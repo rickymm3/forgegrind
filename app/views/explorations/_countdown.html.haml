@@ -1,0 +1,14 @@
+- remaining_seconds = user_exploration.explore_time_remaining
+
+%div{ data: {
+    controller:              "countdown",
+    countdown_seconds_value: remaining_seconds,
+    user_exploration_id:     user_exploration.id
+  }}
+  %p.font-semibold.mb-2= world.name
+  %p.text-sm.text-gray-600 Exploring...
+  %p.text-sm.mt-1
+    Time left:
+    %span{ data: { countdown_target: "output" } }
+      =puts remaining_seconds
+      = distance_of_time_in_words(remaining_seconds.seconds.from_now)

@@ -1,0 +1,19 @@
+.container.mx-auto.mt-16.text-center
+  %h1.text-3xl.font-bold.mb-6 Nursery
+
+  - if @user_eggs.any?
+    .grid.grid-cols-1.md:grid-cols-2.lg:grid-cols-3.gap-6
+      - @user_eggs.each do |user_egg|
+        .border.p-4.rounded.shadow
+          %h2.text-xl.font-semibold= user_egg.egg.name
+          = turbo_frame_tag "user_egg_hatch_#{user_egg.id}" do
+            - if user_egg.hatched?
+              = render "hatched", user_egg: user_egg
+            - elsif user_egg.hatch_started_at.present? && user_egg.hatch_time_remaining <= 0
+              = render "hatch_now", user_egg: user_egg
+            - elsif user_egg.hatch_started_at.present?
+              = render "hatch_countdown", user_egg: user_egg
+            - else
+              = button_to "Begin Incubation", incubate_user_egg_path(user_egg), method: :post, data: { turbo_stream: true }, class: "mt-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
+  - else
+    %p.text-gray-500 No eggs found.

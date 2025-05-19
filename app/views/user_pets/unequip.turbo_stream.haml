@@ -1,0 +1,9 @@
+= turbo_stream.update "equip_slots" do
+  = render "user_pets/equip_slots"
+
+- if target_pet
+  = turbo_stream.replace dom_id(target_pet) do
+    = render partial: "pets/user_pet_card", locals: { user_pet: target_pet }
+
+= turbo_stream.update "equip_detail" do
+  %p.text-yellow-600.text-center.mt-4 Pet unequipped.

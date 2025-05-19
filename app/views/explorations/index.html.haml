@@ -1,0 +1,26 @@
+%h1.text-2xl.font-semibold.mb-4 Exploration Zones
+
+%ul.space-y-3
+  - @worlds.each do |world|
+    - user_exploration = @user_explorations.find { |ue| ue.world_id == world.id }
+
+    = turbo_frame_tag "exploration_#{world.id}" do
+      - if user_exploration&.timer_expired? && user_exploration.complete?
+        = button_to "Complete",
+            complete_user_exploration_path(user_exploration),
+            method: :post,
+            data: { turbo_frame: "exploration_#{world.id}" },
+            class: "px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700"
+      - elsif user_exploration.present? && !user_exploration.timer_expired?
+        = render "explorations/countdown", user_exploration: user_exploration, world: world
+      - else
+        %li.border.p-4.rounded-lg.flex.items-center.justify-between
+          .flex.items-center.space-x-4
+            %span.font-medium= world.name
+            %small.text-gray-500= "#{world.duration / 60}m #{world.duration % 60}s"
+
+          = button_to "Explore",
+              start_exploration_path(world),
+              method: :post,
+              data: { turbo_frame: "exploration_#{world.id}" },
+              class: "px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"

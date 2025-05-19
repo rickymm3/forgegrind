@@ -1,0 +1,27 @@
+%h1.text-2xl.font-bold.mb-4 Pets
+
+= link_to "New Pet", new_admin_pet_path, class: "bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 mb-4 inline-block"
+
+%table.w-full.text-left.border-collapse
+  %thead
+    %tr.bg-gray-200
+      %th.px-4.py-2 ID
+      %th.px-4.py-2 Name
+      %th.px-4.py-2 Rarity
+      %th.px-4.py-2 Egg
+      %th.px-4.py-2 Actions
+  %tbody
+    - @pets.each do |pet|
+      %tr.border-b
+        %td.px-4.py-2= pet.id
+        %td.px-4.py-2= pet.name
+        %td.px-4.py-2= pet.rarity&.name
+        %td.px-4.py-2
+          - if pet.egg
+            = link_to pet.egg.name, admin_egg_path(pet.egg), class: "text-blue-600 hover:underline"
+          - else
+            %span.text-gray-500 —
+        %td.px-4.py-2.space-x-2
+          = link_to "Show", admin_pet_path(pet), class: "text-blue-600 hover:underline"
+          = link_to "Edit", edit_admin_pet_path(pet), class: "text-yellow-600 hover:underline"
+          = link_to "Delete", admin_pet_path(pet), method: :delete, data: { confirm: "Are you sure?" }, class: "text-red-600 hover:underline"

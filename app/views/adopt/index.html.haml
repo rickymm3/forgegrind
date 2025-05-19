@@ -1,0 +1,27 @@
+.container.mx-auto.mt-16.text-center
+  %h1.text-2xl.font-bold.mb-4 Adopt an Egg
+
+  %h2.text-xl.font-semibold.mb-4 Your Inventory
+
+  = turbo_frame_tag "user-inventory" do
+    = render "user_inventory", user_items: @user_items
+
+  = turbo_frame_tag "egg-list" do
+    .grid.grid-cols-2.md:grid-cols-3.lg:grid-cols-4.gap-4
+      - @eggs.each do |egg|
+        - can_afford = current_user.can_afford_egg?(egg)
+
+        .border.rounded-lg.p-4.bg-white.shadow
+          %h2.text-lg.font-semibold.text-gray-800= egg.name
+          %p.text-sm.text-gray-600.mb-2 Hatches in #{distance_of_time_in_words(egg.hatch_duration.seconds.from_now)}
+
+          %p.text-sm.text-gray-600.mb-1 Required Items:
+          %ul.text-sm.mb-3
+            - egg.egg_item_costs.each do |cost|
+              %li= "#{cost.item.name}: #{cost.quantity}"
+
+          = form_with url: user_eggs_path, method: :post, data: { turbo: true } do |f|
+            = hidden_field_tag :egg_id, egg.id
+            = f.submit "Adopt",
+                class: "w-full mt-2 py-2 rounded #{can_afford ? 'bg-blue-500 hover:bg-blue-600 text-white' : 'bg-gray-300 text-gray-500 cursor-not-allowed'}",
+                disabled: !can_afford

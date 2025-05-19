@@ -1,0 +1,11 @@
+-# app/views/nursery/_hatch_countdown.html.haml
+%div{ data: {
+      controller:              "countdown",
+      countdown_seconds_value: user_egg.hatch_time_remaining.to_i,
+      user_egg_id:             user_egg.id
+    }}
+  %div{ data: { countdown_target: "container" } }
+    %p.text-yellow-600.font-semibold.mt-2 Hatching...
+    %p.mt-1.text-sm
+      Time left:
+      %span{ data: { countdown_target: "output" } }= distance_of_time_in_words(user_egg.hatch_time_remaining)

@@ -1,0 +1,2 @@
+module UserEggsHelper
+end

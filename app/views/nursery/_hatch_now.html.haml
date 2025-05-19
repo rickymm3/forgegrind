@@ -1,0 +1,5 @@
+%p.text-green-700.font-semibold.mt-2 Ready to hatch!
+
+= form_with url: hatch_user_egg_path(user_egg), method: :post, data: { turbo_stream: true }, class: "mt-0" do |f|
+  = f.submit "Hatch Now",
+      class: "mt-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded w-full"

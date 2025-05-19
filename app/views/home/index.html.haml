@@ -1,0 +1,9 @@
+.container.mx-auto.mt-16.text-center
+  %h1.text-4xl.font-bold.mb-4 ForgeGrind
+  %p.text-lg.text-gray-600.mb-6
+    Welcome to the idle game where energy, pets, and rebirths shape your grind.
+    Summon powerful heroes. Defeat bosses. Rebirth endlessly.
+  - unless user_signed_in?
+    = link_to "Get Started", new_user_registration_path, class: "inline-block bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
+  - if user_signed_in?
+    = link_to "Go to Profile", user_profile_path, class: "inline-block bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700"

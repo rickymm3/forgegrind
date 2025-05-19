@@ -1,0 +1,6 @@
+= turbo_stream.update "equip_detail" do
+  .border-t.px-6.py-4.bg-gray-50
+    .font-semibold.text-gray-800.mb-1= @user_pet.pet.name
+    .text-sm.text-gray-600.mb-3= "Rarity: #{@user_pet.pet.rarity.name} | Power: #{@user_pet.pet.power}"
+    = form_with url: equip_user_pet_path(@user_pet, slot: params[:slot]), method: :post, data: { turbo_frame: "equip_detail", action: "submit->equip-modal#close" } do
+      = submit_tag "Equip", class: "w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded-lg transition"

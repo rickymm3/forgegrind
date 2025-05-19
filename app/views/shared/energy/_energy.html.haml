@@ -1,0 +1,16 @@
+-# <!-- app/views/shared/energy/_energy.html.haml -->
+-# Modular energy display + Turbo Stream subscription
+-# Expects: `user` local and uses UserStat#energy_multiplier for all bonuses
+- user_stat = user.user_stat
+%div{ data: {
+    controller:               "energy",
+    energy_interval_value:    GameConfig::BASE_TICK_INTERVAL.to_i,
+    energy_base_value:        GameConfig::BASE_ENERGY_VALUE,
+    energy_energy_value:      user_stat.energy,
+    energy_multiplier_value:  user_stat.energy_multiplier
+  } }
+  %p.text-lg.text-gray-700
+    Energy:
+    %span.text-green-600.font-bold{ id: dom_id(user, :energy_display), data: { energy_target: "value" } }= user_stat.energy
+
+= turbo_stream_from "user_#{user.id}_energy"

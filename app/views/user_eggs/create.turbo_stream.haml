@@ -1,0 +1,27 @@
+- relevant_item_ids = EggItemCost.distinct.pluck(:item_id)
+- user_items = current_user.user_items.includes(:item).where(item_id: relevant_item_ids)
+- eggs = Egg.includes(:egg_item_costs => :item).all
+
+- user_items.each do |user_item|
+  = turbo_stream.update "user-item-quantity-#{user_item.item_id}" do
+    = "x#{user_item.quantity}"
+
+= turbo_stream.update "egg-list" do
+  .grid.grid-cols-2.md:grid-cols-3.lg:grid-cols-4.gap-4
+    - eggs.each do |egg|
+      - can_afford = current_user.can_afford_egg?(egg)
+
+      .border.rounded-lg.p-4.bg-white.shadow
+        %h2.text-lg.font-semibold.text-gray-800= egg.name
+        %p.text-sm.text-gray-600.mb-2 Hatches in #{distance_of_time_in_words(egg.hatch_duration.seconds.from_now)}
+
+        %p.text-sm.text-gray-600.mb-1 Required Items:
+        %ul.text-sm.mb-3
+          - egg.egg_item_costs.each do |cost|
+            %li= "#{cost.item.name}: #{cost.quantity}"
+
+        = form_with url: user_eggs_path, method: :post, data: { turbo: true } do |f|
+          = hidden_field_tag :egg_id, egg.id
+          = f.submit "Adopt",
+              class: "w-full mt-2 py-2 rounded #{can_afford ? 'bg-blue-500 hover:bg-blue-600 text-white' : 'bg-gray-300 text-gray-500 cursor-not-allowed'}",
+              disabled: !can_afford

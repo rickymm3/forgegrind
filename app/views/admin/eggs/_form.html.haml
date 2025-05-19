@@ -1,0 +1,22 @@
+= form_with model: [:admin, @egg], local: true, class: "space-y-6 max-w-md" do |f|
+  - if @egg.errors.any?
+    #error_explanation.bg-red-100.text-red-800.p-4.rounded
+      %h2.font-bold= "#{pluralize(@egg.errors.count, "error")} prohibited this egg from being saved:"
+      %ul.list-disc.pl-5
+        - @egg.errors.full_messages.each do |msg|
+          %li= msg
+
+  .field
+    = f.label :name, class: "block text-sm font-medium text-gray-700"
+    = f.text_field :name, class: "mt-1 block w-full border border-gray-300 rounded px-3 py-2"
+
+  .field
+    = f.label :description, class: "block text-sm font-medium text-gray-700"
+    = f.text_area :description, rows: 4, class: "mt-1 block w-full border border-gray-300 rounded px-3 py-2"
+
+  .field.flex.items-center.space-x-2
+    = f.check_box :enabled, class: "rounded border-gray-300"
+    = f.label :enabled, class: "text-sm text-gray-700"
+
+  .actions
+    = f.submit class: "bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"

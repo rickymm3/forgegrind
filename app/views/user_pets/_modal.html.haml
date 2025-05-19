@@ -1,0 +1,17 @@
+#equip-modal.hidden.fixed.inset-0.flex.items-center.justify-center.z-50{
+  class: "bg-[rgba(0,0,0,0.5)]",
+  data: { action: "click->equip-modal#backgroundClose" }
+  }
+  .bg-white.relative.rounded-2xl.shadow-xl.overflow-hidden.flex.flex-col{class: "w-[28rem] max-h-[80vh]", "data-equip-modal-target" => "container"}
+    / Close button (inside modal)
+    %button.absolute.top-3.right-4.text-gray-400.hover:text-gray-600.text-2xl{"data-action" => "click->equip-modal#close"}
+      ×
+    / Header
+    .text-center.px-6.pt-6.pb-4.border-b
+      %h2.text-xl.font-semibold.text-gray-800 Select a Pet to Equip
+    / Pet icon grid
+    .px-4.py-2.overflow-y-auto.flex-1
+      .grid.grid-cols-5.gap-3{"data-equip-modal-target" => "petList"}
+        = render "user_pets/modal_icon_grid"
+    / Pet stat block
+    = turbo_frame_tag "equip_detail", class: "border-t px-6 py-4 bg-gray-50"

@@ -1,0 +1,13 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  user: one
+  energy: 1
+  trophies: 1
+  rebirths: 1
+
+two:
+  user: two
+  energy: 1
+  trophies: 1
+  rebirths: 1

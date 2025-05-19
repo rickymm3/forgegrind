@@ -1,0 +1,4 @@
+- exploration_frame_id = "exploration_#{@world.id}"
+
+= turbo_stream.update exploration_frame_id do
+  = render "explorations/countdown", user_exploration: @user_exploration, world: @world

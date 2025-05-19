@@ -1,0 +1,21 @@
+%h1.text-2xl.font-bold.mb-4 Eggs
+
+= link_to "New Egg", new_admin_egg_path, class: "bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 mb-4 inline-block"
+
+%table.w-full.text-left.border-collapse
+  %thead
+    %tr.bg-gray-200
+      %th.px-4.py-2 ID
+      %th.px-4.py-2 Name
+      %th.px-4.py-2 Enabled
+      %th.px-4.py-2 Actions
+  %tbody
+    - @eggs.each do |egg|
+      %tr.border-b
+        %td.px-4.py-2= egg.id
+        %td.px-4.py-2= egg.name
+        %td.px-4.py-2= egg.enabled ? "✅" : "❌"
+        %td.px-4.py-2.space-x-2
+          = link_to "Show", admin_egg_path(egg), class: "text-blue-600 hover:underline"
+          = link_to "Edit", edit_admin_egg_path(egg), class: "text-yellow-600 hover:underline"
+          = link_to "Delete", admin_egg_path(egg), method: :delete, data: { confirm: "Are you sure?" }, class: "text-red-600 hover:underline"

@@ -1,0 +1,17 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  user: one
+  pet: one
+  egg: one
+  name: MyString
+  rarity: one
+  power: 1
+
+two:
+  user: two
+  pet: two
+  egg: two
+  name: MyString
+  rarity: two
+  power: 1

@@ -1,0 +1,13 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  user: one
+  egg: one
+  hatched: false
+  hatch_started_at: 2025-05-04 09:48:22
+
+two:
+  user: two
+  egg: two
+  hatched: false
+  hatch_started_at: 2025-05-04 09:48:22

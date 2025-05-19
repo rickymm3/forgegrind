@@ -1,0 +1,11 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  user: one
+  world: one
+  started_at: 2025-05-13 13:19:28
+
+two:
+  user: two
+  world: two
+  started_at: 2025-05-13 13:19:28

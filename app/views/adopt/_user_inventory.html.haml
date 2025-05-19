@@ -1,0 +1,8 @@
+.grid.grid-cols-2.md:grid-cols-4.lg:grid-cols-6.gap-4.mb-6
+  - user_items.each do |user_item|
+    .flex.flex-col.items-center.text-center.border.p-3.rounded
+      = image_tag asset_path("items/#{user_item.item.item_type}.png"),
+          class: "w-16 h-16 object-contain mb-2 border border-gray-300 rounded"
+      %div.font-medium= user_item.item.name
+      %div.text-sm.text-gray-600{ id: "user-item-quantity-#{user_item.item_id}" }
+        = "x#{user_item.quantity}"

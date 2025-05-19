@@ -1,0 +1,13 @@
+.container.mx-auto.mt-16.text-center{"data-controller" => "equip-modal"}
+  %h1.text-3xl.font-bold.mb-6 Your Pets
+  .mb-8
+    = render "user_pets/equip_widget"
+
+  - if @user_pets.any?
+    .grid.grid-cols-1.md:grid-cols-2.lg:grid-cols-3.gap-6
+      - @user_pets.each do |user_pet|
+        = turbo_frame_tag dom_id(user_pet) do
+          = render partial: "pets/user_pet_card", locals: { user_pet: user_pet }
+
+  - else
+    %p.text-gray-500 You don’t have any pets yet.
