@@ -16,8 +16,6 @@ export default class extends Controller {
 
     this.tick()
     this.timer = setInterval(() => this.tick(), 1000)
-    console.log(this.secondsValue)
-    console.log(this.endTime)
   }
 
   disconnect() {
