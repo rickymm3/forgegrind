@@ -1,0 +1,17 @@
+-# app/views/shared/empty_modal.html.haml
+.modal-container.mx-auto.mt-6.text-center
+  .hidden.fixed.inset-0.flex.items-center.justify-center.z-50{
+    class: "bg-[rgba(0,0,0,0.5)] #{modal_name}",
+    data: { action: "click->modal#backgroundClose", modal_target: "overlay" } # Add modal_target for the overlay
+    }
+    .bg-white.relative.rounded-2xl.shadow-xl.overflow-hidden.flex.flex-col{class: "w-[28rem] max-h-[80vh]", data: {modal_target: "container"}}
+      %button.absolute.top-3.right-4.text-gray-400.hover:text-gray-600.text-2xl{"data-action" => "click->modal#close"}
+        ×
+      .text-center.px-6.pt-6.pb-4.border-b
+        %h2.text-xl.font-semibold.text-gray-800 
+          = header_text
+      .px-4.py-2.overflow-y-auto.flex-1
+        .grid.grid-cols-5.gap-3
+          = turbo_frame_tag "#{modal_name}-content-frame" do
+            %div.p-4.text-center Loading...
+

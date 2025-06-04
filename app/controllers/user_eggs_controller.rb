@@ -52,30 +52,72 @@ class UserEggsController < ApplicationController
     end
   end
 
-  def hatch
-    @user_egg = current_user.user_eggs.find(params[:id])
+# app/controllers/user_eggs_controller.rb
 
-    UserEgg.transaction do
-      @user_egg.update!(hatched: true)
-      pet = @user_egg.egg.random_pet
-      current_user.user_pets.create!(
-        pet:    pet,
-        egg:    @user_egg.egg,
-        name:   pet.name,
-        rarity: pet.rarity,
-        power:  pet.power
-      )
-    end
+def hatch
+  @user_egg = current_user.user_eggs.find(params[:id])
+  pet = nil
 
-    respond_to do |format|
-      format.turbo_stream do
-        render turbo_stream: turbo_stream.replace(
-          "user_egg_hatch_#{@user_egg.id}",
-          partial: "nursery/hatched",
-          locals: { user_egg: @user_egg }
-        )
-      end
-    end
+  UserEgg.transaction do
+    @user_egg.update!(hatched: true)
+    pet = @user_egg.egg.random_pet
+
+    random_thought = PetThought.order("RANDOM()").first
+
+    @user_pet = current_user.user_pets.create!(
+      pet:           pet,
+      egg:           @user_egg.egg,
+      name:          pet.name,
+      rarity:        pet.rarity,
+      power:         pet.power,
+      playfulness:   rand(1..10),
+      affection:     rand(1..10),
+      temperament:   rand(1..10),
+      curiosity:     rand(1..10),
+      confidence:    rand(1..10),
+      pet_thought:   random_thought
+    )
   end
+
+  redirect_to nursery_hatch_path(@user_pet.id)
+end
+
+  # def hatch
+  #   @user_egg = current_user.user_eggs.find(params[:id])
+  #   @egg_frame_id = "user_egg_hatch_#{@user_egg.id}" # Define the frame ID for the main page
+
+  #   UserEgg.transaction do
+  #     @user_egg.update!(hatched: true)
+  #     pet = @user_egg.egg.random_pet # Assuming egg.random_pet is defined
+  #     @user_pet = current_user.user_pets.create!(
+  #       pet:    pet,
+  #       egg:    @user_egg.egg,
+  #       name:   pet.name,
+  #       rarity: pet.rarity,
+  #       power:  pet.power
+  #     )
+  #   end
+
+  #   # Respond with turbo_stream directly
+  #   respond_to do |format|
+  #     format.html { redirect_to nursery_path } # Fallback for non-turbo requests
+  #     format.turbo_stream do
+  #       # This will implicitly render user_eggs/hatch.turbo_stream.haml
+  #       # or you can explicitly render:
+  #       # render turbo_stream: [
+  #       #   turbo_stream.update(@egg_frame_id, partial: "nursery/hatched", locals: { user_egg: @user_egg }),
+  #       #   turbo_stream.update("hatch-modal-content-frame", partial: "nursery/hatch_modal_content", locals: { pet: @user_pet.pet, egg: @user_egg.egg })
+  #       # ]
+  #     end
+  #   end
+  # rescue ActiveRecord::RecordNotFound
+  #   redirect_to nursery_path, alert: "Egg not found."
+  # rescue StandardError => e
+  #   Rails.logger.error "Hatching error: #{e.message}"
+  #   respond_to do |format|
+  #     format.html { redirect_to nursery_path, alert: "Error hatching egg." }
+  #     format.turbo_stream { head :unprocessable_entity } # Or render an error stream
+  #   end
+  # end
 
 end

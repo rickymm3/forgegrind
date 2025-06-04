@@ -1,8 +1,14 @@
-.border.p-4.rounded.shadow.bg-white.relative
-  - if user_pet.equipped?
-    %span.absolute.top-2.right-2.text-xs.bg-green-200.text-green-800.px-2.py-1.rounded Equipped
+-# app/views/pets/_user_pet_card.html.haml
 
-  %h2.text-xl.font-semibold= user_pet.name
+.border.p-4.rounded.shadow.bg-white.relative
+  -# - if user_pet.equipped?
+  -#   %span.absolute.top-2.right-2.text-xs.bg-green-200.text-green-800.px-2.py-1.rounded Equipped
+
+  %h2.text-xl.font-semibold
+    = link_to user_pet.name,
+              pet_path(user_pet.pet),
+              class: "text-blue-600 hover:underline",
+              data: { turbo_frame: "_top" }
   %p.text-sm.text-gray-600.mt-1= "Rarity: #{user_pet.rarity.name}"
   %p.text-sm.text-gray-600.mt-1= "Power: #{user_pet.power}"
   %p.text-sm.text-gray-600.mt-1= "From Egg: #{user_pet.egg.name}"

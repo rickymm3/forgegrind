@@ -1,3 +1,5 @@
+-# app/views/explorations/index.html.haml
+
 %h1.text-2xl.font-semibold.mb-4 Exploration Zones
 
 %ul.space-y-3
@@ -5,14 +7,13 @@
     - user_exploration = @user_explorations.find { |ue| ue.world_id == world.id }
 
     = turbo_frame_tag "exploration_#{world.id}" do
-      - if user_exploration&.timer_expired? && user_exploration.complete?
-        = button_to "Complete",
-            complete_user_exploration_path(user_exploration),
-            method: :post,
-            data: { turbo_frame: "exploration_#{world.id}" },
-            class: "px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700"
+      - # If exploration exists and the timer has already run out, show the button:
+      - if user_exploration.present? && user_exploration.timer_expired?
+        = render "user_explorations/ready_to_complete", user_exploration: user_exploration
+
       - elsif user_exploration.present? && !user_exploration.timer_expired?
         = render "explorations/countdown", user_exploration: user_exploration, world: world
+
       - else
         %li.border.p-4.rounded-lg.flex.items-center.justify-between
           .flex.items-center.space-x-4

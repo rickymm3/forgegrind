@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_05_19_163454) do
+ActiveRecord::Schema[8.0].define(version: 2025_06_03_171841) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -49,6 +49,23 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_19_163454) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "pet_thoughts", force: :cascade do |t|
+    t.string "thought"
+    t.float "playfulness_mod"
+    t.float "affection_mod"
+    t.float "temperament_mod"
+    t.float "curiosity_mod"
+    t.float "confidence_mod"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "pet_types", force: :cascade do |t|
+    t.string "name"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
   create_table "pets", force: :cascade do |t|
     t.string "name"
     t.integer "power"
@@ -56,7 +73,15 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_19_163454) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.bigint "rarity_id"
+    t.bigint "pet_type_id"
+    t.integer "hp", default: 5, null: false
+    t.integer "atk", default: 5, null: false
+    t.integer "def", default: 5, null: false
+    t.integer "sp_atk", default: 5, null: false
+    t.integer "sp_def", default: 5, null: false
+    t.integer "speed", default: 5, null: false
     t.index ["egg_id"], name: "index_pets_on_egg_id"
+    t.index ["pet_type_id"], name: "index_pets_on_pet_type_id"
     t.index ["rarity_id"], name: "index_pets_on_rarity_id"
   end
 
@@ -111,8 +136,22 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_19_163454) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.boolean "equipped", default: false
+    t.integer "playfulness"
+    t.integer "affection"
+    t.integer "temperament"
+    t.integer "curiosity"
+    t.integer "confidence"
+    t.bigint "pet_thought_id", null: false
+    t.datetime "last_interacted_at"
+    t.integer "level", default: 1, null: false
+    t.integer "exp", default: 0, null: false
+    t.integer "interactions_remaining", default: 5, null: false
+    t.integer "energy", default: 100, null: false
+    t.datetime "asleep_until"
+    t.datetime "last_energy_update_at"
     t.index ["egg_id"], name: "index_user_pets_on_egg_id"
     t.index ["pet_id"], name: "index_user_pets_on_pet_id"
+    t.index ["pet_thought_id"], name: "index_user_pets_on_pet_thought_id"
     t.index ["rarity_id"], name: "index_user_pets_on_rarity_id"
     t.index ["user_id"], name: "index_user_pets_on_user_id"
   end
@@ -153,6 +192,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_19_163454) do
   add_foreign_key "egg_item_costs", "items"
   add_foreign_key "eggs", "currencies"
   add_foreign_key "pets", "eggs"
+  add_foreign_key "pets", "pet_types"
   add_foreign_key "pets", "rarities"
   add_foreign_key "user_eggs", "eggs"
   add_foreign_key "user_eggs", "users"
@@ -161,6 +201,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_19_163454) do
   add_foreign_key "user_items", "items"
   add_foreign_key "user_items", "users"
   add_foreign_key "user_pets", "eggs"
+  add_foreign_key "user_pets", "pet_thoughts"
   add_foreign_key "user_pets", "pets"
   add_foreign_key "user_pets", "rarities"
   add_foreign_key "user_pets", "users"

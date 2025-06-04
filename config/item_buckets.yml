@@ -1,0 +1,49 @@
+bucket_starter_zone:
+  "Starter Item":
+    weight: 0
+    guaranteed: true
+
+  "Frisbee":
+    weight: 30
+    guaranteed: false
+
+  "Whistle":
+    weight: 15
+    guaranteed: false
+
+  "Blanket":
+    weight: 20
+    guaranteed: false
+
+  "Treat":
+    weight: 20
+    guaranteed: false
+
+  "Map":
+    weight: 15
+    guaranteed: false
+
+bucket_forest:
+  "Wooden Stick":
+    weight: 0
+    guaranteed: true
+
+  "Frisbee":
+    weight: 30
+    guaranteed: false
+
+  "Whistle":
+    weight: 15
+    guaranteed: false
+
+  "Blanket":
+    weight: 20
+    guaranteed: false
+
+  "Treat":
+    weight: 20
+    guaranteed: false
+
+  "Map":
+    weight: 15
+    guaranteed: false

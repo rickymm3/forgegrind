@@ -1,0 +1,61 @@
+# Name of your application. Used to uniquely configure containers.
+service: forgegrind
+
+# Name of the container image.
+image: rickymm3/forgegrind
+
+# Deploy to these servers.
+servers:
+  web:
+    - 192.168.0.1
+
+# Configure builder setup.
+builder:
+  arch: amd64
+
+  ssh:
+  user: gcp
+
+service: forgegrind
+image: rickymm3/forgegrind
+
+registry:
+  username: rickymm3
+  password:
+    - KAMAL_REGISTRY_PASSWORD
+
+servers:
+  web:
+    hosts:
+      - 34.82.106.188
+
+builder:
+  arch: amd64
+
+env:
+  clear:
+    RAILS_ENV: production
+    RACK_ENV: production
+  secret:
+    - RAILS_MASTER_KEY
+    - DB_USERNAME
+    - DB_PASSWORD
+    - POSTGRES_PASSWORD
+    - DB_DATABASE
+    - DATABASE_URL
+
+accessories:
+  postgres:
+    image: postgres:16
+    host: 34.82.106.188
+    port: "127.0.0.1:5432:5432"
+    env:
+      clear:
+        POSTGRES_USER: rails_user
+        POSTGRES_DB: forgegrind_production
+      secret:
+        - POSTGRES_PASSWORD
+    directories:
+      - data:/var/lib/postgresql/data
+    files:
+      - db/production_setup.sql:/docker-entrypoint-initdb.d/setup.sql

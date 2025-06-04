@@ -6,7 +6,15 @@ class PetsController < ApplicationController
   end
 
   def show
-    @pet = Pet.includes(:rarity).find(params[:id])
+    @pet = Pet.find(params[:id])
+    @user_pet = current_user.user_pets.find_by(pet: @pet)
+
+    if @user_pet
+      @user_pet.catch_up_energy!
+    else
+      # You might redirect or render a “not found” if the user doesn’t own this pet.
+      redirect_to pets_path, alert: "You don’t own that pet."
+    end
   end
   
 end

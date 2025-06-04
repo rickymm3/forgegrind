@@ -1,0 +1,24 @@
+-# app/views/user_pets/_interact_preview.html.haml
+-# Locals expected: user_pet, interaction, required_item, user_qty, item_info
+
+%div
+  %p.text-lg.font-semibold.mb-2= "Confirm: #{interaction.capitalize} with #{user_pet.name}?"
+
+  %p.text-sm.text-gray-700.mb-1
+    %strong Required Item:
+    = " #{required_item.name}"
+
+  %p.text-sm.text-gray-700.mb-1
+    %strong You Have:
+    = " #{user_qty}"
+
+  - if item_info["description"].present?
+    %p.text-sm.text-gray-600.mt-2.mb-2= item_info["description"]
+
+  -# Final confirmation button posts to actual interact action
+  = button_to "Yes, #{interaction.capitalize}",
+      interact_user_pet_path(user_pet),
+      params: { interaction_type: interaction },
+      method: :post,
+      data: { turbo_frame: "_top" },
+      class: "mt-3 w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded"

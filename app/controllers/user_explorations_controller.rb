@@ -2,21 +2,31 @@ class UserExplorationsController < ApplicationController
   def complete
     @user_exploration = current_user.user_explorations.find(params[:id])
     @world = @user_exploration.world
+    slug = @world.name.parameterize(separator: "_")
 
-    # Find or create the reward item
-    item = Item.find_or_create_by!(item_type: @world.reward_item_type) do |i|
-      i.name = @world.reward_item_type.titleize
-    end
+    # Determine bucket name based on this world’s ID (e.g., "world_1_chest_common")
+    bucket_name = "bucket_#{slug}"
 
-    # Add item to user's inventory
-    @user_item = UserItem.add_to_inventory(current_user, item, 1)
+    # Open that bucket—awards all guaranteed items + any weighted drops
+    @awarded_items = UserItem.open_bucket(user: current_user, bucket_name: bucket_name)
 
-    # Optionally clean up completed explorations here:
     @user_exploration.destroy
 
     respond_to do |format|
       format.turbo_stream
     end
   end
+
+
+  def ready
+    # Use :id or, if that’s nil, :user_exploration_id
+    exploration_id = params[:id] || params[:user_exploration_id]
+    @user_exploration = current_user.user_explorations.find(exploration_id)
+
+    respond_to do |format|
+      format.turbo_stream
+    end
+  end
+
 
 end

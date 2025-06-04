@@ -1,0 +1,44 @@
+# config/item_details.yml
+starter_item:
+  description: "A basic egg, could have anything? Or not"
+wooden_stick:
+  description: "A stick"  
+frisbee:
+  description: "A playful frisbee to toss around with your pet."
+  playfulness_mod: 0.5
+  affection_mod:   0.0
+  temperament_mod: 0.0
+  curiosity_mod:   0.2
+  confidence_mod:  0.0
+
+blanket:
+  description: "A cozy blanket that makes your pet feel safe and warm."
+  playfulness_mod: 0.0
+  affection_mod:   0.5
+  temperament_mod: 0.1
+  curiosity_mod:   0.0
+  confidence_mod:  0.2
+
+whistle:
+  description: "A whistle that grabs your pet’s attention instantly."
+  playfulness_mod: 0.0
+  affection_mod:   -0.2
+  temperament_mod: 0.5
+  curiosity_mod:   0.0
+  confidence_mod:  0.1
+
+treat:
+  description: "A tasty treat that boosts your pet’s mood."
+  playfulness_mod: 0.0
+  affection_mod:   0.3
+  temperament_mod: 0.0
+  curiosity_mod:   0.4
+  confidence_mod:  0.0
+
+map:
+  description: "A detailed map to help you and your pet explore new areas."
+  playfulness_mod: 0.0
+  affection_mod:   0.0
+  temperament_mod: 0.0
+  curiosity_mod:   0.5
+  confidence_mod:  0.2

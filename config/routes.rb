@@ -2,9 +2,7 @@ Rails.application.routes.draw do
   root to: "home#index"
 
   get "/adopt", to: "adopt#index"
-  get "adopt/index"
   get "nursery", to: "nursery#index", as: :nursery
-  get "users/show"
   get "home/index"
   get "profile", to: "users#show", as: :user_profile  # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
@@ -12,11 +10,17 @@ Rails.application.routes.draw do
     member do
       post :preview
       post :equip
+      post :interact
+      post :level_up
+      post :interact_preview 
     end
     collection do
       post :unequip
     end
   end
+
+  get "/items", to: "items#index", as: :items
+
 
   namespace :admin do
     root to: "dashboard#index"
@@ -37,15 +41,18 @@ Rails.application.routes.draw do
 
   resources :user_explorations, only: [] do
     post :complete, on: :member
+    get :ready   # new: GET /user_explorations/:id/ready
+
   end
 
   resources :user_eggs, only: [:create] do
     member do
       post :incubate
       post :mark_ready
-      post :hatch
+      post :hatch      
     end
   end
+  get "nursery/hatch/:id", to: "nursery#hatch", as: :nursery_hatch
 
   devise_for :users
 

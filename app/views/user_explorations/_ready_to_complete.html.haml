@@ -1,0 +1,11 @@
+-# app/views/user_explorations/_ready_to_complete.html.haml
+
+%div
+  %p.font-semibold.mb-2= user_exploration.world.name
+  %p.text-sm.text-green-600.mb-2 Exploring complete! Click below:
+
+  = button_to "Complete",
+      complete_user_exploration_path(user_exploration),
+      method: :post,
+      data: { turbo_frame: "exploration_#{user_exploration.world_id}" },
+      class: "px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700"

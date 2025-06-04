@@ -1,3 +1,5 @@
+// app/javascript/controllers/countdown_controller.js
+
 import { Controller } from "@hotwired/stimulus"
 import { Turbo } from "@hotwired/turbo-rails"
 
@@ -10,14 +12,10 @@ export default class extends Controller {
 
   connect() {
     this.endTime = Date.now() + this.secondsValue * 1000
-
-    this.userEggId = this.element.dataset.userEggId
     this.userExplorationId = this.element.dataset.userExplorationId
 
     this.tick()
     this.timer = setInterval(() => this.tick(), 1000)
-    console.log(this.secondsValue)
-    console.log(this.endTime)
   }
 
   disconnect() {
@@ -35,39 +33,21 @@ export default class extends Controller {
   }
 
   handleCompletion() {
-    if (this.userEggId) {
-      this.markEggReady()
-    } else if (this.userExplorationId) {
-      this.completeExploration()
+    if (this.userExplorationId) {
+      // Instead of auto‐completing, request “ready” partial
+      fetch(`/user_explorations/${this.userExplorationId}/ready`, {
+        method: "GET",
+        headers: {
+          "Accept": "text/vnd.turbo-stream.html",
+          "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]').content
+        }
+      })
+        .then(response => response.text())
+        .then(html => Turbo.renderStreamMessage(html))
+        .catch(err => console.error("ready_exploration failed:", err))
     } else {
-      console.warn("Countdown finished but no ID found to handle completion.")
+      console.warn("Countdown finished but no exploration ID found.")
     }
-  }
-
-  markEggReady() {
-    fetch(`/user_eggs/${this.userEggId}/mark_ready`, {
-      method: "POST",
-      headers: {
-        "Accept": "text/vnd.turbo-stream.html",
-        "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]').content
-      }
-    })
-      .then(response => response.text())
-      .then(html => Turbo.renderStreamMessage(html))
-      .catch(err => console.error("mark_ready failed:", err))
-  }
-
-  completeExploration() {
-    fetch(`/user_explorations/${this.userExplorationId}/complete`, {
-      method: "POST",
-      headers: {
-        "Accept": "text/vnd.turbo-stream.html",
-        "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]').content
-      }
-    })
-      .then(response => response.text())
-      .then(html => Turbo.renderStreamMessage(html))
-      .catch(err => console.error("complete_exploration failed:", err))
   }
 
   formatTime(seconds) {

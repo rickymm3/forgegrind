@@ -1,5 +1,95 @@
-.border-t.px-6.py-4.bg-gray-50
-  .font-semibold.text-gray-800.mb-1= @pet.name
-  .text-sm.text-gray-600.mb-3= "Rarity: #{@pet.rarity.name} | Power: #{@pet.power}"
-  = form_with url: equip_user_pet_path(current_user.user_pets.find_by(pet: @pet)), method: :post do
-    = submit_tag "Equip", class: "w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded-lg transition"
+-# app/views/pets/show.html.haml
+
+.container.mx-auto.mt-16.text-center
+  %h1.text-3xl.font-bold.mb-6= @pet.name
+
+  -# — Show Current Pet Thought (if present) —#
+  - if @user_pet.pet_thought
+    %div.mb-6
+      %p.text-lg.font-semibold.text-purple-700
+        = "\"#{@user_pet.pet_thought.thought}\""
+
+  -# — REFRESH ENERGY ON PAGE LOAD —#
+  - @user_pet.catch_up_energy!
+
+  -# — ENERGY PROGRESS BAR —#
+  %div.mb-4
+    %span.font-semibold= "Energy: #{@user_pet.energy} / #{UserPet::MAX_ENERGY}"
+    %div.w-full.bg-gray-200.rounded-lg.h-2.mt-1
+      %div.bg-green-500.h-2.rounded-lg{ style: "width: #{@user_pet.energy}%;" }
+
+  -# — SLEEP COUNTDOWN, IF APPLICABLE —#
+  - if @user_pet.asleep_until.present? && Time.current < @user_pet.asleep_until
+    %div.mt-3.mb-4{"data-controller" => "sleep", "data-sleep-until-value" => @user_pet.asleep_until.to_i}
+      %p.text-red-600.mb-1
+        = "Sleeping until: "
+        %span{"data-sleep-target" => "timer"} Loading...
+  - else
+    %p.text-green-600.mb-4= "Pet is awake and ready to play!"
+
+  -# — INTERACTION BUTTONS (COST = 5 ENERGY) —#
+  - cost = 5
+  - disabled = (@user_pet.asleep_until.present? && Time.current < @user_pet.asleep_until) || @user_pet.energy < cost
+
+  %div#interactions.mt-6.flex.justify-center.space-x-4
+    = button_to "Play",
+        interact_preview_user_pet_path(@user_pet),
+        params: { interaction_type: "play" },
+        method: :post,
+        data: { turbo_frame: "interaction-action" },
+        class: "bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded",
+        disabled: disabled
+    = button_to "Cuddle",
+        interact_preview_user_pet_path(@user_pet),
+        params: { interaction_type: "cuddle" },
+        method: :post,
+        data: { turbo_frame: "interaction-action" },
+        class: "bg-pink-500 hover:bg-pink-600 text-white px-4 py-2 rounded",
+        disabled: disabled
+    = button_to "Reprimand",
+        interact_preview_user_pet_path(@user_pet),
+        params: { interaction_type: "reprimand" },
+        method: :post,
+        data: { turbo_frame: "interaction-action" },
+        class: "bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded",
+        disabled: disabled
+    = button_to "Feed",
+        interact_preview_user_pet_path(@user_pet),
+        params: { interaction_type: "feed" },
+        method: :post,
+        data: { turbo_frame: "interaction-action" },
+        class: "bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded",
+        disabled: disabled
+    = button_to "Explore",
+        interact_preview_user_pet_path(@user_pet),
+        params: { interaction_type: "explore" },
+        method: :post,
+        data: { turbo_frame: "interaction-action" },
+        class: "bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded",
+        disabled: disabled
+
+%div.interactions-actions.mt-6.w-full.border-t.border-b.py-4.flex.justify-center
+  = turbo_frame_tag "interaction-action" do
+    %p.text-gray-500 Select an action above to see details here.
+
+
+  -# — (Rest of your pet page, e.g. stats, personality, etc.) —#
+.grid.grid-cols-2.sm:grid-cols-3.lg:grid-cols-6.gap-4.mt-8
+  .text-gray-700
+    %span.font-semibold HP:
+    = @pet.hp
+  .text-gray-700
+    %span.font-semibold ATK:
+    = @pet.atk
+  .text-gray-700
+    %span.font-semibold DEF:
+    = @pet.def
+  .text-gray-700
+    %span.font-semibold SP ATK:
+    = @pet.sp_atk
+  .text-gray-700
+    %span.font-semibold SP DEF:
+    = @pet.sp_def
+  .text-gray-700
+    %span.font-semibold Speed:
+    = @pet.speed

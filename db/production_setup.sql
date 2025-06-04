@@ -1,0 +1,4 @@
+CREATE DATABASE forgegrind_production;
+CREATE DATABASE forgegrind_production_cache;
+CREATE DATABASE forgegrind_production_queue;
+CREATE DATABASE forgegrind_production_cable;

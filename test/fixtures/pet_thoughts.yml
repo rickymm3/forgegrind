@@ -1,0 +1,17 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  thought: MyString
+  playfulness_mod: 1.5
+  affection_mod: 1.5
+  temperament_mod: 1.5
+  curiosity_mod: 1.5
+  confidence_mod: 1.5
+
+two:
+  thought: MyString
+  playfulness_mod: 1.5
+  affection_mod: 1.5
+  temperament_mod: 1.5
+  curiosity_mod: 1.5
+  confidence_mod: 1.5

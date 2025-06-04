@@ -10,8 +10,14 @@ application.register("countdown", CountdownController)
 import EnergyController from "./energy_controller"
 application.register("energy", EnergyController)
 
-import EquipModalController from "./equip_modal_controller"
-application.register("equip-modal", EquipModalController)
+import HatchController from "./hatch_controller"
+application.register("hatch", HatchController)
 
 import HelloController from "./hello_controller"
 application.register("hello", HelloController)
+
+import ModalController from "./modal_controller"
+application.register("modal", ModalController)
+
+import SleepController from "./sleep_controller"
+application.register("sleep", SleepController)

@@ -1,0 +1,35 @@
+-# app/views/items/_item_card.html.haml
+-# Expects: local variables `user_item` (UserItem) and `details` (hash from YAML)
+
+%div.bg-white.shadow-md.rounded-lg.p-4.flex.flex-col.justify-between
+  %h3.text-xl.font-semibold.mb-2= user_item.item.name
+  %p.text-sm.text-gray-600.mb-1
+    %strong Type:&nbsp;
+    = user_item.item.item_type
+  %p.text-sm.text-gray-600.mb-1
+    %strong Quantity:&nbsp;
+    = user_item.quantity
+
+  - if details.present?
+    %p.text-sm.text-gray-600.mb-1
+      %strong Description:
+      %p.text-sm.text-gray-700.mt-2.mb-3= details[:description]
+    -if details[:playfulness_mod]
+      %div.text-sm.text-gray-700.space-y-0.5
+        %p
+          %strong Playfulness Mod:&nbsp;
+          = details[:playfulness_mod]
+        %p
+          %strong Affection Mod:&nbsp;
+          = details[:affection_mod]
+        %p
+          %strong Temperament Mod:&nbsp;
+          = details[:temperament_mod]
+        %p
+          %strong Curiosity Mod:&nbsp;
+          = details[:curiosity_mod]
+        %p
+          %strong Confidence Mod:&nbsp;
+          = details[:confidence_mod]
+  - else
+    %p.text-sm.text-red-500 This item has no YAML details.

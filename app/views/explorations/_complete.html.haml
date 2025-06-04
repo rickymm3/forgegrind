@@ -1,8 +1,17 @@
+-# app/views/explorations/_complete.html.haml
+-# Expects local variables `world` and `awarded_items`
+
 %div
-  %p.font-semibold.mb-2= "Exploration Complete: #{@world.name}"
-  %p.text-sm.text-green-600= "You gained 1 #{@user_item.item.name} (Total: #{@user_item.quantity})"
+  %p.font-semibold.mb-2= "Exploration Complete: #{world.name}"
+
+  %div.grid.grid-cols-1.sm:grid-cols-2.lg:grid-cols-3.gap-4.mb-4
+    - awarded_items.each do |ui|
+      %div.border.p-4.rounded.shadow.bg-white
+        %p.font-bold.mb-2= ui.item.name
+        %p.text-sm.text-gray-700= "Quantity: #{ui.quantity}"
+
   = button_to "Explore Again",
-      start_exploration_path(@world),
+      start_exploration_path(world),
       method: :post,
-      data: { turbo_frame: "exploration_#{@world.id}" },
+      data: { turbo_frame: "exploration_#{world.name.parameterize(separator: '_')}" },
       class: "mt-3 px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"

@@ -1,0 +1,6 @@
+-# app/views/user_explorations/ready.turbo_stream.haml
+
+- exploration_frame_id = "exploration_#{@user_exploration.world_id}"
+
+= turbo_stream.update exploration_frame_id do
+  = render "user_explorations/ready_to_complete", user_exploration: @user_exploration
