@@ -51,6 +51,32 @@ class UserPet < ApplicationRecord
     end
   end
 
+  def spend_energy!(amount)
+    if asleep_until.present? && Time.current < asleep_until
+      remaining_minutes = ((asleep_until - Time.current) / 60).ceil
+      raise PetSleepingError, "#{pet.name} is asleep for another #{remaining_minutes} minute#{'s' if remaining_minutes != 1}."
+    end
+
+    unless energy.to_i >= amount
+      raise NotEnoughEnergyError, "#{pet.name} doesn’t have enough energy to interact."
+    end
+
+    self.energy -= amount
+    # self.last_energy_update_at = Time.current
+
+    if energy <= 10
+      self.asleep_until = Time.current + sleep_duration
+    end
+  end
+
+  def seconds_until_next_energy
+    last = last_energy_update_at || created_at
+    elapsed = Time.current.to_i - last.to_i
+    remainder = ENERGY_INTERVAL - (elapsed % ENERGY_INTERVAL)
+    remainder = ENERGY_INTERVAL if remainder.zero?
+    remainder
+  end
+
   # ----------------------------------------
   # PUBLIC: “Catch up” energy by granting +1 per ENERGY_INTERVAL since last_energy_update_at (or created_at).
   # Updates energy (capped at MAX_ENERGY) and advances last_energy_update_at to carry over leftover.

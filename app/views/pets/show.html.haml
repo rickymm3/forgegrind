@@ -13,10 +13,9 @@
   - @user_pet.catch_up_energy!
 
   -# — ENERGY PROGRESS BAR —#
-  %div.mb-4
-    %span.font-semibold= "Energy: #{@user_pet.energy} / #{UserPet::MAX_ENERGY}"
-    %div.w-full.bg-gray-200.rounded-lg.h-2.mt-1
-      %div.bg-green-500.h-2.rounded-lg{ style: "width: #{@user_pet.energy}%;" }
+  -# — ENERGY DISPLAY + TIMER —#
+  = turbo_frame_tag "pet_energy_#{@user_pet.id}" do
+    = render "energy_display", user_pet: @user_pet
 
   -# — SLEEP COUNTDOWN, IF APPLICABLE —#
   - if @user_pet.asleep_until.present? && Time.current < @user_pet.asleep_until
@@ -28,7 +27,7 @@
     %p.text-green-600.mb-4= "Pet is awake and ready to play!"
 
   -# — INTERACTION BUTTONS (COST = 5 ENERGY) —#
-  - cost = 5
+  - cost = 10
   - disabled = (@user_pet.asleep_until.present? && Time.current < @user_pet.asleep_until) || @user_pet.energy < cost
 
   %div#interactions.mt-6.flex.justify-center.space-x-4

@@ -13,6 +13,8 @@ Rails.application.routes.draw do
       post :interact
       post :level_up
       post :interact_preview 
+      post :energy_tick
+
     end
     collection do
       post :unequip
