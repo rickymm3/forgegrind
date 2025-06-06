@@ -103,7 +103,8 @@ class UserPetsController < ApplicationController
     # 2. Deduct energy & handle sleep (cost = 10)
     energy_cost = 10
     begin
-      user_pet.deduct_energy!(energy_cost)
+      user_pet.catch_up_energy!
+      user_pet.spend_energy!(energy_cost)
     rescue UserPet::PetSleepingError, UserPet::NotEnoughEnergyError => e
       flash[:alert] = e.message
       return redirect_to pet_path(user_pet.pet)
@@ -151,6 +152,17 @@ class UserPetsController < ApplicationController
     respond_to do |format|
       format.turbo_stream
       format.html { head :not_acceptable }
+    end
+  end
+
+  # POST /user_pets/:id/energy_tick
+  def energy_tick
+    @user_pet = current_user.user_pets.find(params[:id])
+    @user_pet.catch_up_energy!
+
+    respond_to do |format|
+      format.turbo_stream
+      format.html { redirect_to pet_path(@user_pet.pet) }
     end
   end
 end

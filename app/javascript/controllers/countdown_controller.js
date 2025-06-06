@@ -13,6 +13,8 @@ export default class extends Controller {
   connect() {
     this.endTime = Date.now() + this.secondsValue * 1000
     this.userExplorationId = this.element.dataset.userExplorationId
+    this.userEggId = this.element.dataset.userEggId
+    this.userPetId = this.element.dataset.userPetId
 
     this.tick()
     this.timer = setInterval(() => this.tick(), 1000)
@@ -40,13 +42,43 @@ export default class extends Controller {
         headers: {
           "Accept": "text/vnd.turbo-stream.html",
           "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]').content
-        }
+        },
+        credentials: "same-origin"
       })
         .then(response => response.text())
         .then(html => Turbo.renderStreamMessage(html))
         .catch(err => console.error("ready_exploration failed:", err))
+    } else if (this.userEggId) {
+      fetch(`/user_eggs/${this.userEggId}/mark_ready`, {
+        method: "POST",
+        headers: {
+          "Accept": "text/vnd.turbo-stream.html",
+          "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]').content
+        },
+        credentials: "same-origin"
+      })
+        .then(response => response.text())
+        .then(html => Turbo.renderStreamMessage(html))
+        .catch(err => console.error("ready_egg failed:", err))
+    } else if (this.userPetId) {
+      fetch(`/user_pets/${this.userPetId}/energy_tick`, {
+        method: "POST",
+        headers: {
+          "Accept": "text/vnd.turbo-stream.html",
+          "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]').content
+        },
+        credentials: "same-origin"
+      })
+        .then(response => response.text())
+        .then(html => {
+          Turbo.renderStreamMessage(html)
+          // restart timer
+          this.endTime = Date.now() + this.secondsValue * 1000
+          this.timer = setInterval(() => this.tick(), 1000)
+        })
+        .catch(err => console.error("energy_tick failed:", err))
     } else {
-      console.warn("Countdown finished but no exploration ID found.")
+      console.warn("Countdown finished but no target ID found.")
     }
   }
 

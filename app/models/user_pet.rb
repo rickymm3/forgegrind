@@ -12,7 +12,7 @@ class UserPet < ApplicationRecord
   LEVEL_CAP        = 5
   EXP_PER_LEVEL    = 100
   MAX_ENERGY       = 100
-  ENERGY_INTERVAL  = 5.minutes
+  ENERGY_INTERVAL  = GameConfig::PET_ENERGY_INTERVAL
 
   BASE_IMPACTS = {
     "play" =>      { playfulness:  2.0, affection:  1.0, temperament:  0.0, curiosity:  1.0, confidence:  0.0 },
@@ -52,6 +52,33 @@ class UserPet < ApplicationRecord
   end
 
   # ----------------------------------------
+  # PUBLIC: Directly subtract `amount` from energy without catching up first.
+  # If energy was full, sets last_energy_update_at to now so regeneration starts.
+  # Sets asleep_until if energy drops to 10 or below.
+  # Raises the same errors as `deduct_energy!`.
+  # Does not save; caller should call save! afterwards.
+  # ----------------------------------------
+  def spend_energy!(amount)
+    if asleep_until.present? && Time.current < asleep_until
+      remaining_minutes = ((asleep_until - Time.current) / 60).ceil
+      raise PetSleepingError, "#{pet.name} is asleep for another #{remaining_minutes} minute#{'s' if remaining_minutes != 1}."
+    end
+
+    unless energy.to_i >= amount
+      raise NotEnoughEnergyError, "#{pet.name} doesn’t have enough energy to interact."
+    end
+
+    # If energy was full, start the regen timer now
+    self.last_energy_update_at = Time.current if energy.to_i >= MAX_ENERGY
+
+    self.energy -= amount
+
+    if energy <= 10
+      self.asleep_until = Time.current + sleep_duration
+    end
+  end
+
+  # ----------------------------------------
   # PUBLIC: “Catch up” energy by granting +1 per ENERGY_INTERVAL since last_energy_update_at (or created_at).
   # Updates energy (capped at MAX_ENERGY) and advances last_energy_update_at to carry over leftover.
   # ----------------------------------------
@@ -70,6 +97,17 @@ class UserPet < ApplicationRecord
       energy:                 new_energy,
       last_energy_update_at:  now - leftover_seconds
     )
+  end
+
+  # ----------------------------------------
+  # PUBLIC: Seconds remaining until the next energy point is gained.
+  # ----------------------------------------
+  def seconds_until_next_energy
+    last = last_energy_update_at || created_at
+    elapsed = Time.current.to_i - last.to_i
+    remainder = ENERGY_INTERVAL - (elapsed % ENERGY_INTERVAL)
+    remainder = ENERGY_INTERVAL if remainder.zero?
+    remainder
   end
 
   # ----------------------------------------
