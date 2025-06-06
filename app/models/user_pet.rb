@@ -61,13 +61,16 @@ class UserPet < ApplicationRecord
       raise NotEnoughEnergyError, "#{pet.name} doesn’t have enough energy to interact."
     end
 
+    # If energy was full, start the regen timer now
+    self.last_energy_update_at = Time.current if energy.to_i >= MAX_ENERGY
+
     self.energy -= amount
-    # self.last_energy_update_at = Time.current
 
     if energy <= 10
       self.asleep_until = Time.current + sleep_duration
     end
   end
+
 
   def seconds_until_next_energy
     last = last_energy_update_at || created_at

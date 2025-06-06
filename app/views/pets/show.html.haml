@@ -2,7 +2,10 @@
 
 .container.mx-auto.mt-16.text-center
   %h1.text-3xl.font-bold.mb-6= @pet.name
-
+  - if @pet.pet_types.any?
+    %p.text-sm.text-gray-600.mb-4
+      %strong Types:
+      = @pet.pet_types.map(&:name).join(", ")
   -# — Show Current Pet Thought (if present) —#
   - if @user_pet.pet_thought
     %div.mb-6

@@ -5,7 +5,7 @@
 %ul.space-y-3
   - @worlds.each do |world|
     - user_exploration = @user_explorations.find { |ue| ue.world_id == world.id }
-
+    - world_types = world.pet_types.pluck(:name)
     = turbo_frame_tag "exploration_#{world.id}" do
       - # If exploration exists and the timer has already run out, show the button:
       - if user_exploration.present? && user_exploration.timer_expired?
@@ -19,7 +19,10 @@
           .flex.items-center.space-x-4
             %span.font-medium= world.name
             %small.text-gray-500= "#{world.duration / 60}m #{world.duration % 60}s"
-
+            - if world_types.any?
+              %p.text-xs.text-green-600.mt-1
+                %strong Types:
+                = world_types.join(", ")
           = button_to "Explore",
               start_exploration_path(world),
               method: :post,
