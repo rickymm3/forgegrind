@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_06_06_172801) do
+ActiveRecord::Schema[8.0].define(version: 2025_06_09_154040) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -125,6 +125,13 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_06_172801) do
     t.datetime "completed_at"
     t.index ["user_id"], name: "index_user_explorations_on_user_id"
     t.index ["world_id"], name: "index_user_explorations_on_world_id"
+  end
+
+  create_table "user_explorations_pets", id: false, force: :cascade do |t|
+    t.bigint "user_exploration_id", null: false
+    t.bigint "user_pet_id", null: false
+    t.index ["user_exploration_id", "user_pet_id"], name: "index_explorations_pets_on_ids"
+    t.index ["user_pet_id", "user_exploration_id"], name: "index_pets_explorations_on_ids"
   end
 
   create_table "user_items", force: :cascade do |t|

@@ -1,0 +1,4 @@
+- exploration_frame_id = "exploration_#{@world.id}"
+
+= turbo_stream.update exploration_frame_id do
+  = render "explorations/preview", world: @world, user_pets: @user_pets, active_pet_ids: @active_pet_ids, filters: @filters

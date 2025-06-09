@@ -1,7 +1,8 @@
 class UserExploration < ApplicationRecord
   belongs_to :user
   belongs_to :world
-
+  has_and_belongs_to_many :user_pets
+  
   validates :started_at, presence: true
 
   def timer_expired?

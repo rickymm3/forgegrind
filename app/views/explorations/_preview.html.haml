@@ -1,0 +1,28 @@
+-# app/views/explorations/_preview.html.haml
+-# Locals: world, user_pets, active_pet_ids, filters
+%div.border.p-4.rounded-lg.bg-gray-50
+  %h2.font-semibold.mb-2= world.name
+  %p.text-sm.text-gray-600.mb-2
+    Duration: #{world.duration / 60}m #{world.duration % 60}s
+  - if world.pet_types.any?
+    %p.text-xs.text-green-600.mb-2
+      %strong Types:
+      = world.pet_types.map(&:name).join(', ')
+
+  / Filter form
+  = form_with url: preview_exploration_path(world), method: :post, data: { turbo_frame: "exploration_#{world.id}" }, class: "flex space-x-2 mb-2" do |f|
+    = text_field_tag :name, filters[:name], placeholder: "Name", class: "border rounded px-2 py-1 text-sm"
+    = select_tag :pet_type_id, options_for_select(PetType.pluck(:name, :id), filters[:pet_type_id]), include_blank: "Type", class: "border rounded px-2 py-1 text-sm"
+    = f.submit "Filter", class: "px-2 py-1 bg-gray-200 rounded text-sm"
+
+  = form_with url: start_exploration_path(world), method: :post, data: { turbo_frame: "exploration_#{world.id}" } do |f|
+    .overflow-y-auto.h-48.grid.grid-cols-3.gap-2.mb-2.p-1
+      - user_pets.each do |up|
+        - disabled = active_pet_ids.include?(up.id)
+        %label.block.cursor-pointer.relative{ class: (disabled ? "opacity-50 pointer-events-none" : "") }
+          = check_box_tag "user_pet_ids[]", up.id, false, disabled: disabled, class: "hidden peer"
+          .border.rounded.p-1.flex.items-center.space-x-1.peer-checked:border-blue-600
+            = image_tag "pets/#{up.pet.name.parameterize}.png", width: 25, height: 25, class: "inline"
+            %span.text-xs= up.name.presence || up.pet.name
+    %p.text-xs.text-gray-500.mb-2 Select up to 3 pets
+    = f.submit "Go Explore", class: "px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"

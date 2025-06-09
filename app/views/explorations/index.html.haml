@@ -24,7 +24,7 @@
                 %strong Types:
                 = world_types.join(", ")
           = button_to "Explore",
-              start_exploration_path(world),
+              preview_exploration_path(world),
               method: :post,
               data: { turbo_frame: "exploration_#{world.id}" },
               class: "px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"

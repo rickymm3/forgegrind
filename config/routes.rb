@@ -37,6 +37,8 @@ Rails.application.routes.draw do
 
   resources :explorations, only: [:index] do
      post :start, on: :member
+     post :preview, on: :member
+
   end  
   
   resources :pets, only: [:index, :show]
