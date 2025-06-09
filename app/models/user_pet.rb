@@ -34,18 +34,22 @@ class UserPet < ApplicationRecord
   # ----------------------------------------
   def deduct_energy!(amount)
     catch_up_energy!
-
+  
     if asleep_until.present? && Time.current < asleep_until
       remaining_minutes = ((asleep_until - Time.current) / 60).ceil
       raise PetSleepingError, "#{pet.name} is asleep for another #{remaining_minutes} minute#{'s' if remaining_minutes != 1}."
     end
-
+  
     unless energy.to_i >= amount
       raise NotEnoughEnergyError, "#{pet.name} doesn’t have enough energy to interact."
     end
-
+  
+    # if we were at full energy, start the regen timer now
+    was_full = energy.to_i >= MAX_ENERGY
+  
     self.energy -= amount
-
+    self.last_energy_update_at = Time.current if was_full
+  
     if energy <= 10
       self.asleep_until = Time.current + sleep_duration
     end
