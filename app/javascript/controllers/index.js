@@ -16,6 +16,9 @@ application.register("hatch", HatchController)
 import HelloController from "./hello_controller"
 application.register("hello", HelloController)
 
+import LimitController from "./limit_controller"
+application.register("limit", LimitController)
+
 import ModalController from "./modal_controller"
 application.register("modal", ModalController)
 

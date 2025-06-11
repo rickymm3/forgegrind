@@ -1,0 +1,26 @@
+%h1.text-2xl.font-semibold.mb-4 Ability Details
+%dl
+  %dt.font-semibold Name
+  %dd.mb-2= @ability.name
+  %dt.font-semibold Description
+  %dd.mb-2= @ability.description
+  %dt.font-semibold Power
+  %dd.mb-2= @ability.power
+  %dt.font-semibold Cost
+  %dd.mb-2= @ability.cost
+  %dt.font-semibold Cooldown
+  %dd.mb-2= @ability.cooldown
+  %dt.font-semibold Damage
+  %dd.mb-2= @ability.damage
+  %dt.font-semibold Element Type
+  %dd.mb-2= @ability.element_type
+%h2.text-xl.font-semibold.mt-6 Permissions
+%ul.list-disc.list-inside
+  - @ability.ability_permissions.each do |perm|
+    %li= "Granted to #{perm.permitted_type} ID=#{perm.permitted_id}"
+%h2.text-xl.font-semibold.mt-6 Effects
+%ul.list-disc.list-inside
+  - @ability.ability_effects.each do |ae|
+    %li= "#{ae.effect.name}: magnitude #{ae.magnitude}, duration #{ae.duration}"  
+
+= link_to 'Back', admin_abilities_path, class: 'mt-6 inline-block text-sm text-gray-600 underline'

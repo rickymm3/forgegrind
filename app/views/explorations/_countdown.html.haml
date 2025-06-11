@@ -6,9 +6,14 @@
     user_exploration_id:     user_exploration.id
   }}
   %p.font-semibold.mb-2= world.name
-  %p.text-sm.text-gray-600 Exploring...
+  - if user_exploration.user_pets.any?
+    .flex.space-x-2.mb-2
+      - user_exploration.user_pets.each do |up|
+        %span.flex.items-center.space-x-1
+          = image_tag "pets/#{up.pet.name.parameterize}.png", width: 25, height: 25, class: "inline"
+          %span.text-xs= up.name.presence || up.pet.name
+    %p.text-sm.text-gray-600 Exploring...
   %p.text-sm.mt-1
     Time left:
     %span{ data: { countdown_target: "output" } }
-      =puts remaining_seconds
       = distance_of_time_in_words(remaining_seconds.seconds.from_now)

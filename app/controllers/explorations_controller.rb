@@ -7,23 +7,42 @@ class ExplorationsController < ApplicationController
   def start
     @world = World.find(params[:id])
   
-    # Check if user already has an active exploration for this world
+    # If there’s already an active exploration, just re-render its countdown
     existing = current_user.user_explorations.find_by(world: @world, completed_at: nil)
-  
     if existing.present?
-      # Optionally: flash message or noop response
       respond_to do |format|
-        format.turbo_stream { render turbo_stream: turbo_stream.update("exploration_#{@world.id}", partial: "explorations/countdown", locals: { user_exploration: existing }) }
+        format.turbo_stream do
+          render turbo_stream: turbo_stream.update(
+            "exploration_#{@world.id}",
+            partial: "explorations/countdown",
+            locals: { user_exploration: existing }
+          )
+        end
       end
       return
     end
   
-    user_pet_ids = Array(params[:user_pet_ids]).first(3)
-
-    @user_exploration = current_user.user_explorations.create!(world: @world, started_at: Time.current)
-    if user_pet_ids.any?
-      @user_exploration.user_pets << current_user.user_pets.where(id: user_pet_ids)
+    # Require at least one pet selected
+    user_pet_ids = Array(params[:user_pet_ids]).map(&:to_i).uniq
+    if user_pet_ids.empty?
+      flash[:alert] = "Please select at least one pet to explore."
+      redirect_to explorations_path and return
     end
+      
+    # Ensure no more than 3 and no overlapping active pets
+    active_pet_ids = current_user.user_explorations
+                                 .joins(:user_pets)
+                                 .where(completed_at: nil)
+                                 .pluck('user_pets.id')
+  
+    if user_pet_ids.size > 3 || (user_pet_ids & active_pet_ids).any?
+      head :unprocessable_entity and return
+    end
+  
+    # Kick off the exploration
+    user_pet_ids   = user_pet_ids.first(3)
+    @user_exploration = current_user.user_explorations.create!(world: @world, started_at: Time.current)
+    @user_exploration.user_pets << current_user.user_pets.where(id: user_pet_ids)
   
     respond_to do |format|
       format.turbo_stream

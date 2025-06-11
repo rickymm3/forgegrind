@@ -7,6 +7,9 @@ class UserPet < ApplicationRecord
   belongs_to :rarity
   belongs_to :pet_thought, optional: true
 
+  has_many :user_pet_abilities, dependent: :destroy
+  has_many :learned_abilities, through: :user_pet_abilities, source: :ability
+
   scope :equipped, -> { where(equipped: true) }
 
   LEVEL_CAP        = 5

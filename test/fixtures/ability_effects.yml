@@ -1,0 +1,13 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  ability: one
+  effect: one
+  magnitude: 1
+  duration: 1
+
+two:
+  ability: two
+  effect: two
+  magnitude: 1
+  duration: 1

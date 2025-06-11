@@ -30,7 +30,7 @@ Rails.application.routes.draw do
     resources :eggs do
       post :assign_pets, on: :member
     end
-
+    resources :abilities
     resources :pets
   end
   

@@ -10,13 +10,55 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_06_09_154040) do
+ActiveRecord::Schema[8.0].define(version: 2025_06_09_170919) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
+
+  create_table "abilities", force: :cascade do |t|
+    t.string "name", null: false
+    t.text "description"
+    t.integer "power"
+    t.integer "cost"
+    t.integer "cooldown"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.integer "damage", default: 0, null: false
+    t.string "element_type"
+  end
+
+  create_table "ability_effects", force: :cascade do |t|
+    t.bigint "ability_id", null: false
+    t.bigint "effect_id", null: false
+    t.integer "magnitude", default: 0, null: false
+    t.integer "duration", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["ability_id", "effect_id"], name: "index_ability_effects_on_ability_and_effect", unique: true
+    t.index ["ability_id"], name: "index_ability_effects_on_ability_id"
+    t.index ["effect_id"], name: "index_ability_effects_on_effect_id"
+  end
+
+  create_table "ability_permissions", force: :cascade do |t|
+    t.bigint "ability_id", null: false
+    t.string "permitted_type", null: false
+    t.bigint "permitted_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["ability_id"], name: "index_ability_permissions_on_ability_id"
+    t.index ["permitted_type", "permitted_id"], name: "index_ability_permissions_on_permitted"
+    t.index ["permitted_type", "permitted_id"], name: "index_permissions_on_permitted"
+  end
 
   create_table "currencies", force: :cascade do |t|
     t.string "name"
     t.string "symbol"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "effects", force: :cascade do |t|
+    t.string "name", null: false
+    t.text "description"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
   end
@@ -93,6 +135,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_09_154040) do
     t.integer "sp_atk", default: 5, null: false
     t.integer "sp_def", default: 5, null: false
     t.integer "speed", default: 5, null: false
+    t.bigint "default_ability_id"
+    t.index ["default_ability_id"], name: "index_pets_on_default_ability_id"
     t.index ["egg_id"], name: "index_pets_on_egg_id"
     t.index ["rarity_id"], name: "index_pets_on_rarity_id"
   end
@@ -143,6 +187,16 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_09_154040) do
     t.index ["item_id"], name: "index_user_items_on_item_id"
     t.index ["user_id", "item_id"], name: "index_user_items_on_user_id_and_item_id", unique: true
     t.index ["user_id"], name: "index_user_items_on_user_id"
+  end
+
+  create_table "user_pet_abilities", force: :cascade do |t|
+    t.bigint "user_pet_id", null: false
+    t.bigint "ability_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["ability_id"], name: "index_user_pet_abilities_on_ability_id"
+    t.index ["user_pet_id", "ability_id"], name: "index_user_pet_abilities_on_user_pet_and_ability", unique: true
+    t.index ["user_pet_id"], name: "index_user_pet_abilities_on_user_pet_id"
   end
 
   create_table "user_pets", force: :cascade do |t|
@@ -207,9 +261,13 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_09_154040) do
     t.datetime "updated_at", null: false
   end
 
+  add_foreign_key "ability_effects", "abilities"
+  add_foreign_key "ability_effects", "effects"
+  add_foreign_key "ability_permissions", "abilities"
   add_foreign_key "egg_item_costs", "eggs"
   add_foreign_key "egg_item_costs", "items"
   add_foreign_key "eggs", "currencies"
+  add_foreign_key "pets", "abilities", column: "default_ability_id"
   add_foreign_key "pets", "eggs"
   add_foreign_key "pets", "rarities"
   add_foreign_key "user_eggs", "eggs"
@@ -218,6 +276,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_09_154040) do
   add_foreign_key "user_explorations", "worlds"
   add_foreign_key "user_items", "items"
   add_foreign_key "user_items", "users"
+  add_foreign_key "user_pet_abilities", "abilities"
+  add_foreign_key "user_pet_abilities", "user_pets"
   add_foreign_key "user_pets", "eggs"
   add_foreign_key "user_pets", "pet_thoughts"
   add_foreign_key "user_pets", "pets"

@@ -11,7 +11,7 @@
         %p.text-sm.text-gray-700= "Quantity: #{ui.quantity}"
 
   = button_to "Explore Again",
-      start_exploration_path(world),
+      preview_exploration_path(world),
       method: :post,
-      data: { turbo_frame: "exploration_#{world.name.parameterize(separator: '_')}" },
+      data: { turbo_frame: "exploration_#{world.id}" },
       class: "mt-3 px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"

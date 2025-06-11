@@ -10,7 +10,7 @@
       = world.pet_types.map(&:name).join(', ')
 
   / Filter form
-  = form_with url: preview_exploration_path(world), method: :post, data: { turbo_frame: "exploration_#{world.id}" }, class: "flex space-x-2 mb-2" do |f|
+  = form_with url: preview_exploration_path(world), method: :post, data: { turbo_frame: "exploration_#{world.id}", controller: "limit", "limit-max-value": 3 } do |f|
     = text_field_tag :name, filters[:name], placeholder: "Name", class: "border rounded px-2 py-1 text-sm"
     = select_tag :pet_type_id, options_for_select(PetType.pluck(:name, :id), filters[:pet_type_id]), include_blank: "Type", class: "border rounded px-2 py-1 text-sm"
     = f.submit "Filter", class: "px-2 py-1 bg-gray-200 rounded text-sm"
@@ -20,7 +20,7 @@
       - user_pets.each do |up|
         - disabled = active_pet_ids.include?(up.id)
         %label.block.cursor-pointer.relative{ class: (disabled ? "opacity-50 pointer-events-none" : "") }
-          = check_box_tag "user_pet_ids[]", up.id, false, disabled: disabled, class: "hidden peer"
+          = check_box_tag "user_pet_ids[]", up.id, false, disabled: disabled, class: "hidden peer", data: { action: "limit#toggle", "limit-target": "checkbox", permanent_disabled: disabled }
           .border.rounded.p-1.flex.items-center.space-x-1.peer-checked:border-blue-600
             = image_tag "pets/#{up.pet.name.parameterize}.png", width: 25, height: 25, class: "inline"
             %span.text-xs= up.name.presence || up.pet.name
