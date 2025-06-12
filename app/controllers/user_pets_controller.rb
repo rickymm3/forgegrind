@@ -2,6 +2,7 @@
 
 class UserPetsController < ApplicationController
   before_action :authenticate_user!
+  before_action :set_user_pet, only: [:level_up]
 
   def equip
     @user_pet = current_user.user_pets.find(params[:id])
@@ -76,6 +77,44 @@ class UserPetsController < ApplicationController
       end
       format.html { redirect_to pets_path }
     end
+  end
+
+  def level_up
+    @user_pet = current_user.user_pets.find(params[:id])
+  
+    # 1) ensure enough EXP
+    unless @user_pet.exp >= UserPet::EXP_PER_LEVEL
+      redirect_to @user_pet, alert: "Not enough EXP to level up." and return
+    end
+  
+    # 2) fetch & verify held item
+    held_item = current_user.user_items.find_by(id: params[:held_user_item_id])
+    unless held_item
+      redirect_to @user_pet, alert: "You must select an item to hold when leveling up." and return
+    end
+  
+    # 3) perform level up + consume the item
+    @user_pet.transaction do
+      @user_pet.update!(
+        exp:   @user_pet.exp - UserPet::EXP_PER_LEVEL,
+        level: @user_pet.level + 1
+      )
+      held_item.update!(quantity: held_item.quantity - 1)
+      @user_pet.update!(held_user_item: held_item)
+    end
+  
+    # 4) auto‐evolve if any rule applies
+    rules = PetEvolutionService.applicable_rules(@user_pet)
+    if rules.any?
+      rule = rules.first
+      PetEvolutionService.evolve!(@user_pet, rule)
+      notice = "Leveled up to #{@user_pet.level} and evolved into #{rule.child_pet.name}!"
+    else
+      @user_pet.update!(held_user_item: nil)
+      notice = "Leveled up to #{@user_pet.level}!"
+    end
+  
+    redirect_to @user_pet, notice: notice
   end
 
   # POST /user_pets/:id/interact
@@ -155,14 +194,20 @@ class UserPetsController < ApplicationController
     end
   end
 
-    # POST /user_pets/:id/energy_tick
-    def energy_tick
-      @user_pet = current_user.user_pets.find(params[:id])
-      @user_pet.catch_up_energy!
-  
-      respond_to do |format|
-        format.turbo_stream
-        format.html { redirect_to pet_path(@user_pet.pet) }
-      end
+  # POST /user_pets/:id/energy_tick
+  def energy_tick
+    @user_pet = current_user.user_pets.find(params[:id])
+    @user_pet.catch_up_energy!
+
+    respond_to do |format|
+      format.turbo_stream
+      format.html { redirect_to pet_path(@user_pet.pet) }
     end
+  end
+
+private
+
+  def set_user_pet
+    @user_pet = current_user.user_pets.find(params[:id])
+  end
 end

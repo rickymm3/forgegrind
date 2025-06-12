@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_06_09_170919) do
+ActiveRecord::Schema[8.0].define(version: 2025_06_12_165927) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -82,6 +82,22 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_09_170919) do
     t.integer "hatch_duration"
     t.boolean "enabled", default: true, null: false
     t.index ["currency_id"], name: "index_eggs_on_currency_id"
+  end
+
+  create_table "evolution_rules", force: :cascade do |t|
+    t.bigint "parent_pet_id", null: false
+    t.bigint "child_pet_id", null: false
+    t.integer "trigger_level", null: false
+    t.bigint "required_item_id"
+    t.string "required_trait"
+    t.float "required_trait_threshold"
+    t.integer "required_play_count"
+    t.integer "required_explorations"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["child_pet_id"], name: "index_evolution_rules_on_child_pet_id"
+    t.index ["parent_pet_id"], name: "index_evolution_rules_on_parent_pet_id"
+    t.index ["required_item_id"], name: "index_evolution_rules_on_required_item_id"
   end
 
   create_table "items", force: :cascade do |t|
@@ -222,7 +238,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_09_170919) do
     t.integer "energy", default: 100, null: false
     t.datetime "asleep_until"
     t.datetime "last_energy_update_at"
+    t.bigint "held_user_item_id"
     t.index ["egg_id"], name: "index_user_pets_on_egg_id"
+    t.index ["held_user_item_id"], name: "index_user_pets_on_held_user_item_id"
     t.index ["pet_id"], name: "index_user_pets_on_pet_id"
     t.index ["pet_thought_id"], name: "index_user_pets_on_pet_thought_id"
     t.index ["rarity_id"], name: "index_user_pets_on_rarity_id"
@@ -267,6 +285,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_09_170919) do
   add_foreign_key "egg_item_costs", "eggs"
   add_foreign_key "egg_item_costs", "items"
   add_foreign_key "eggs", "currencies"
+  add_foreign_key "evolution_rules", "items", column: "required_item_id"
+  add_foreign_key "evolution_rules", "pets", column: "child_pet_id"
+  add_foreign_key "evolution_rules", "pets", column: "parent_pet_id"
   add_foreign_key "pets", "abilities", column: "default_ability_id"
   add_foreign_key "pets", "eggs"
   add_foreign_key "pets", "rarities"
@@ -282,6 +303,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_09_170919) do
   add_foreign_key "user_pets", "pet_thoughts"
   add_foreign_key "user_pets", "pets"
   add_foreign_key "user_pets", "rarities"
+  add_foreign_key "user_pets", "user_items", column: "held_user_item_id"
   add_foreign_key "user_pets", "users"
   add_foreign_key "user_stats", "users"
 end

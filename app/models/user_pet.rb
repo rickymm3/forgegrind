@@ -12,6 +12,10 @@ class UserPet < ApplicationRecord
 
   scope :equipped, -> { where(equipped: true) }
 
+  belongs_to :held_user_item,
+           class_name: "UserItem",
+           optional: true
+           
   LEVEL_CAP        = 5
   EXP_PER_LEVEL    = 100
   MAX_ENERGY       = 100

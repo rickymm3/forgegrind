@@ -28,7 +28,7 @@ class ExplorationsController < ApplicationController
       flash[:alert] = "Please select at least one pet to explore."
       redirect_to explorations_path and return
     end
-      
+
     # Ensure no more than 3 and no overlapping active pets
     active_pet_ids = current_user.user_explorations
                                  .joins(:user_pets)
@@ -46,6 +46,30 @@ class ExplorationsController < ApplicationController
   
     respond_to do |format|
       format.turbo_stream
+    end
+  end
+
+  # POST /explorations/:id/complete
+  def complete
+    @user_exploration = current_user.user_explorations.find(params[:id])
+    return head :unprocessable_entity if @user_exploration.completed_at
+
+    reward = GameConfig.exp_for(@user_exploration.world.key)
+
+    @user_exploration.user_pets.each do |up|
+      # add reward, cap at EXP_PER_LEVEL, discard any overflow
+      new_exp = [up.exp.to_i + reward, UserPet::EXP_PER_LEVEL].min
+      up.update!(exp: new_exp)
+    end
+
+    @user_exploration.update!(completed_at: Time.current)
+
+    respond_to do |format|
+      format.turbo_stream
+      format.html do
+        redirect_to explorations_path,
+                    notice: "Exploration complete! Each pet gained #{reward} EXP."
+      end
     end
   end
 

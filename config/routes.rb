@@ -14,7 +14,6 @@ Rails.application.routes.draw do
       post :level_up
       post :interact_preview 
       post :energy_tick
-
     end
     collection do
       post :unequip
@@ -36,9 +35,11 @@ Rails.application.routes.draw do
   
 
   resources :explorations, only: [:index] do
-     post :start, on: :member
-     post :preview, on: :member
-
+    member do
+      post :start
+      post :preview
+      post :complete
+    end
   end  
   
   resources :pets, only: [:index, :show]

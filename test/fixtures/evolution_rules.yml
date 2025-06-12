@@ -1,0 +1,21 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  parent_pet: one
+  child_pet: one
+  trigger_level: 1
+  required_item: one
+  required_trait: MyString
+  required_trait_threshold: 1.5
+  required_play_count: 1
+  required_explorations: 1
+
+two:
+  parent_pet: two
+  child_pet: two
+  trigger_level: 1
+  required_item: two
+  required_trait: MyString
+  required_trait_threshold: 1.5
+  required_play_count: 1
+  required_explorations: 1

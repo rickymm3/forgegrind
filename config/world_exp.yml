@@ -1,0 +1,14 @@
+development:
+  starter: 10
+  forest: 20
+  desert: 30
+
+test:
+  starter: 10
+  forest: 20
+  desert: 30
+
+production:
+  starter: 10
+  forest: 20
+  desert: 30
