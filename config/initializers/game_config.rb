@@ -4,10 +4,8 @@ module GameConfig
 
   # EXP rewards per world
   WORLD_EXP = {
-    "starter" => 10,
+    "starter_zone" => 10,
     "forest"  => 20,
-    "desert"  => 30,
-    # add more worlds here...
   }.freeze
 
   # Shortcut for lookup, e.g.

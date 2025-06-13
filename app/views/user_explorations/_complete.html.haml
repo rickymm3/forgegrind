@@ -1,0 +1,23 @@
+-# app/views/user_explorations/_complete.html.haml
+%div
+  %p.font-semibold.mb-2= "Exploration Complete: #{@world.name}"
+
+  %h3.font-medium.mb-2 Pets Gained EXP
+  %ul.list-disc.list-inside.mb-4
+    - @user_pets.each do |up|
+      %li
+        = link_to up.name, user_pet_path(up), class: "text-blue-600 hover:underline"
+        = " — +#{@reward} EXP (Now #{up.exp} / #{UserPet::EXP_PER_LEVEL})"
+
+  %h3.font-medium.mb-2 Items Found
+  %div.grid.grid-cols-1.sm:grid-cols-2.lg:grid-cols-3.gap-4.mb-4
+    - @awarded_items.each do |ui|
+      %div.border.p-4.rounded.shadow.bg-white
+        %p.font-bold.mb-2= ui.item.name
+        %p.text-sm.text-gray-700= "Quantity: #{ui.quantity}"
+
+  = button_to "Explore Again",
+      preview_exploration_path(@world),
+      method: :post,
+      data: { turbo_frame: "exploration_#{@world.id}" },
+      class: "mt-3 px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"

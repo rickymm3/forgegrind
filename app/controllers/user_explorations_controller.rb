@@ -1,19 +1,30 @@
 class UserExplorationsController < ApplicationController
+  # POST /user_explorations/:id/complete
   def complete
     @user_exploration = current_user.user_explorations.find(params[:id])
-    @world = @user_exploration.world
-    slug = @world.name.parameterize(separator: "_")
-
-    # Determine bucket name based on this world’s ID (e.g., "world_1_chest_common")
-    bucket_name = "bucket_#{slug}"
-
-    # Open that bucket—awards all guaranteed items + any weighted drops
+    @world            = @user_exploration.world
+  
+    # build a slug from the world name to look up EXP
+    slug    = @world.name.parameterize(separator: "_")
+    @reward = GameConfig.exp_for(slug)
+  
+    @user_pets = @user_exploration.user_pets
+    @user_pets.each do |up|
+      new_exp = [up.exp.to_i + @reward, UserPet::EXP_PER_LEVEL].min
+      up.update!(exp: new_exp)
+    end
+  
+    bucket_name    = "bucket_#{slug}"
     @awarded_items = UserItem.open_bucket(user: current_user, bucket_name: bucket_name)
-
+  
     @user_exploration.destroy
-
+  
     respond_to do |format|
       format.turbo_stream
+      format.html do
+        redirect_to explorations_path,
+                    notice: "Exploration complete! Each pet gained #{@reward} EXP."
+      end
     end
   end
 

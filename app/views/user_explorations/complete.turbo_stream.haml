@@ -1,6 +1,3 @@
--# app/views/user_explorations/complete.turbo_stream.haml
-
-- exploration_frame_id = "exploration_#{@world.id}"
-
-= turbo_stream.update exploration_frame_id do
-  = render "explorations/complete", world: @world, awarded_items: @awarded_items
+-# Update the frame for this world
+= turbo_stream.update "exploration_#{@world.id}" do
+  = render partial: "user_explorations/complete"
