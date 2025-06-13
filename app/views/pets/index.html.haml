@@ -1,13 +1,12 @@
-.container.mx-auto.mt-16.text-center{"data-controller" => "equip-modal"}
-  %h1.text-3xl.font-bold.mb-6 Your Pets
-  -# .mb-8
-  -#   = render "user_pets/equip_widget"
-
-  - if @user_pets.any?
+.container.mx-auto.mt-16.text-center
+  %h1.text-3xl.font-bold.mb-6 All Pets
+  - if @pets.any?
     .grid.grid-cols-1.md:grid-cols-2.lg:grid-cols-3.gap-6
-      - @user_pets.each do |user_pet|
-        = turbo_frame_tag dom_id(user_pet) do
-          = render partial: "pets/user_pet_card", locals: { user_pet: user_pet }
-
+      - @pets.each do |pet|
+        .border.p-4.rounded.shadow.bg-white
+          %h2.text-xl.font-semibold
+            = link_to pet.name, pet_path(pet), class: "text-blue-600 hover:underline"
+          %p.text-sm.text-gray-600.mt-1= "Power: #{pet.power}"
+          %p.text-sm.text-gray-600.mt-1= "Rarity: #{pet.rarity.name}"
   - else
-    %p.text-gray-500 You don’t have any pets yet.
+    %p.text-gray-500 No pets found.

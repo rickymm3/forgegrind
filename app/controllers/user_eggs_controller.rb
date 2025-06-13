@@ -32,8 +32,7 @@ class UserEggsController < ApplicationController
 
     respond_to do |format|
       format.turbo_stream
-      format.html { redirect_to pets_path }
-
+      format.html { redirect_to user_pets_path }
     end
   end
 
@@ -47,7 +46,7 @@ class UserEggsController < ApplicationController
   
     respond_to do |format|
       format.turbo_stream
-      format.html { redirect_to pets_path }
+      format.html { redirect_to user_pets_path }
 
     end
   end

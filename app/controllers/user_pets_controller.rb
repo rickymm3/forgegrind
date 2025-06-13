@@ -2,7 +2,16 @@
 
 class UserPetsController < ApplicationController
   before_action :authenticate_user!
-  before_action :set_user_pet, only: [:level_up]
+  before_action :set_user_pet, only: [:show, :level_up]
+
+  def index
+    @user_pets = current_user.user_pets.includes(:pet, :rarity, :egg)
+  end
+
+  def show
+    @user_pet.catch_up_energy!
+    @pet = @user_pet.pet
+  end
 
   def equip
     @user_pet = current_user.user_pets.find(params[:id])
@@ -25,7 +34,7 @@ class UserPetsController < ApplicationController
       format.turbo_stream do
         render :equip, locals: { previous_pet: previous_equipped }
       end
-      format.html { redirect_to pets_path }
+      format.html { redirect_to user_pets_path }
     end
   end
 
@@ -75,7 +84,7 @@ class UserPetsController < ApplicationController
       format.turbo_stream do
         render :unequip, locals: { target_pet: target_pet }
       end
-      format.html { redirect_to pets_path }
+      format.html { redirect_to user_pets_path }
     end
   end
 
@@ -136,7 +145,7 @@ class UserPetsController < ApplicationController
   
     if user_item_record.nil? || user_item_record.quantity < 1
       flash[:alert] = "You need a #{required_item.name} to #{interaction} with #{user_pet.name}."
-      return redirect_to pet_path(user_pet.pet)
+      return redirect_to user_pet_path(user_pet)
     end
   
     # 2. Deduct energy & handle sleep (cost = 10)
@@ -146,7 +155,7 @@ class UserPetsController < ApplicationController
       user_pet.spend_energy!(energy_cost)
     rescue UserPet::PetSleepingError, UserPet::NotEnoughEnergyError => e
       flash[:alert] = e.message
-      return redirect_to pet_path(user_pet.pet)
+      return redirect_to user_pet_path(user_pet)
     end
   
     # 3. Remove one of the required item
@@ -164,25 +173,7 @@ class UserPetsController < ApplicationController
     user_pet.save!
   
     flash[:notice] = "You #{interaction}ed with #{user_pet.name}!"
-    redirect_to pet_path(user_pet.pet)
-  end
-
-  # POST /user_pets/:id/level_up
-  def level_up
-    user_pet = current_user.user_pets.find(params[:id])
-
-    unless user_pet.can_level_up?
-      flash[:alert] = if user_pet.level >= UserPet::LEVEL_CAP
-                        "#{user_pet.name} is already at max level."
-                      else
-                        "Not enough EXP to level up."
-                      end
-      redirect_to pet_path(user_pet.pet) and return
-    end
-
-    user_pet.level_up!
-    flash[:notice] = "#{user_pet.name} reached level #{user_pet.level}!"
-    redirect_to pet_path(user_pet.pet)
+    redirect_to user_pet_path(user_pet)
   end
 
   def preview
@@ -201,7 +192,7 @@ class UserPetsController < ApplicationController
 
     respond_to do |format|
       format.turbo_stream
-      format.html { redirect_to pet_path(@user_pet.pet) }
+      format.html { redirect_to user_pet_path(@user_pet) }
     end
   end
 

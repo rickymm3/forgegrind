@@ -6,13 +6,13 @@ Rails.application.routes.draw do
   get "home/index"
   get "profile", to: "users#show", as: :user_profile  # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
-  resources :user_pets, only: [] do
+  resources :user_pets, only: [:index, :show] do
     member do
       post :preview
       post :equip
       post :interact
       post :level_up
-      post :interact_preview 
+      post :interact_preview
       post :energy_tick
     end
     collection do
