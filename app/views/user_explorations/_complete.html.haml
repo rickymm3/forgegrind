@@ -6,8 +6,11 @@
   %ul.list-disc.list-inside.mb-4
     - @user_pets.each do |up|
       %li
-        = link_to up.name, user_pet_path(up), class: "text-blue-600 hover:underline"
-        = " — +#{@reward} EXP (Now #{up.exp} / #{UserPet::EXP_PER_LEVEL})"
+        = link_to up.name,
+                  user_pet_path(up),
+                  class: "text-blue-600 hover:underline",
+                  data: { turbo_frame: "_top" }
+        = "#{@reward} EXP (Now #{up.exp} / #{UserPet::EXP_PER_LEVEL})"
 
   %h3.font-medium.mb-2 Items Found
   %div.grid.grid-cols-1.sm:grid-cols-2.lg:grid-cols-3.gap-4.mb-4

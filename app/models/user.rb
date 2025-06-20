@@ -8,6 +8,11 @@ class User < ApplicationRecord
   has_many :user_pets, dependent: :destroy
   has_many :user_explorations, dependent: :destroy
   has_many :user_items, dependent: :destroy
+  has_many :battle_sessions, dependent: :destroy
+
+  has_and_belongs_to_many :unlocked_worlds, class_name: 'World', join_table: 'user_worlds'
+
+  after_create :unlock_starter_world
 
   after_create :build_default_stats
   after_create :give_starter_egg
@@ -42,6 +47,11 @@ class User < ApplicationRecord
     starter = Egg.find_by(name: "Starter Egg")
     return unless starter
     user_eggs.create!(egg: starter, hatched: false, hatch_started_at: nil)
+  end
+
+  def unlock_starter_world
+    starter = World.find_by(name: 'Starter Zone')
+    unlocked_worlds << starter if starter
   end
   
 end

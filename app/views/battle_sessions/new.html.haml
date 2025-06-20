@@ -1,0 +1,35 @@
+/ app/views/battle_sessions/new.html.erb
+.container.mx-auto.mt-8.max-w-md
+  %h1.text-3xl.font-bold.mb-4
+    Battle: #{@world.name}
+  = turbo_frame_tag "battle_frame" do
+    = form_with url: world_battle_session_path(@world), |
+      method: :post,                                    |
+      local: false,                                     |
+      data: {                                           |
+        turbo_frame:       "battle_frame",              |
+        controller:        "limit",                     |
+        "limit-max-value": @stat.attunement_level       |
+      },                                                |
+      class: "space-y-4" do |f|                         |
+      %h2.text-lg.mb-2
+        Select up to #{@stat.attunement_level} pets:
+      .overflow-y-auto.h-48.grid.grid-cols-3.gap-2.mb-2.p-1
+        - @available_pets.each do |up|
+          %label.block.cursor-pointer.relative
+            = check_box_tag "user_pet_ids[]",   |
+              up.id,                            |
+              false,                            |
+              class: "hidden peer",             |
+              data: {                           |
+                action:         "limit#toggle", |
+                "limit-target": "checkbox"      |
+              }                                 |
+            .border.rounded.p-2.flex.items-center.space-x-2.peer-checked:border-blue-600
+              = image_tag "pets/#{up.pet.name.parameterize}.png", |
+                width: 25,                                        |
+                height: 25,                                       |
+                class: "inline"                                   |
+              %span.text-sm= up.name
+      = f.submit "Begin Battle",                                            |
+        class: "w-full py-2 bg-red-600 text-white rounded hover:bg-red-700" |

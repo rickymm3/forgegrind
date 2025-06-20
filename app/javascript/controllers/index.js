@@ -4,6 +4,9 @@
 
 import { application } from "./application"
 
+import BattleController from "./battle_controller"
+application.register("battle", BattleController)
+
 import CountdownController from "./countdown_controller"
 application.register("countdown", CountdownController)
 

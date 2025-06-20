@@ -1,5 +1,8 @@
 class UserStat < ApplicationRecord
   belongs_to :user
+  validates :player_level, :hp_level, :attack_level,
+            :defense_level, :luck_level, :attunement_level,
+            numericality: { only_integer: true, greater_than: 0 }
 
   # How many whole ticks have passed since last persistence
   def pending_ticks
@@ -22,6 +25,26 @@ class UserStat < ApplicationRecord
     update_column(
       :energy_updated_at,
       energy_updated_at + ticks * GameConfig::BASE_TICK_INTERVAL
+    )
+  end
+
+  # How many trophies you need to spend to gain your next player_level point
+  def next_level_cost
+    GameConfig.cost_for_level(player_level)
+  end
+
+  # Whether the user has enough trophies to level up
+  def can_level_up?
+    trophies >= next_level_cost
+  end
+
+  # Spend trophies and bump player_level by 1
+  def level_up!
+    raise "Not enough trophies" unless can_level_up?
+
+    update!(
+      trophies:     trophies - next_level_cost,
+      player_level: player_level + 1
     )
   end
 

@@ -1,0 +1,44 @@
+-# app/views/battle_sessions/_show.html.haml
+
+%div#battle_ui{ data: {
+    controller:                          "battle",
+    "battle-session-id-value":           battle_session.id,
+    "battle-enemy-index-value":          battle_session.current_enemy_index,
+    "battle-last-sync-at-value":         battle_session.last_sync_at.iso8601,
+
+    "battle-player-attack-interval-value": GameConfig::PLAYER_ATTACK_INTERVAL,
+    "battle-enemy-attack-interval-value":  GameConfig::ENEMY_ATTACK_INTERVAL,
+    "battle-sync-interval-value":         GameConfig::SYNC_INTERVAL,
+
+    "battle-attack-per-point-value":      GameConfig::ATTACK_PER_POINT,
+    "battle-defense-per-point-value":     GameConfig::DEFENSE_PER_POINT,
+    "battle-hp-per-point-value":          GameConfig::HP_PER_POINT
+  } }
+
+  %h1.text-2xl.font-bold.mb-4= battle_session.world.name
+
+  %div.mb-4
+    %strong Player HP:
+    %span{ data: { battle_target: "playerHp" } }= battle_session.player_hp
+
+  - enemy = battle_session.world.enemies[battle_session.current_enemy_index]
+  %div.mb-4
+    %h2.text-xl.font-semibold= enemy.name
+    %p
+      %strong Enemy HP:
+      %span{ data: { battle_target: "enemyHp" } }= battle_session.enemy_hp
+
+  %div.grid.grid-cols-2.gap-2.mb-4
+    - battle_session.user_pets.each do |up|
+      - up.learned_abilities.each do |ability|
+        -# Compute next availability via a helper on the session:
+        - next_at = battle_session.next_available_at_for(ability) 
+        %button.ability-button.border.rounded.px-3.py-1{ data: {
+          action:                               "battle#useAbility",
+          "battle-ability-id-value":            ability.id,
+          "battle-cooldown-value":              ability.cooldown,
+          "battle-next-available-at-value":     (next_at && next_at.iso8601),
+          "battle-ability-name-value":          ability.name
+        } }= ability.name
+
+  %button#wild_attack.btn-pulse{ data: { action: "battle#attack" } } Attack

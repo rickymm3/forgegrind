@@ -1,0 +1,24 @@
+-# app/views/player_stats/show.html.haml
+
+.container.mx-auto.mt-8.max-w-xl
+  %h1.text-3xl.font-bold.mb-6 Player Stats
+
+  %div.mb-6
+    %p.text-lg
+      %strong Trophies:
+      = @stat.trophies
+
+  %div.grid.grid-cols-1.sm:grid-cols-2.gap-4
+    - @stats.each do |label, key, level|
+      - cost = GameConfig.cost_for_level(level)
+      .border.rounded.p-4.flex.flex-col.justify-between
+        %div
+          %h2.text-xl.font-semibold= "#{label} Level: #{level}"
+          %p.text-sm.text-gray-600
+            %strong Cost to upgrade:
+            = "#{cost} trophies"
+        = button_to "Upgrade #{label}",
+            upgrade_hero_path(stat: key),
+            method: :post,
+            class: "...",
+            disabled: @stat.trophies < cost

@@ -8,7 +8,7 @@ class UserExplorationsController < ApplicationController
     slug    = @world.name.parameterize(separator: "_")
     @reward = GameConfig.exp_for(slug)
   
-    @user_pets = @user_exploration.user_pets
+    @user_pets = @user_exploration.user_pets.to_a
     @user_pets.each do |up|
       new_exp = [up.exp.to_i + @reward, UserPet::EXP_PER_LEVEL].min
       up.update!(exp: new_exp)

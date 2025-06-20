@@ -20,6 +20,28 @@ Rails.application.routes.draw do
     end
   end
 
+  resources :battle_sessions, only: [] do
+    # POST /battle_sessions/:id/attack    → BattleSessionsController#attack
+    # POST /battle_sessions/:id/complete  → BattleSessionsController#complete
+    member do
+      post :attack
+      post :sync
+      post :complete
+    end
+  end
+
+  # Battle gauntlet per world
+  # Per-world battle:
+  resources :worlds, only: [:index] do
+    resource :battle_session, only: [:new, :create], controller: 'battle_sessions'
+  end
+  resource :player_stats,
+           path: 'hero',
+           as:   'hero',
+           only: [:show] do
+    post :upgrade, on: :member
+  end
+
   get "/items", to: "items#index", as: :items
 
 

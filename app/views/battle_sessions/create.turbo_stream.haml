@@ -1,0 +1,6 @@
+-# app/views/battle_sessions/create.turbo_stream.haml
+
+= turbo_stream.replace "battle_frame" do
+  = render partial: "battle_sessions/show",
+           locals: {battle_session: @battle_session,
+                    stat: current_user.user_stat}

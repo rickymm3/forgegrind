@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_06_12_165927) do
+ActiveRecord::Schema[8.0].define(version: 2025_06_18_213604) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -49,6 +49,28 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_12_165927) do
     t.index ["permitted_type", "permitted_id"], name: "index_permissions_on_permitted"
   end
 
+  create_table "battle_sessions", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "world_id", null: false
+    t.integer "current_enemy_index", default: 0, null: false
+    t.integer "player_hp", null: false
+    t.string "status", default: "in_progress", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.integer "enemy_hp", default: 0, null: false
+    t.datetime "last_sync_at", default: -> { "now()" }, null: false
+    t.jsonb "ability_cooldowns", default: {}, null: false
+    t.index ["user_id"], name: "index_battle_sessions_on_user_id"
+    t.index ["world_id"], name: "index_battle_sessions_on_world_id"
+  end
+
+  create_table "battle_sessions_user_pets", id: false, force: :cascade do |t|
+    t.bigint "battle_session_id", null: false
+    t.bigint "user_pet_id", null: false
+    t.index ["battle_session_id"], name: "index_bs_up_on_bs"
+    t.index ["user_pet_id"], name: "index_bs_up_on_up"
+  end
+
   create_table "currencies", force: :cascade do |t|
     t.string "name"
     t.string "symbol"
@@ -82,6 +104,20 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_12_165927) do
     t.integer "hatch_duration"
     t.boolean "enabled", default: true, null: false
     t.index ["currency_id"], name: "index_eggs_on_currency_id"
+  end
+
+  create_table "enemies", force: :cascade do |t|
+    t.bigint "world_id", null: false
+    t.string "name", null: false
+    t.integer "hp", default: 0, null: false
+    t.integer "attack", default: 0, null: false
+    t.integer "defense", default: 0, null: false
+    t.integer "trophy_reward_base", default: 0, null: false
+    t.integer "trophy_reward_growth", default: 0, null: false
+    t.float "boss_bonus_multiplier", default: 1.0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["world_id"], name: "index_enemies_on_world_id"
   end
 
   create_table "evolution_rules", force: :cascade do |t|
@@ -251,11 +287,24 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_12_165927) do
     t.bigint "user_id", null: false
     t.integer "energy", default: 0
     t.integer "trophies", default: 0
-    t.integer "rebirths", default: 0
+    t.integer "player_level", default: 0
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.datetime "energy_updated_at"
+    t.integer "hp_level", default: 1, null: false
+    t.integer "attack_level", default: 1, null: false
+    t.integer "defense_level", default: 1, null: false
+    t.integer "luck_level", default: 1, null: false
+    t.integer "attunement_level", default: 1, null: false
     t.index ["user_id"], name: "index_user_stats_on_user_id"
+  end
+
+  create_table "user_worlds", id: false, force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "world_id", null: false
+    t.index ["user_id", "world_id"], name: "index_user_worlds_on_user_id_and_world_id", unique: true
+    t.index ["user_id"], name: "index_user_worlds_on_user_id"
+    t.index ["world_id"], name: "index_user_worlds_on_world_id"
   end
 
   create_table "users", force: :cascade do |t|
@@ -277,14 +326,20 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_12_165927) do
     t.string "reward_item_type", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.boolean "enabled", default: true, null: false
   end
 
   add_foreign_key "ability_effects", "abilities"
   add_foreign_key "ability_effects", "effects"
   add_foreign_key "ability_permissions", "abilities"
+  add_foreign_key "battle_sessions", "users"
+  add_foreign_key "battle_sessions", "worlds"
+  add_foreign_key "battle_sessions_user_pets", "battle_sessions"
+  add_foreign_key "battle_sessions_user_pets", "user_pets"
   add_foreign_key "egg_item_costs", "eggs"
   add_foreign_key "egg_item_costs", "items"
   add_foreign_key "eggs", "currencies"
+  add_foreign_key "enemies", "worlds"
   add_foreign_key "evolution_rules", "items", column: "required_item_id"
   add_foreign_key "evolution_rules", "pets", column: "child_pet_id"
   add_foreign_key "evolution_rules", "pets", column: "parent_pet_id"
@@ -306,4 +361,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_12_165927) do
   add_foreign_key "user_pets", "user_items", column: "held_user_item_id"
   add_foreign_key "user_pets", "users"
   add_foreign_key "user_stats", "users"
+  add_foreign_key "user_worlds", "users"
+  add_foreign_key "user_worlds", "worlds"
 end

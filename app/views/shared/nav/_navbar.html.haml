@@ -10,6 +10,8 @@
       = link_to "Adopt", adopt_path, class: "text-sm text-blue-600 hover:underline"
       = link_to "Explore", explorations_path, class: "text-sm text-blue-600 hover:underline"
       = link_to "Items", items_path, class: "text-sm text-blue-600 hover:underline"
+      = link_to "Hero", hero_path, class: "text-sm text-blue-600 hover:underline"
+      = link_to "Battle", worlds_path, class: "text-sm text-blue-600 hover:underline"
 
       - if user_signed_in? && current_user.admin?
         = link_to "Admin", admin_root_path, class: "text-sm text-red-600 font-semibold hover:underline"
