@@ -39,38 +39,28 @@ class BattleSessionsController < ApplicationController
   end
 
   def complete
-    @battle_session = current_user.battle_sessions.find(params[:id])
-  
-    # Figure out how many waves were beaten:
-    # current_enemy_index is zero‐based, so +1 = count of defeated enemies
-    waves_defeated = @battle_session.current_enemy_index + 1
-  
-    # Collect those first N enemies
-    defeated_enemies = @battle_session.world.enemies.first(waves_defeated)
-  
-    # Sum their trophy_reward values
-    total_trophies = defeated_enemies.sum(&:trophy_reward)
-  
-    @battle_session.with_lock do
-      if @battle_session.status == "won"
-        # Credit the player
-        current_user.user_stat.increment!(:trophies, total_trophies)
-      end
-  
-      # Tear down the session
+    payload        = JSON.parse(request.body.read)
+    events         = payload["events"] || []
+    claimed_status = payload["claimed_status"]
+
+    result = BattleReplayService.new(
+      world:     @battle_session.world,
+      user_stat: current_user.user_stat,
+      user_pets: @battle_session.user_pets,
+      events:    events
+    ).run
+
+    if result.status.to_s != claimed_status.to_s
       @battle_session.destroy
+      return head :unprocessable_entity
     end
-  
-    respond_to do |format|
-      format.turbo_stream
-      format.html do
-        if @battle_session.status == "won"
-          redirect_to hero_path, notice: "Victory! You earned #{total_trophies} trophies."
-        else
-          redirect_to hero_path, alert: "You were defeated—no trophies this time."
-        end
-      end
-    end
+
+    current_user.user_stat.increment!(:trophies, result.trophies) if result.status == :won
+
+    @battle_session.destroy
+
+    head :ok
+  end
 
   # POST /battle_sessions/:id/sync
   def sync
@@ -145,6 +135,50 @@ class BattleSessionsController < ApplicationController
       end
     elsif @battle_session.player_hp <= 0
       @battle_session.status = "lost"
+    end
+  end
+
+  # POST /worlds/:world_id/battle_sessions/:id/wave_complete
+  def wave_complete
+    payload        = JSON.parse(request.body.read)
+    events         = payload["events"] || []
+    claimed_status = payload["claimed_status"] || "won"
+
+    # replay just this wave
+    result = BattleReplayService.new(
+      world:     @battle_session.world,
+      user_stat: current_user.user_stat,
+      user_pets: @battle_session.user_pets,
+      events:    events
+    ).run_wave(@battle_session.current_enemy_index)  # -> { status:, trophies:, player_hp: }
+
+    # reject if wave not actually won
+    return head :unprocessable_entity unless result[:status] == :won
+
+    # award trophies for this wave
+    current_user.user_stat.increment!(:trophies, result[:trophies])
+
+    next_index = @battle_session.current_enemy_index + 1
+
+    if next_index < @battle_session.world.enemies.size
+      # advance to next wave
+      @battle_session.update!(current_enemy_index: next_index)
+
+      enemy = @battle_session.world.enemies[next_index]
+      render json: {
+        next_enemy:       { id: enemy.id, name: enemy.name, hp: enemy.hp },
+        player_hp:        result[:player_hp],
+        trophies_awarded: result[:trophies],
+        final:            false
+      }
+    else
+      # last wave cleared → full victory
+      @battle_session.destroy
+      render json: {
+        player_hp:        result[:player_hp],
+        trophies_awarded: result[:trophies],
+        final:            true
+      }
     end
   end
 

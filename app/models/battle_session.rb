@@ -3,9 +3,6 @@ class BattleSession < ApplicationRecord
   belongs_to :world
   has_and_belongs_to_many :user_pets
 
-  # Serialize our new column as a Hash of { ability_id_string => ISO8601 timestamp }
-  serialize :ability_cooldowns, JSON
-
   # Returns a Time when that ability can next be used, or nil if never used
   def next_available_at_for(ability)
     ts = ability_cooldowns[ability.id.to_s]

@@ -24,6 +24,7 @@ Rails.application.routes.draw do
     # POST /battle_sessions/:id/attack    → BattleSessionsController#attack
     # POST /battle_sessions/:id/complete  → BattleSessionsController#complete
     member do
+      post :wave_complete
       post :attack
       post :sync
       post :complete
