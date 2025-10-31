@@ -1,0 +1,134 @@
+bases:
+  ember_fields:
+    label: "Ember Fields"
+    world_name: "Ember Fields"
+    default_duration: 900
+    flavor: "Ash-swept plains with scattered pyre blooms."
+    rewards:
+      base_drop_key: "starter_zone"
+    requirements: []
+  aurora_tundra:
+    label: "Aurora Tundra"
+    world_name: "Aurora Tundra"
+    default_duration: 960
+    flavor: "Iridescent ice fields under a crackling sky."
+    rewards:
+      base_drop_key: "forest"
+    requirements: []
+  verdant_canopy:
+    label: "Verdant Canopy"
+    world_name: "Verdant Canopy"
+    default_duration: 840
+    flavor: "Layered jungles pulsing with life."
+    rewards:
+      base_drop_key: "forest"
+    requirements:
+      - type: "pet_type"
+        key: "Grass"
+        label: "Grass-aligned companions"
+        required: 1
+
+prefixes:
+  scorching:
+    weight: 8
+    label: "Scorching"
+    duration_multiplier: 1.25
+    requirements:
+      - type: "ability"
+        key: "fire"
+        label: "Fire abilities"
+        required: 1
+    rewards:
+      bonus_drop_key: "blazing_zone_drops"
+      requires_full_match: true
+  chilling:
+    weight: 10
+    label: "Chilling"
+    duration_multiplier: 1.15
+    requirements:
+      - type: "ability"
+        key: "ice"
+        label: "Ice abilities"
+        required: 1
+    rewards:
+      bonus_drop_key: "frozen_zone_drops"
+      requires_full_match: true
+  tempestuous:
+    weight: 6
+    label: "Tempestuous"
+    duration_multiplier: 1.35
+    requirements:
+      - type: "ability"
+        key: "wind"
+        label: "Wind abilities"
+        required: 1
+      - type: "level_min"
+        value: 5
+        label: "High level companions"
+        required: 2
+    rewards:
+      bonus_drop_key: "storm_zone_drops"
+      requires_full_match: true
+  toxic:
+    weight: 5
+    label: "Toxic"
+    duration_multiplier: 1.2
+    requirements:
+      - type: "ability"
+        key: "poison"
+        label: "Poison abilities"
+        required: 1
+    rewards:
+      bonus_drop_key: "toxic_zone_drops"
+      requires_full_match: true
+
+suffixes:
+  of_embers:
+    weight: 9
+    label: "of Embers"
+    duration_bonus: 120
+    requirements:
+      - type: "level_min"
+        value: 3
+        label: "Seasoned pets"
+        required: 3
+    rewards:
+      bonus_drop_key: "blazing_zone_drops"
+  of_the_hunt:
+    weight: 7
+    label: "of the Hunt"
+    duration_bonus: 60
+    requirements:
+      - type: "pet_type"
+        key: "Beast"
+        label: "Beast allies"
+        required: 2
+    rewards:
+      bonus_drop_key: "verdant_zone_drops"
+  of_whispers:
+    weight: 6
+    label: "of Whispers"
+    duration_bonus: 90
+    requirements:
+      - type: "ability"
+        key: "shadow"
+        label: "Shadow abilities"
+        required: 1
+    rewards:
+      bonus_drop_key: "toxic_zone_drops"
+  of_legends:
+    weight: 2
+    label: "of Legends"
+    duration_bonus: 180
+    requirements:
+      - type: "species"
+        key: "Blazewulf"
+        label: "Blazewulf companion"
+        required: 1
+      - type: "level_min"
+        value: 8
+        label: "Elite levels"
+        required: 2
+    rewards:
+      bonus_drop_key: "celestial_zone_drops"
+      requires_full_match: true

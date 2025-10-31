@@ -1,0 +1,18 @@
+-# locals: message, icon (optional), theme (optional), timeout (optional)
+- message ||= ""
+- theme   ||= :success
+- icon    ||= (theme == :success ? "✓" : "!")
+- timeout ||= 4000
+
+- bg_class, text_class = case theme
+- when :success then ["bg-emerald-600", "text-white"]
+- when :error   then ["bg-rose-600", "text-white"]
+- when :info    then ["bg-slate-800", "text-white"]
+- else            ["bg-slate-700", "text-white"]
+
+%div.mt-3{ data: { controller: "toast", "toast-timeout-value": timeout } }
+  .flex.items-center.gap-3.rounded-xl.px-4.py-3.shadow-xl.transition.opacity-100.translate-y-0{ class: "#{bg_class} #{text_class}" }
+    %span.text-lg.font-semibold.leading-none= icon
+    %span.text-sm.font-medium.flex-1= message
+    %button.text-sm.font-semibold.opacity-70.hover:opacity-100{ type: "button", data: { action: "click->toast#dismiss" } }
+      ×

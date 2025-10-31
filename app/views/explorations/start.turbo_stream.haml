@@ -1,4 +1,15 @@
-- exploration_frame_id = "exploration_#{@world.id}"
+- active_progress = @user_exploration.generated_exploration&.requirements_progress_for(@user_exploration.user_pets) || []
 
-= turbo_stream.update exploration_frame_id do
-  = render "explorations/countdown", user_exploration: @user_exploration, world: @world
+= turbo_stream.update "exploration_detail" do
+  = render "explorations/detail_panel",
+           generated_exploration: @user_exploration.generated_exploration,
+           requirement_progress: active_progress,
+           requirement_groups: active_progress.group_by { |req| req[:source] || 'base' },
+           user_exploration: @user_exploration
+
+= turbo_stream.replace "worlds-list" do
+  = render "explorations/worlds_list",
+           generated_explorations: @generated_explorations,
+           active_explorations: @active_explorations,
+           requirement_map: @requirement_map,
+           selected_generated: @user_exploration.generated_exploration

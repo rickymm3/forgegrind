@@ -10,20 +10,18 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_06_18_213604) do
+ActiveRecord::Schema[8.0].define(version: 2025_10_25_120500) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
   create_table "abilities", force: :cascade do |t|
     t.string "name", null: false
     t.text "description"
-    t.integer "power"
-    t.integer "cost"
-    t.integer "cooldown"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.integer "damage", default: 0, null: false
     t.string "element_type"
+    t.string "reference", null: false
+    t.index ["reference"], name: "index_abilities_on_reference", unique: true
   end
 
   create_table "ability_effects", force: :cascade do |t|
@@ -69,6 +67,36 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_18_213604) do
     t.bigint "user_pet_id", null: false
     t.index ["battle_session_id"], name: "index_bs_up_on_bs"
     t.index ["user_pet_id"], name: "index_bs_up_on_up"
+  end
+
+  create_table "chest_types", force: :cascade do |t|
+    t.string "key", null: false
+    t.string "name", null: false
+    t.string "icon", null: false
+    t.bigint "default_loot_table_id", null: false
+    t.boolean "open_batch_allowed", default: false, null: false
+    t.integer "min_level", default: 1, null: false
+    t.boolean "visible", default: true, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["default_loot_table_id"], name: "index_chest_types_on_default_loot_table_id"
+    t.index ["key"], name: "index_chest_types_on_key", unique: true
+  end
+
+  create_table "container_open_events", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "chest_type_id", null: false
+    t.integer "opened_qty", default: 0, null: false
+    t.jsonb "rewards_json", default: [], null: false
+    t.integer "latency_ms"
+    t.string "client_version"
+    t.string "request_uuid", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["chest_type_id"], name: "index_container_open_events_on_chest_type_id"
+    t.index ["request_uuid"], name: "index_container_open_events_on_request_uuid", unique: true
+    t.index ["user_id", "chest_type_id"], name: "index_container_open_events_on_user_id_and_chest_type_id"
+    t.index ["user_id"], name: "index_container_open_events_on_user_id"
   end
 
   create_table "currencies", force: :cascade do |t|
@@ -123,7 +151,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_18_213604) do
   create_table "evolution_rules", force: :cascade do |t|
     t.bigint "parent_pet_id", null: false
     t.bigint "child_pet_id", null: false
-    t.integer "trigger_level", null: false
+    t.integer "trigger_level"
     t.bigint "required_item_id"
     t.string "required_trait"
     t.float "required_trait_threshold"
@@ -131,9 +159,38 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_18_213604) do
     t.integer "required_explorations"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "priority", default: 0, null: false
+    t.integer "window_min_level"
+    t.integer "window_max_level"
+    t.string "window_event"
+    t.jsonb "guard_json", default: {}, null: false
+    t.boolean "one_shot", default: true, null: false
+    t.string "seasonal_tag"
+    t.text "notes"
     t.index ["child_pet_id"], name: "index_evolution_rules_on_child_pet_id"
     t.index ["parent_pet_id"], name: "index_evolution_rules_on_parent_pet_id"
     t.index ["required_item_id"], name: "index_evolution_rules_on_required_item_id"
+  end
+
+  create_table "generated_explorations", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "world_id", null: false
+    t.string "base_key", null: false
+    t.string "prefix_key"
+    t.string "suffix_key"
+    t.string "name", null: false
+    t.jsonb "requirements", default: [], null: false
+    t.jsonb "reward_config", default: {}, null: false
+    t.jsonb "metadata", default: {}, null: false
+    t.integer "duration_seconds", null: false
+    t.datetime "scouted_at", null: false
+    t.datetime "expires_at"
+    t.datetime "consumed_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id", "consumed_at"], name: "index_generated_explorations_on_user_id_and_consumed_at"
+    t.index ["user_id"], name: "index_generated_explorations_on_user_id"
+    t.index ["world_id"], name: "index_generated_explorations_on_world_id"
   end
 
   create_table "items", force: :cascade do |t|
@@ -141,6 +198,31 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_18_213604) do
     t.string "item_type", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+  end
+
+  create_table "loot_entries", force: :cascade do |t|
+    t.bigint "loot_table_id", null: false
+    t.bigint "item_id", null: false
+    t.integer "weight", default: 1, null: false
+    t.integer "qty_min", default: 1, null: false
+    t.integer "qty_max", default: 1, null: false
+    t.string "rarity", default: "common", null: false
+    t.jsonb "constraints_json", default: {}, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["item_id"], name: "index_loot_entries_on_item_id"
+    t.index ["loot_table_id"], name: "index_loot_entries_on_loot_table_id"
+  end
+
+  create_table "loot_tables", force: :cascade do |t|
+    t.string "key", null: false
+    t.string "name", null: false
+    t.integer "rolls_min", default: 1, null: false
+    t.integer "rolls_max", default: 1, null: false
+    t.jsonb "pity_config_json", default: {}, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["key"], name: "index_loot_tables_on_key", unique: true
   end
 
   create_table "pet_thoughts", force: :cascade do |t|
@@ -188,6 +270,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_18_213604) do
     t.integer "sp_def", default: 5, null: false
     t.integer "speed", default: 5, null: false
     t.bigint "default_ability_id"
+    t.text "description"
     t.index ["default_ability_id"], name: "index_pets_on_default_ability_id"
     t.index ["egg_id"], name: "index_pets_on_egg_id"
     t.index ["rarity_id"], name: "index_pets_on_rarity_id"
@@ -199,6 +282,20 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_18_213604) do
     t.integer "weight"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "glow_essence_multiplier", default: 1, null: false
+  end
+
+  create_table "user_containers", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "chest_type_id", null: false
+    t.integer "count", default: 0, null: false
+    t.string "acquired_source", default: "unknown", null: false
+    t.jsonb "metadata", default: {}, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["chest_type_id"], name: "index_user_containers_on_chest_type_id"
+    t.index ["user_id", "chest_type_id"], name: "index_user_containers_on_user_id_and_chest_type_id", unique: true
+    t.index ["user_id"], name: "index_user_containers_on_user_id"
   end
 
   create_table "user_eggs", force: :cascade do |t|
@@ -219,6 +316,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_18_213604) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.datetime "completed_at"
+    t.bigint "generated_exploration_id"
+    t.index ["generated_exploration_id"], name: "index_user_explorations_on_generated_exploration_id"
     t.index ["user_id"], name: "index_user_explorations_on_user_id"
     t.index ["world_id"], name: "index_user_explorations_on_world_id"
   end
@@ -236,6 +335,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_18_213604) do
     t.integer "quantity", default: 0, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.boolean "glow_infused", default: false, null: false
     t.index ["item_id"], name: "index_user_items_on_item_id"
     t.index ["user_id", "item_id"], name: "index_user_items_on_user_id_and_item_id", unique: true
     t.index ["user_id"], name: "index_user_items_on_user_id"
@@ -246,6 +346,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_18_213604) do
     t.bigint "ability_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "unlocked_via"
     t.index ["ability_id"], name: "index_user_pet_abilities_on_ability_id"
     t.index ["user_pet_id", "ability_id"], name: "index_user_pet_abilities_on_user_pet_and_ability", unique: true
     t.index ["user_pet_id"], name: "index_user_pet_abilities_on_user_pet_id"
@@ -275,11 +376,29 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_18_213604) do
     t.datetime "asleep_until"
     t.datetime "last_energy_update_at"
     t.bigint "held_user_item_id"
+    t.integer "hunger", default: 70, null: false
+    t.integer "hygiene", default: 70, null: false
+    t.integer "boredom", default: 70, null: false
+    t.integer "injury_level", default: 70, null: false
+    t.integer "mood", default: 70, null: false
+    t.datetime "needs_updated_at"
+    t.jsonb "state_flags", default: {}, null: false
+    t.jsonb "evolution_journal", default: {}, null: false
+    t.jsonb "badges", default: [], null: false
+    t.integer "care_good_days_count", default: 0, null: false
+    t.date "last_good_day"
+    t.datetime "retired_at"
+    t.string "retired_reason"
+    t.bigint "predecessor_user_pet_id"
+    t.bigint "successor_user_pet_id"
     t.index ["egg_id"], name: "index_user_pets_on_egg_id"
     t.index ["held_user_item_id"], name: "index_user_pets_on_held_user_item_id"
     t.index ["pet_id"], name: "index_user_pets_on_pet_id"
     t.index ["pet_thought_id"], name: "index_user_pets_on_pet_thought_id"
+    t.index ["predecessor_user_pet_id"], name: "index_user_pets_on_predecessor_user_pet_id"
     t.index ["rarity_id"], name: "index_user_pets_on_rarity_id"
+    t.index ["retired_at"], name: "index_user_pets_on_retired_at"
+    t.index ["successor_user_pet_id"], name: "index_user_pets_on_successor_user_pet_id"
     t.index ["user_id"], name: "index_user_pets_on_user_id"
   end
 
@@ -296,6 +415,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_18_213604) do
     t.integer "defense_level", default: 1, null: false
     t.integer "luck_level", default: 1, null: false
     t.integer "attunement_level", default: 1, null: false
+    t.integer "glow_essence", default: 0, null: false
+    t.integer "diamonds", default: 0, null: false
     t.index ["user_id"], name: "index_user_stats_on_user_id"
   end
 
@@ -307,6 +428,18 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_18_213604) do
     t.index ["world_id"], name: "index_user_worlds_on_world_id"
   end
 
+  create_table "user_zone_completions", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "world_id", null: false
+    t.integer "times_cleared", default: 0, null: false
+    t.datetime "last_completed_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id", "world_id"], name: "index_user_zone_completions_on_user_id_and_world_id", unique: true
+    t.index ["user_id"], name: "index_user_zone_completions_on_user_id"
+    t.index ["world_id"], name: "index_user_zone_completions_on_world_id"
+  end
+
   create_table "users", force: :cascade do |t|
     t.string "email", default: "", null: false
     t.string "encrypted_password", default: "", null: false
@@ -316,7 +449,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_18_213604) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.boolean "admin", default: false, null: false
+    t.datetime "last_scouted_at"
     t.index ["email"], name: "index_users_on_email", unique: true
+    t.index ["last_scouted_at"], name: "index_users_on_last_scouted_at"
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
   end
 
@@ -327,6 +462,29 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_18_213604) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.boolean "enabled", default: true, null: false
+    t.integer "diamond_reward", default: 0, null: false
+    t.boolean "upgraded_on_clear", default: true, null: false
+    t.jsonb "special_traits", default: [], null: false
+    t.text "required_pet_abilities", default: [], null: false, array: true
+    t.string "drop_table_override_key"
+    t.text "upgrade_trait_keys", default: [], null: false, array: true
+    t.text "upgrade_required_pet_abilities", default: [], null: false, array: true
+    t.string "upgrade_drop_table_override_key"
+    t.boolean "rotation_active", default: true, null: false
+    t.integer "rotation_weight", default: 1, null: false
+    t.datetime "rotation_starts_at"
+    t.datetime "rotation_ends_at"
+  end
+
+  create_table "zone_chest_drops", force: :cascade do |t|
+    t.bigint "world_id", null: false
+    t.bigint "chest_type_id", null: false
+    t.integer "weight", default: 100, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["chest_type_id"], name: "index_zone_chest_drops_on_chest_type_id"
+    t.index ["world_id", "chest_type_id"], name: "index_zone_chest_drops_on_world_id_and_chest_type_id", unique: true
+    t.index ["world_id"], name: "index_zone_chest_drops_on_world_id"
   end
 
   add_foreign_key "ability_effects", "abilities"
@@ -336,6 +494,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_18_213604) do
   add_foreign_key "battle_sessions", "worlds"
   add_foreign_key "battle_sessions_user_pets", "battle_sessions"
   add_foreign_key "battle_sessions_user_pets", "user_pets"
+  add_foreign_key "chest_types", "loot_tables", column: "default_loot_table_id"
+  add_foreign_key "container_open_events", "chest_types"
+  add_foreign_key "container_open_events", "users"
   add_foreign_key "egg_item_costs", "eggs"
   add_foreign_key "egg_item_costs", "items"
   add_foreign_key "eggs", "currencies"
@@ -343,11 +504,18 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_18_213604) do
   add_foreign_key "evolution_rules", "items", column: "required_item_id"
   add_foreign_key "evolution_rules", "pets", column: "child_pet_id"
   add_foreign_key "evolution_rules", "pets", column: "parent_pet_id"
+  add_foreign_key "generated_explorations", "users"
+  add_foreign_key "generated_explorations", "worlds"
+  add_foreign_key "loot_entries", "items"
+  add_foreign_key "loot_entries", "loot_tables"
   add_foreign_key "pets", "abilities", column: "default_ability_id"
   add_foreign_key "pets", "eggs"
   add_foreign_key "pets", "rarities"
+  add_foreign_key "user_containers", "chest_types"
+  add_foreign_key "user_containers", "users"
   add_foreign_key "user_eggs", "eggs"
   add_foreign_key "user_eggs", "users"
+  add_foreign_key "user_explorations", "generated_explorations"
   add_foreign_key "user_explorations", "users"
   add_foreign_key "user_explorations", "worlds"
   add_foreign_key "user_items", "items"
@@ -359,8 +527,14 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_18_213604) do
   add_foreign_key "user_pets", "pets"
   add_foreign_key "user_pets", "rarities"
   add_foreign_key "user_pets", "user_items", column: "held_user_item_id"
+  add_foreign_key "user_pets", "user_pets", column: "predecessor_user_pet_id", on_delete: :nullify
+  add_foreign_key "user_pets", "user_pets", column: "successor_user_pet_id", on_delete: :nullify
   add_foreign_key "user_pets", "users"
   add_foreign_key "user_stats", "users"
   add_foreign_key "user_worlds", "users"
   add_foreign_key "user_worlds", "worlds"
+  add_foreign_key "user_zone_completions", "users"
+  add_foreign_key "user_zone_completions", "worlds"
+  add_foreign_key "zone_chest_drops", "chest_types"
+  add_foreign_key "zone_chest_drops", "worlds"
 end

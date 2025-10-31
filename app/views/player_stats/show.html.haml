@@ -7,6 +7,10 @@
     %p.text-lg
       %strong Trophies:
       = @stat.trophies
+  %div.mb-6
+    %p.text-lg
+      %strong Glow Essence:
+      = @stat.glow_essence
 
   %div.grid.grid-cols-1.sm:grid-cols-2.gap-4
     - @stats.each do |label, key, level|

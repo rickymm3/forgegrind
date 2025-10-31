@@ -6,7 +6,7 @@ class NurseryController < ApplicationController
   end
 
   def hatch
-    @user_pet = current_user.user_pets.find(params[:id])
+    @user_pet = current_user.user_pets.active.find(params[:id])
     @egg = @user_pet.egg
     @pet = @user_pet.pet
   end

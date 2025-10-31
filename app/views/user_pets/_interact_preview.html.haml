@@ -1,24 +1,88 @@
--# app/views/user_pets/_interact_preview.html.haml
--# Locals expected: user_pet, interaction, required_item, user_qty, item_info
+-# Expected locals:
+-# user_pet, interaction, requirements, energy_cost, needs_delta, personality_delta, can_perform,
+-# glow_essence_balance, glow_multiplier
 
-%div
-  %p.text-lg.font-semibold.mb-2= "Confirm: #{interaction.capitalize} with #{user_pet.name}?"
+.card.rounded-2xl.bg-white.shadow-lg.p-6.space-y-5{ data: { controller: "glow-preview", "glow-preview-multiplier-value": glow_multiplier } }
+  %h2.text-xl.font-semibold.text-slate-900.flex.items-center.justify-between
+    = interaction.to_s.humanize
+    %span.text-xs.font-semibold.text-slate-500.uppercase
+      = "Energy −#{energy_cost}"
 
-  %p.text-sm.text-gray-700.mb-1
-    %strong Required Item:
-    = " #{required_item.name}"
+  - if requirements.present?
+    .space-y-3
+      %h3.text-xs.font-semibold.uppercase.text-slate-500 Required Items
+      .flex.flex-wrap.gap-3
+        - requirements.each do |req|
+          - item = req[:item]
+          - icon_type = item&.item_type || req[:type]
+          - icon_path = icon_type ? care_item_image_path(icon_type) : nil
+          .rounded-xl.border.px-4.py-2.flex.items-center.gap-3{ class: (req[:quantity].to_i.positive? ? "border-emerald-200 bg-emerald-50" : "border-red-200 bg-red-50") }
+            - if icon_path
+              %img.h-10.w-10.object-contain.rounded{ src: icon_path, alt: item ? item.name : req[:type].to_s.humanize }
+            %div
+              %p.text-sm.font-semibold= item ? item.name : req[:type].to_s.humanize
+              - if req[:description].present?
+                %p.text-xs.text-slate-500= req[:description]
+            %span.text-xs.font-semibold
+              = "Have #{req[:quantity]} / #{req[:required_quantity]}"
+  - else
+    %p.text-xs.text-slate-500 No items required.
 
-  %p.text-sm.text-gray-700.mb-1
-    %strong You Have:
-    = " #{user_qty}"
+  .space-y-3
+    %h3.text-xs.font-semibold.uppercase.text-slate-500 Expected Impact
+    .grid.grid-cols-1.sm:grid-cols-2.gap-3
+      - needs_delta.each do |need, delta|
+        - base_delta = delta.to_f
+        - delta_class = base_delta > 0 ? "text-sm font-semibold text-emerald-600" : base_delta < 0 ? "text-sm font-semibold text-red-600" : "text-sm font-semibold text-slate-600"
+        .rounded-lg.bg-slate-50.px-3.py-2.flex.items-center.justify-between
+          %span.text-xs.font-semibold.text-slate-500= need_label(need)
+          %div.flex.items-center.gap-1
+            %span{ class: delta_class, data: { "glow-preview-target": "delta", "glow-preview-base-value": base_delta } }
+              = base_delta >= 0 ? "+#{base_delta.to_i}" : base_delta.to_i
+            %span.text-xs.font-semibold.text-emerald-500.hidden{ data: { "glow-preview-target": "diff" } }
 
-  - if item_info["description"].present?
-    %p.text-sm.text-gray-600.mt-2.mb-2= item_info["description"]
+      - personality_delta.each do |trait, delta|
+        .rounded-lg.bg-white.border.border-slate-200.px-3.py-2.flex.items-center.justify-between
+          %span.text-xs.font-semibold.text-slate-500= trait.to_s.humanize
+          %span.text-sm.font-semibold.text-indigo-600
+            = delta.to_f >= 0 ? "+#{delta.round(2)}" : delta.round(2)
 
-  -# Final confirmation button posts to actual interact action
-  = button_to "Yes, #{interaction.capitalize}",
-      interact_user_pet_path(user_pet),
-      params: { interaction_type: interaction },
-      method: :post,
-      data: { turbo_frame: "_top" },
-      class: "mt-3 w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded"
+  - unless can_perform
+    .rounded-xl.border.border-red-200.bg-red-50.px-4.py-3.text-xs.text-red-600.font-semibold
+      You’re missing the necessary items or energy for this action.
+
+  - glow_available = glow_essence_balance.to_i.positive?
+  .mt-4
+    = form_with url: interact_user_pet_path(user_pet),
+                method: :post,
+                data: { turbo_frame: "_top" },
+                local: true do
+      = hidden_field_tag :interaction_type, interaction
+
+      .flex.justify-between.items-center.mb-3
+        %span.text-xs.text-slate-400
+          Energy after action:
+          %span.font-semibold.text-slate-600= [user_pet.energy.to_i - energy_cost, 0].max
+        %span.text-xs.text-slate-400
+          Glow Essence:
+          %span.font-semibold.text-slate-600= glow_essence_balance.to_i
+
+      - if glow_available && can_perform
+        .rounded-lg.border.border-emerald-200.bg-emerald-50.px-4.py-3.flex.items-start.gap-3
+          = check_box_tag :use_glow_essence,
+                          "1",
+                          false,
+                          id: "use-glow-#{interaction}",
+                          class: "mt-1 h-4 w-4 text-emerald-600",
+                          data: { "glow-preview-target": "checkbox", action: "glow-preview#toggle" }
+          %label{ for: "use-glow-#{interaction}", class: "text-xs text-emerald-700 leading-5" }
+            %strong Consume 1 Glow Essence.
+            %br/
+            Boost positive care effects by #{((glow_multiplier - 1.0) * 100).round}% for this action.
+      - elsif can_perform
+        .rounded-lg.border.border-slate-200.bg-slate-50.px-4.py-3.text-xs.text-slate-500
+          No Glow Essence available to supercharge this interaction.
+
+      = submit_tag "Confirm",
+                   class: "mt-3 inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-400 disabled:opacity-50",
+                   disabled: !can_perform

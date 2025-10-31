@@ -1,0 +1,14 @@
+<%= form_with url: containers_open_path,
+              method: :post,
+              data: {
+                controller: "open-container",
+                action: "submit->open-container#handleSubmit turbo:submit-end->open-container#handleSubmitEnd"
+              } do |form| %>
+  <%= form.hidden_field :chest_type_key, value: chest.key %>
+  <%= form.hidden_field :quantity, value: quantity %>
+  <%= form.hidden_field :request_uuid, value: "", data: { open_container_target: "requestUuid" } %>
+  <%= form.submit label,
+                  class: css,
+                  data: { open_container_target: "submit" },
+                  disabled: disabled %>
+<% end %>

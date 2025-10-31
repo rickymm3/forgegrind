@@ -1,0 +1,49 @@
+lupin:
+  parent: Lupin
+  rules:
+    fenra:
+      child: Fenra
+      trigger_level: 2
+      priority: 30
+      guard:
+        all:
+          - type: flag_true
+            key: perky
+          - type: flag_true
+            key: happy
+          - type: flag_true
+            key: well_fed
+      notes: "Playful, well-cared-for Lupin blossoms into Fenra once it stays upbeat and well fed."
+    blazewulf:
+      child: Blazewulf
+      trigger_level: 2
+      priority: 25
+      guard:
+        all:
+          - type: flag_true
+            key: well_fed
+          - type: flag_true
+            key: starving_history
+          - type: flag_true
+            key: ticked_off
+      notes: "A Lupin that survived starvation and kept its fiery edge becomes Blazewulf."
+    duskhound:
+      child: Duskhound
+      trigger_level: 2
+      priority: 20
+      guard:
+        all:
+          - type: flag_true
+            key: forest_explorer
+        any:
+          - type: flag_true
+            key: happy
+          - type: flag_true
+            key: ticked_off
+      notes: "Seasoned wanderers who temper their mood in the wilds evolve into Duskhound."
+    galeclaw_default:
+      child: Galeclaw
+      trigger_level: 2
+      priority: 5
+      guard: {}
+      notes: "Lupins that grow without special circumstances mature into Galeclaw."

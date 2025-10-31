@@ -1,0 +1,48 @@
+-# app/views/user_pets/_detail.html.haml
+- pet = user_pet.pet
+- display_name = user_pet.name.presence || pet.name
+
+.space-y-4
+  .flex.items-start.justify-between
+    %div
+      %h2.text-2xl.font-semibold.text-slate-900= display_name
+      %p.text-sm.text-slate-500= "Species: #{pet.name}"
+    = link_to "More",
+              user_pet_path(user_pet),
+              data: { turbo_frame: "_top" },
+              class: "inline-flex items-center text-sm font-medium text-indigo-600 hover:text-indigo-700"
+  %div.flex.items-center.space-x-3.text-sm
+    %span.font-semibold.text-slate-700 Level:
+    %span.text-slate-800= user_pet.level
+    %span.font-semibold.text-slate-700 EXP:
+    %span.text-slate-800= "#{user_pet.exp} / #{UserPet::EXP_PER_LEVEL}"
+  %div.flex.items-center.space-x-3.text-sm
+    %span.font-semibold.text-slate-700 Rarity:
+    %span.text-slate-800= user_pet.rarity.name
+    %span.font-semibold.text-slate-700 Glow Essence:
+    %span.text-slate-800= user_pet.glow_essence_reward
+  - if pet.pet_types.any?
+    %p.text-sm.text-slate-600
+      %strong Types:
+      = pet.pet_types.map(&:name).join(", ")
+  - if user_pet.pet_thought
+    %p.text-sm.font-medium.text-purple-700.bg-purple-50.border.border-purple-100.rounded-lg.px-3.py-2
+      = "\"#{user_pet.pet_thought.thought}\""
+  .flex.items-center.justify-between.text-sm.text-slate-600
+    %div
+      %span.font-semibold.text-slate-700 Energy:
+      = user_pet.energy
+    %div
+      %span.font-semibold.text-slate-700 Interactions left:
+      = user_pet.interactions_remaining
+  .space-y-2
+    = link_to "Open Pet Page",
+              user_pet_path(user_pet),
+              data: { turbo_frame: "_top" },
+              class: "w-full inline-flex justify-center bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-semibold"
+    = button_to "Release #{display_name}",
+                user_pet_path(user_pet),
+                method: :delete,
+                data: { turbo_confirm: "Are you sure you want to release #{display_name}? This cannot be undone." },
+                class: "w-full bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-semibold",
+                form: { class: "w-full" }

@@ -1,0 +1,19 @@
+- background_class = "min-h-[420px] w-full flex flex-col items-center justify-center space-y-6 relative overflow-hidden bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 text-center text-white"
+- initial_image = image_path("eggs/#{egg.name.parameterize}.png")
+- final_image   = pet_sprite_path(pet)
+
+= render "shared/pet_reveal",
+         wrapper_class: background_class,
+         initial_title: "Hatching...",
+         initial_subtitle: "A new companion is about to arrive!",
+         final_title: "You hatched #{pet.name}!",
+         final_subtitle: "Welcome your new friend to ForgeGrind!",
+         delay: 2600,
+         initial_image_path: initial_image,
+         final_image_path: final_image,
+         initial_alt: "#{egg.name} egg",
+         final_alt: pet.name,
+         sparkles: true
+
+%div.mt-6.flex.flex-col.items-center.space-y-3.text-white
+  = link_to "Close", nursery_path, class: "inline-flex items-center gap-2 rounded-full bg-white/10 px-5 py-2 text-sm font-semibold hover:bg-white/20 transition"

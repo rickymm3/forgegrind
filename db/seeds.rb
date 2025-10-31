@@ -6,15 +6,37 @@ electric  = PetType.find_or_create_by!(name: "Electric")
 water     = PetType.find_or_create_by!(name: "Water")
 fire      = PetType.find_or_create_by!(name: "Fire")
 grass     = PetType.find_or_create_by!(name: "Grass")
+ice       = PetType.find_or_create_by!(name: "Ice")
+shadow    = PetType.find_or_create_by!(name: "Shadow")
+metal     = PetType.find_or_create_by!(name: "Metal")
+wind      = PetType.find_or_create_by!(name: "Wind")
+spirit    = PetType.find_or_create_by!(name: "Spirit")
+storm     = PetType.find_or_create_by!(name: "Storm")
+celestial = PetType.find_or_create_by!(name: "Celestial")
+beast     = PetType.find_or_create_by!(name: "Beast")
 
 # === Currencies (legacy) ===
 trophies = Currency.find_or_create_by!(name: "Trophies", symbol: "🏆")
+diamonds = Currency.find_or_create_by!(name: "Diamonds", symbol: "💎")
 
 # === Rarities ===
-common    = Rarity.find_or_create_by!(name: "Common",    color: "gray",    weight: 80)
-uncommon  = Rarity.find_or_create_by!(name: "Uncommon",  color: "green",   weight: 15)
-rare      = Rarity.find_or_create_by!(name: "Rare",      color: "blue",    weight: 4)
-legendary = Rarity.find_or_create_by!(name: "Legendary", color: "orange",  weight: 1)
+rarity_definitions = [
+  { name: "Common",    color: "gray",   weight: 80, glow_essence_multiplier: 5 },
+  { name: "Uncommon",  color: "green",  weight: 15, glow_essence_multiplier: 10 },
+  { name: "Rare",      color: "blue",   weight: 4,  glow_essence_multiplier: 20 },
+  { name: "Legendary", color: "orange", weight: 1,  glow_essence_multiplier: 40 }
+]
+
+rarities = rarity_definitions.each_with_object({}) do |attrs, memo|
+  rarity = Rarity.find_or_initialize_by(name: attrs[:name])
+  rarity.update!(attrs)
+  memo[attrs[:name]] = rarity
+end
+
+common    = rarities["Common"]
+uncommon  = rarities["Uncommon"]
+rare      = rarities["Rare"]
+legendary = rarities["Legendary"]
 
 # === Items ===
 starter_item = Item.find_or_create_by!(item_type: "starter_item") { |i| i.name = "Starter Item" }
@@ -24,12 +46,28 @@ blanket      = Item.find_or_create_by!(item_type: "blanket")        { |i| i.name
 whistle      = Item.find_or_create_by!(item_type: "whistle")        { |i| i.name = "Whistle" }
 treat        = Item.find_or_create_by!(item_type: "treat")          { |i| i.name = "Treat" }
 map          = Item.find_or_create_by!(item_type: "map")            { |i| i.name = "Map" }
+soap         = Item.find_or_create_by!(item_type: "soap")           { |i| i.name = "Soap" }
+leveling_stone  = Item.find_or_create_by!(item_type: "leveling_stone")  { |i| i.name = "Leveling Stone" }
+normal_stone    = Item.find_or_create_by!(item_type: "normal_stone")    { |i| i.name = "Normal Stone" }
+fire_stone      = Item.find_or_create_by!(item_type: "fire_stone")      { |i| i.name = "Fire Stone" }
+water_stone     = Item.find_or_create_by!(item_type: "water_stone")     { |i| i.name = "Water Stone" }
+electric_stone  = Item.find_or_create_by!(item_type: "electric_stone")  { |i| i.name = "Electric Stone" }
+grass_stone     = Item.find_or_create_by!(item_type: "grass_stone")     { |i| i.name = "Grass Stone" }
+ice_stone       = Item.find_or_create_by!(item_type: "ice_stone")       { |i| i.name = "Ice Stone" }
+shadow_stone    = Item.find_or_create_by!(item_type: "shadow_stone")    { |i| i.name = "Shadow Stone" }
+metal_stone     = Item.find_or_create_by!(item_type: "metal_stone")     { |i| i.name = "Metal Stone" }
+wind_stone      = Item.find_or_create_by!(item_type: "wind_stone")      { |i| i.name = "Wind Stone" }
+spirit_stone    = Item.find_or_create_by!(item_type: "spirit_stone")    { |i| i.name = "Spirit Stone" }
+storm_stone     = Item.find_or_create_by!(item_type: "storm_stone")     { |i| i.name = "Storm Stone" }
+celestial_stone = Item.find_or_create_by!(item_type: "celestial_stone") { |i| i.name = "Celestial Stone" }
 
 # === Worlds ===
 starter_zone = World.find_or_create_by!(name: "Starter Zone") do |w|
   w.duration         = 300
   w.reward_item_type = "starter_item"
+  w.diamond_reward   = 50
 end
+starter_zone.update!(diamond_reward: 50) unless starter_zone.diamond_reward == 50
 # clear existing waves
 starter_zone.enemies.destroy_all
 # recreate waves with base/growth and boss multiplier
@@ -69,6 +107,26 @@ starter_zone.enemies.create!([
 forest = World.find_or_create_by!(name: "Forest") do |w|
   w.duration         = 600
   w.reward_item_type = "wooden_stick"
+  w.diamond_reward   = 75
+end
+forest.update!(diamond_reward: 75) unless forest.diamond_reward == 75
+
+ember_fields = World.find_or_create_by!(name: "Ember Fields") do |w|
+  w.duration         = 900
+  w.reward_item_type = "leveling_stone"
+  w.diamond_reward   = 90
+end
+
+aurora_tundra = World.find_or_create_by!(name: "Aurora Tundra") do |w|
+  w.duration         = 960
+  w.reward_item_type = "ice_stone"
+  w.diamond_reward   = 95
+end
+
+verdant_canopy = World.find_or_create_by!(name: "Verdant Canopy") do |w|
+  w.duration         = 840
+  w.reward_item_type = "grass_stone"
+  w.diamond_reward   = 85
 end
 forest.enemies.destroy_all
 forest.enemies.create!([
@@ -114,10 +172,104 @@ forest_egg = Egg.find_or_create_by!(name: "Forest Egg") do |e|
   e.hatch_duration = 600
 end
 
+nature_egg = Egg.find_or_create_by!(name: "Nature Egg") do |e|
+  e.currency       = diamonds
+  e.cost_amount    = 200
+  e.hatch_duration = 900
+end
+nature_egg.update!(currency: diamonds, cost_amount: 200, hatch_duration: 900)
+
+lupin_evolution_egg = Egg.find_or_create_by!(name: "Lupin Evolution Forms") do |e|
+  e.currency       = diamonds
+  e.cost_amount    = 0
+  e.hatch_duration = 0
+  e.enabled        = false
+end
+lupin_evolution_egg.update!(enabled: false)
+
 sapling_egg = Egg.find_or_create_by!(name: "Sapling Egg") do |e|
   e.currency       = trophies
   e.cost_amount    = 100
   e.hatch_duration = 900
+end
+
+# === Loot Tables & Containers ===
+pet_care_loot_tables = {
+  "lt_pet_care_basic" => {
+    name: "Pet Care Supplies I",
+    rolls_min: 1,
+    rolls_max: 2,
+    entries: [
+      { item: treat, weight: 60, qty_min: 3, qty_max: 5, rarity: "common" },
+      { item: frisbee, weight: 20, qty_min: 1, qty_max: 2, rarity: "uncommon" },
+      { item: blanket, weight: 15, qty_min: 1, qty_max: 1, rarity: "uncommon" },
+      { item: soap, weight: 5, qty_min: 1, qty_max: 1, rarity: "rare" }
+    ]
+  },
+  "lt_pet_care_plus" => {
+    name: "Pet Care Supplies II",
+    rolls_min: 2,
+    rolls_max: 3,
+    entries: [
+      { item: treat, weight: 40, qty_min: 4, qty_max: 6, rarity: "common" },
+      { item: frisbee, weight: 25, qty_min: 2, qty_max: 3, rarity: "uncommon" },
+      { item: blanket, weight: 20, qty_min: 1, qty_max: 2, rarity: "uncommon" },
+      { item: whistle, weight: 10, qty_min: 1, qty_max: 1, rarity: "rare" },
+      { item: map, weight: 5, qty_min: 1, qty_max: 1, rarity: "rare" }
+    ]
+  }
+}
+
+loot_tables = {}
+pet_care_loot_tables.each do |key, config|
+  table = LootTable.find_or_initialize_by(key: key)
+  table.name = config[:name]
+  table.rolls_min = config[:rolls_min]
+  table.rolls_max = config[:rolls_max]
+  table.save!
+  loot_tables[key] = table
+
+  config[:entries].each do |entry|
+    loot_entry = LootEntry.find_or_initialize_by(loot_table: table, item: entry[:item])
+    loot_entry.update!(
+      weight: entry[:weight],
+      qty_min: entry[:qty_min],
+      qty_max: entry[:qty_max],
+      rarity: entry[:rarity]
+    )
+  end
+end
+
+pet_care_box_lvl1 = ChestType.find_or_initialize_by(key: "pet_care_box_lvl1")
+pet_care_box_lvl1.update!(
+  name: "Pet Care Box I",
+  icon: "chests/pet_care_box_1.png",
+  default_loot_table: loot_tables.fetch("lt_pet_care_basic"),
+  open_batch_allowed: true,
+  min_level: 1,
+  visible: true
+)
+
+pet_care_box_lvl2 = ChestType.find_or_initialize_by(key: "pet_care_box_lvl2")
+pet_care_box_lvl2.update!(
+  name: "Pet Care Box II",
+  icon: "chests/pet_care_box_2.png",
+  default_loot_table: loot_tables.fetch("lt_pet_care_plus"),
+  open_batch_allowed: true,
+  min_level: 5,
+  visible: true
+)
+
+World.find_each do |world|
+  drop = ZoneChestDrop.find_or_create_by!(world: world, chest_type: pet_care_box_lvl1)
+  drop.update!(weight: 100)
+end
+
+meadow_zone = World.find_by(name: "Meadow")
+if meadow_zone
+  ZoneChestDrop.where(world: meadow_zone).delete_all
+  ZoneChestDrop.create!(world: meadow_zone, chest_type: pet_care_box_lvl1, weight: 40)
+  ZoneChestDrop.create!(world: meadow_zone, chest_type: pet_care_box_lvl2, weight: 60)
 end
 
 # === Sapling Pets ===
@@ -126,7 +278,7 @@ sapling_pets = [
     hp: 12, atk:  6, def:  5, sp_atk:  7, sp_def:  5, speed:  6 },
   { name: "Twigster", rarity: uncommon,  power: 3, pet_types: [water],
     hp: 11, atk:  7, def:  6, sp_atk:  6, sp_def:  5, speed:  7 },
-  { name: "Barkling", rarity: rare,      power: 5, pet_types: [fire],
+  { name: "Barkling", rarity: rare,      power: 5, pet_types: [fire, beast],
     hp: 20, atk:  8, def:  8, sp_atk:  4, sp_def:  6, speed:  4 },
   { name: "Verdant",  rarity: legendary, power: 9, pet_types: [electric],
     hp: 25, atk:  5, def: 10, sp_atk: 15, sp_def: 15, speed:  5 }
@@ -150,9 +302,9 @@ end
 
 # === Starter Pets ===
 starter_pets = [
-  { name: "Cat",   rarity: common,   power: 1, pet_types: [fire],
+  { name: "Cat",   rarity: common,   power: 1, pet_types: [fire, beast],
     hp: 10, atk:  5, def:  5, sp_atk:  2, sp_def:  3, speed:  7 },
-  { name: "Dog",   rarity: common,   power: 1, pet_types: [fire],
+  { name: "Dog",   rarity: common,   power: 1, pet_types: [fire, beast],
     hp: 10, atk:  6, def:  5, sp_atk:  3, sp_def:  3, speed:  6 },
   { name: "Mouse", rarity: common,   power: 1, pet_types: [electric],
     hp:  8, atk:  4, def:  4, sp_atk:  3, sp_def:  2, speed: 10 },
@@ -178,11 +330,11 @@ end
 
 # === Forest Pets ===
 forest_pets = [
-  { name: "Deer",  rarity: common,    power: 2, pet_types: [water],
+  { name: "Deer",  rarity: common,    power: 2, pet_types: [water, beast],
     hp: 20, atk:  7, def:  6, sp_atk:  3, sp_def:  4, speed:  6 },
   { name: "Owl",   rarity: uncommon,  power: 3, pet_types: [electric],
     hp: 15, atk:  5, def:  5, sp_atk:  8, sp_def:  5, speed:  8 },
-  { name: "Bear",  rarity: rare,      power: 5, pet_types: [fire],
+  { name: "Bear",  rarity: rare,      power: 5, pet_types: [fire, beast],
     hp: 30, atk: 10, def: 10, sp_atk:  2, sp_def:  3, speed:  4 },
   { name: "Dryad", rarity: legendary, power:10, pet_types: [grass],
     hp: 18, atk:  4, def:  6, sp_atk: 12, sp_def: 10, speed:  5 }
@@ -202,6 +354,262 @@ forest_pets.each do |attrs|
   )
   pet.save!
   pet.pet_types = attrs[:pet_types]
+end
+
+# === Nature Egg – Lupin lineage ===
+nature_pet_data = [
+  {
+    name: "Lupin",
+    rarity: common,
+    power: 3,
+    pet_types: [spirit, beast],
+    description: "A curious wolf pup brimming with potential. Though small, its alert eyes and playful growls hint at the fierce predator it will become. Known for forming early bonds with its trainer.",
+    hp: 18, atk: 8, def: 6, sp_atk: 7, sp_def: 6, speed: 11
+  },
+  {
+    name: "Fenra",
+    rarity: uncommon,
+    power: 6,
+    pet_types: [ice, spirit, beast],
+    description: "A swift frost wolf whose paws leave trails of snowflakes. Agile and precise, Fenra hunts silently across frozen plains, channeling ice energy through its mane.",
+    hp: 25, atk: 9, def: 8, sp_atk: 12, sp_def: 9, speed: 14
+  },
+  {
+    name: "Blazewulf",
+    rarity: uncommon,
+    power: 6,
+    pet_types: [fire, spirit, beast],
+    description: "A fiery predator whose embered fur burns with living heat. Its rage fuels its strength, and its howl can ignite the air itself. Fiercely loyal yet volatile.",
+    hp: 28, atk: 14, def: 8, sp_atk: 10, sp_def: 7, speed: 12
+  },
+  {
+    name: "Duskhound",
+    rarity: uncommon,
+    power: 6,
+    pet_types: [shadow, spirit, beast],
+    description: "A shadow-born wolf that moves unseen in moonlight. Its eyes glow through the mist, and its presence alone chills prey into stillness. Loyal to the dark, but not evil.",
+    hp: 24, atk: 11, def: 7, sp_atk: 11, sp_def: 8, speed: 13
+  },
+  {
+    name: "Ironfang",
+    rarity: rare,
+    power: 7,
+    pet_types: [metal, spirit, beast],
+    description: "A battle-hardened wolf coated in metallic fur. Forged through countless fights, its armor-like pelt deflects both magic and steel. The sound of its claws striking stone echoes like a forge.",
+    hp: 32, atk: 15, def: 14, sp_atk: 9, sp_def: 12, speed: 10
+  },
+  {
+    name: "Galeclaw",
+    rarity: rare,
+    power: 7,
+    pet_types: [wind, spirit, beast],
+    description: "A wolf infused with the spirit of wind. Its speed is legendary—able to vanish in a blur and strike before its echo fades. Known for freedom and defiance.",
+    hp: 26, atk: 12, def: 8, sp_atk: 13, sp_def: 10, speed: 16
+  },
+  {
+    name: "Fenshadow",
+    rarity: rare,
+    power: 7,
+    pet_types: [shadow, spirit, beast],
+    description: "A spectral wolf of fog and memory. Its body flickers between realms, haunting forests it once called home. Said to protect lost spirits and guide them through mist.",
+    hp: 24, atk: 12, def: 9, sp_atk: 14, sp_def: 12, speed: 12
+  },
+  {
+    name: "Pyrolune",
+    rarity: legendary,
+    power: 9,
+    pet_types: [fire, celestial, beast],
+    description: "A celestial wolf wreathed in divine flame. Its golden fire burns only what is corrupt, and its eyes reflect the light of distant stars. Revered as a guardian spirit.",
+    hp: 34, atk: 16, def: 10, sp_atk: 18, sp_def: 14, speed: 15
+  },
+  {
+    name: "Tempestral",
+    rarity: legendary,
+    power: 9,
+    pet_types: [storm, wind, beast],
+    description: "A storm-forged wolf charged with lightning. Each step hums with energy, and its howl splits the skies. Embodies unrestrained force and wild balance.",
+    hp: 30, atk: 13, def: 11, sp_atk: 17, sp_def: 13, speed: 17
+  },
+  {
+    name: "Steelbane",
+    rarity: legendary,
+    power: 9,
+    pet_types: [metal, spirit, beast],
+    description: "An alpha clad in iron plates, its scars turned to armor. Once a warrior’s companion, now a living fortress. Commands respect through presence alone.",
+    hp: 38, atk: 18, def: 17, sp_atk: 12, sp_def: 15, speed: 10
+  },
+  {
+    name: "Aetherfang",
+    rarity: legendary,
+    power: 10,
+    pet_types: [celestial, spirit, beast],
+    description: "The final ascendant form of the wolf line. Its body glows with celestial runes, fur blending into the night sky. Aetherfang moves between worlds, serving as both protector and omen.",
+    hp: 36, atk: 17, def: 14, sp_atk: 20, sp_def: 18, speed: 18
+  }
+]
+
+nature_pets = nature_pet_data.each_with_object({}) do |attrs, memo|
+  target_egg = attrs[:name] == "Lupin" ? nature_egg : lupin_evolution_egg
+  pet = target_egg.pets.find_or_initialize_by(name: attrs[:name])
+  pet.assign_attributes(
+    rarity:      attrs[:rarity],
+    power:       attrs[:power],
+    description: attrs[:description],
+    hp:          attrs[:hp],
+    atk:         attrs[:atk],
+    def:         attrs[:def],
+    sp_atk:      attrs[:sp_atk],
+    sp_def:      attrs[:sp_def],
+    speed:       attrs[:speed]
+  )
+  pet.save!
+  pet.pet_types = attrs[:pet_types]
+  memo[attrs[:name]] = pet
+end
+
+lupin      = nature_pets["Lupin"]
+fenra      = nature_pets["Fenra"]
+blazewulf  = nature_pets["Blazewulf"]
+duskhound  = nature_pets["Duskhound"]
+
+if lupin && fenra && blazewulf && duskhound
+  lupin_rules = [
+    {
+      parent: lupin,
+      child:  fenra,
+      trigger_level: 5,
+      priority: 20,
+      guard: {
+        "any" => [
+          { "type" => "need_at_least", "key" => "mood", "value" => 70 },
+          { "type" => "sum_traits_at_least", "keys" => ["affection", "playfulness"], "value" => 60 }
+        ]
+      },
+      notes: "Happy Lupin evolves at level 5"
+    },
+    {
+      parent: lupin,
+      child:  blazewulf,
+      trigger_level: nil,
+      window_min_level: 10,
+      window_max_level: 10,
+      priority: 15,
+      guard: {
+        "all" => [
+          { "type" => "flag_true", "key" => "missed_lvl5_happiness" },
+          { "type" => "need_at_most", "key" => "mood", "value" => 69 },
+          { "type" => "trait_at_least", "key" => "temperament", "value" => 40 }
+        ]
+      },
+      notes: "Angry Lupin finds power through fire at level 10"
+    },
+    {
+      parent: lupin,
+      child:  duskhound,
+      trigger_level: nil,
+      window_min_level: 10,
+      window_max_level: 10,
+      priority: 14,
+      guard: {
+        "all" => [
+          { "type" => "flag_true", "key" => "missed_lvl5_happiness" },
+          { "type" => "need_at_least", "key" => "mood", "value" => 70 }
+        ],
+        "any" => [
+          { "type" => "season_is", "value" => "winter" },
+          { "type" => "sum_traits_at_least", "keys" => ["confidence", "curiosity"], "value" => 55 }
+        ]
+      },
+      notes: "Resilient Lupin embraces the shadows after missing its first window",
+      seasonal_tag: "winter"
+    }
+  ]
+
+lupin_rules.each do |attrs|
+  lookup = {
+    parent_pet: attrs[:parent],
+    child_pet:  attrs[:child],
+      trigger_level: attrs[:trigger_level],
+      window_min_level: attrs[:window_min_level],
+      window_max_level: attrs[:window_max_level],
+      window_event: attrs[:window_event]
+    }
+
+    rule = EvolutionRule.find_or_initialize_by(lookup)
+    rule.parent_pet    = attrs[:parent]
+    rule.child_pet     = attrs[:child]
+    rule.trigger_level = attrs[:trigger_level]
+    rule.window_min_level = attrs[:window_min_level]
+    rule.window_max_level = attrs[:window_max_level]
+    rule.window_event  = attrs[:window_event]
+    rule.priority      = attrs[:priority]
+    rule.one_shot      = true
+    rule.guard_json    = attrs[:guard]
+    rule.seasonal_tag  = attrs[:seasonal_tag]
+    rule.notes         = attrs[:notes]
+    rule.save!
+  end
+end
+
+EvolutionRuleLoader.sync!
+
+abilities = [
+  {
+    name:         "Tackle",
+    reference:    "tackle",
+    description:  "A basic physical ram that deals light damage.",
+    element_type: "physical"
+  },
+  {
+    name:         "Growl",
+    reference:    "growl",
+    description:  "Intimidates the foe, lowering its speed.",
+    element_type: "status"
+  },
+  {
+    name:         "Whirlwind",
+    reference:    "whirlwind",
+    description:  "A rare wind gust that strikes swiftly and can hit multiple foes.",
+    element_type: "wind"
+  },
+  {
+    name:         "Ember Burst",
+    reference:    "ember_burst",
+    description:  "Ignites the air around the foe with a burst of flame.",
+    element_type: "fire"
+  },
+  {
+    name:         "Frost Shard",
+    reference:    "frost_shard",
+    description:  "Launches a razor shard of ice that chills the target.",
+    element_type: "ice"
+  },
+  {
+    name:         "Tempest Slash",
+    reference:    "tempest_slash",
+    description:  "Channels slicing winds into a cutting strike.",
+    element_type: "wind"
+  },
+  {
+    name:         "Venom Dart",
+    reference:    "venom_dart",
+    description:  "Fires a toxic barb that leaves foes reeling.",
+    element_type: "poison"
+  },
+  {
+    name:         "Shadow Bind",
+    reference:    "shadow_bind",
+    description:  "Wraps the foe in living shadows, sapping their strength.",
+    element_type: "shadow"
+  }
+]
+
+abilities.each do |attrs|
+  ability = Ability.find_or_initialize_by(reference: attrs[:reference])
+  ability.name         = attrs[:name]
+  ability.description  = attrs[:description]
+  ability.element_type = attrs[:element_type]
+  ability.save!
 end
 
 # === PetThoughts ===
@@ -234,6 +642,7 @@ EggItemCost.find_or_create_by!(egg: starter_egg, item: starter_item) { |eic| eic
 EggItemCost.find_or_create_by!(egg: forest_egg,  item: wooden_stick) { |eic| eic.quantity = 1 }
 EggItemCost.find_or_create_by!(egg: sapling_egg, item: starter_item) { |eic| eic.quantity = 1 }
 EggItemCost.find_or_create_by!(egg: sapling_egg, item: wooden_stick) { |eic| eic.quantity = 1 }
+EggItemCost.find_or_create_by!(egg: nature_egg, item: treat) { |eic| eic.quantity = 2 }
 
 # === Retroactive type associations ===
 Pet.find_each do |pet|

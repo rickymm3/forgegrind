@@ -1,0 +1,13 @@
+<%= turbo_stream.replace "inventory-containers-grid",
+                         partial: "inventories/containers_grid",
+                         locals: { containers: @containers } %>
+
+<%= turbo_stream.replace "inventory-items-grid",
+                         partial: "inventories/items_grid",
+                         locals: { items: @items } %>
+
+<%= turbo_stream.replace "container-open-errors", "" %>
+
+<%= turbo_stream.replace "container-reveal",
+                         partial: "containers/reveal",
+                         locals: { payload: @rewards_payload, container_lookup: @container_lookup } %>

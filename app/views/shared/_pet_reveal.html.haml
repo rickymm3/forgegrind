@@ -1,0 +1,50 @@
+- wrapper_class       = local_assigns[:wrapper_class]       || "relative flex flex-col items-center justify-center space-y-6"
+- initial_title       = local_assigns[:initial_title]       || ""
+- final_title         = local_assigns[:final_title]         || ""
+- initial_subtitle    = local_assigns[:initial_subtitle]    || ""
+- final_subtitle      = local_assigns[:final_subtitle]      || ""
+- delay               = local_assigns[:delay]               || 2400
+- initial_image_path  = local_assigns[:initial_image_path]
+- final_image_path    = local_assigns[:final_image_path]
+- initial_alt         = local_assigns[:initial_alt]         || initial_title.presence || "Initial"
+- final_alt           = local_assigns[:final_alt]           || final_title.presence   || "Final"
+- extra_content       = local_assigns[:extra_content]
+- show_sparkles       = local_assigns[:sparkles]            || false
+
+%div{ class: wrapper_class,
+      data: {
+        controller: "pet-reveal",
+        "pet-reveal-delay-value": delay,
+        "pet-reveal-final-title-value": final_title,
+        "pet-reveal-final-subtitle-value": final_subtitle
+      } }
+  - if show_sparkles
+    %div.absolute.inset-0.pointer-events-none
+      - 10.times do
+        - top  = rand(5..95)
+        - left = rand(5..95)
+        %span{ class: "absolute rounded-full bg-white/70 opacity-80 animate-ping",
+               style: "width:10px;height:10px;top:#{top}%;left:#{left}%" }
+        %span{ class: "absolute rounded-full bg-white/80",
+               style: "width:4px;height:4px;top:#{top + rand(-2..2)}%;left:#{left + rand(-2..2)}%" }
+
+  %div.text-center.space-y-2
+    %h2.text-xl.font-semibold.text-white.drop-shadow{ data: { "pet-reveal-target": "title" } }= initial_title
+    %p.text-sm.text-white/80{ data: { "pet-reveal-target": "subtitle" }, class: (initial_subtitle.present? ? nil : "hidden") }
+      = initial_subtitle
+
+  .relative.flex.items-center.justify-center
+    - if initial_image_path.present?
+      %img{ src: initial_image_path,
+            alt: initial_alt,
+            class: "transition-all duration-300 ease-out opacity-100 scale-100",
+            data: { "pet-reveal-target": "initial" } }
+    - if final_image_path.present?
+      %img.hidden.opacity-0.scale-90{ src: final_image_path,
+                                      alt: final_alt,
+                                      class: "transition-all duration-500 ease-out",
+                                      data: { "pet-reveal-target": "final" } }
+
+  - if extra_content.present?
+    .mt-4
+      = extra_content

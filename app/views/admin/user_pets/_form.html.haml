@@ -1,0 +1,79 @@
+- user_pet ||= @user_pet
+- label_class = "block text-sm font-semibold text-slate-600"
+- input_class = "mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+
+.card.bg-white.shadow-sm.rounded-2xl.p-6
+  = form_with model: [:admin, user_pet], local: true, class: "space-y-8" do |f|
+    .grid.grid-cols-1.md:grid-cols-2.gap-6
+      .space-y-4
+        %h2.text-lg.font-semibold.text-slate-800 Core
+        .space-y-3
+          .field
+            = f.label :name, class: "block text-sm font-semibold text-slate-600"
+            = f.text_field :name, class: "mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+          .field
+            = f.label :level, class: label_class
+            = f.number_field :level, class: input_class
+          .field
+            = f.label :exp, class: label_class
+            = f.number_field :exp, class: input_class
+          .field
+            = f.label :energy, class: label_class
+            = f.number_field :energy, class: input_class
+          .field
+            = f.label :interactions_remaining, class: label_class
+            = f.number_field :interactions_remaining, class: input_class
+          .field
+            = f.label :asleep_until, class: label_class
+            = f.datetime_field :asleep_until, class: input_class
+      .space-y-4
+        %h2.text-lg.font-semibold.text-slate-800 Needs
+        .space-y-3
+          - %i[hunger hygiene boredom injury_level mood].each do |attr|
+            .field
+              = f.label attr, class: label_class
+              = f.number_field attr, class: input_class
+        .space-y-3
+          %h3.text-sm.font-semibold.text-slate-700 Personality
+          - %i[playfulness affection temperament curiosity confidence].each do |attr|
+            .field
+              = f.label attr, class: label_class
+              = f.number_field attr, class: input_class
+    .grid.grid-cols-1.md:grid-cols-2.gap-6
+      .space-y-4
+        %h2.text-lg.font-semibold.text-slate-800 Tracking
+        .field
+          = f.label :needs_updated_at, class: label_class
+          = f.datetime_field :needs_updated_at, class: input_class
+        .field
+          = f.label :last_energy_update_at, class: label_class
+          = f.datetime_field :last_energy_update_at, class: input_class
+        .field
+          = f.label :care_good_days_count, class: label_class
+          = f.number_field :care_good_days_count, class: input_class
+        .field
+          = f.label :last_good_day, class: label_class
+          = f.date_field :last_good_day, class: input_class
+      .space-y-4
+        %h2.text-lg.font-semibold.text-slate-800 JSON Attributes
+        .field
+          %label.block.text-sm.font-semibold.text-slate-600 State Flags (JSON)
+          = text_area_tag "user_pet[state_flags_json]",
+                           JSON.pretty_generate(user_pet.state_flags || {}),
+                           rows: 6,
+                           class: "mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-xs font-mono"
+        .field
+          %label.block.text-sm.font-semibold.text-slate-600 Evolution Journal (JSON)
+          = text_area_tag "user_pet[evolution_journal_json]",
+                           JSON.pretty_generate(user_pet.evolution_journal || {}),
+                           rows: 6,
+                           class: "mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-xs font-mono"
+        .field
+          %label.block.text-sm.font-semibold.text-slate-600 Badges (JSON array)
+          = text_area_tag "user_pet[badges_json]",
+                           JSON.pretty_generate(user_pet.badges || []),
+                           rows: 4,
+                           class: "mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-xs font-mono"
+    .flex.items-center.justify-end.gap-3
+      = link_to "Cancel", admin_user_pet_path(user_pet), class: "text-sm font-semibold text-slate-600 hover:text-slate-800"
+      = f.submit "Save Changes", class: "inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700"

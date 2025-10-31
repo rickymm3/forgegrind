@@ -19,6 +19,14 @@ blanket:
   curiosity_mod:   0.0
   confidence_mod:  0.2
 
+soap:
+  description: "It'll clean ya good."
+  playfulness_mod: 0.0
+  affection_mod:   0.5
+  temperament_mod: 0.1
+  curiosity_mod:   0.0
+  confidence_mod:  0.2
+
 whistle:
   description: "A whistle that grabs your pet’s attention instantly."
   playfulness_mod: 0.0
@@ -42,3 +50,42 @@ map:
   temperament_mod: 0.0
   curiosity_mod:   0.5
   confidence_mod:  0.2
+
+leveling_stone:
+  description: "A steady stone that safely channels growth for any pet."
+
+normal_stone:
+  description: "A versatile stone attuned to well-balanced companions."
+
+fire_stone:
+  description: "Warm to the touch—fire-aligned pets resonate with its ember core."
+
+water_stone:
+  description: "Cool and fluid, perfect for aquatic or flowy personalities."
+
+electric_stone:
+  description: "Crackling with residual charge, it energises electric pets."
+
+grass_stone:
+  description: "Verdant moss covers this stone; nurturing for nature-aligned pets."
+
+ice_stone:
+  description: "Chilled frost clings to its surface, harmonising with icy temperaments."
+
+shadow_stone:
+  description: "Whispers of dusk swirl inside, guiding shadow-bound companions."
+
+metal_stone:
+  description: "Dense and steady, forged for metallic hides and hardy shells."
+
+wind_stone:
+  description: "Light as air; its currents thrill agile, wind-loving pets."
+
+spirit_stone:
+  description: "Glows softly, responding to ethereal, spirit-touched allies."
+
+storm_stone:
+  description: "Rumbles faintly inside, ideal for tempestuous partners."
+
+celestial_stone:
+  description: "Starlight flickers within—perfect for pets attuned to the cosmos."

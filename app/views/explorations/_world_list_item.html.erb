@@ -1,0 +1,66 @@
+<% generated = generated_exploration %>
+<% requirement_progress ||= [] %>
+<% active ||= false %>
+<% user_exploration ||= nil %>
+
+<% duration_minutes = (generated.duration_seconds / 60).floor %>
+<% duration_seconds = generated.duration_seconds % 60 %>
+<% duration_label = [] %>
+<% duration_label << "#{duration_minutes}m" unless duration_minutes.zero? %>
+<% duration_label << "#{duration_seconds}s" %>
+
+<div id="<%= dom_id(generated, :card) %>">
+  <%= link_to explorations_path(generated_id: generated.id),
+              data: {
+                turbo_frame: "exploration_detail",
+                action: "click->exploration-list#select",
+                "exploration-list-target": "item",
+                selected: active ? "true" : "false"
+              },
+              class: [
+                "block rounded-xl border px-4 py-3 transition",
+                active ? "border-indigo-500 bg-indigo-50 shadow-sm" : "border-transparent hover:border-slate-200 hover:bg-slate-50"
+              ] do %>
+    <div class="flex items-center justify-between mb-1">
+      <div>
+        <h3 class="text-sm font-semibold text-slate-900"><%= generated.name %></h3>
+        <p class="text-[11px] uppercase text-slate-400 tracking-wide"><%= generated.world.name %></p>
+      </div>
+      <div class="flex flex-col items-end gap-1">
+        <span class="inline-flex items-center rounded-full bg-slate-100 text-slate-600 px-2 py-0.5 text-[11px] font-semibold uppercase">
+          <%= duration_label.join(' ') %>
+        </span>
+        <% if user_exploration.present? %>
+          <% status_label = user_exploration.complete? ? "Ready to Complete" : "In Progress" %>
+          <% status_color = user_exploration.complete? ? "bg-emerald-100 text-emerald-700" : "bg-indigo-100 text-indigo-700" %>
+          <span class="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase <%= status_color %>">
+            <%= status_label %>
+          </span>
+        <% end %>
+      </div>
+    </div>
+
+    <% traits = Array(generated.metadata[:flavor]) %>
+    <% if traits.any? %>
+      <p class="text-[11px] text-slate-500 mb-1">
+        <%= traits.first %>
+      </p>
+    <% end %>
+
+    <% if requirement_progress.any? %>
+      <div class="space-y-1 mt-2">
+        <% requirement_progress.first(3).each do |req| %>
+          <div class="flex items-center justify-between text-[11px] text-slate-500">
+            <span><%= req[:label] || req[:key].to_s.titleize %></span>
+            <span class="font-semibold <%= req[:fulfilled] ? 'text-emerald-600' : 'text-slate-500' %>"><%= req[:current] %>/<%= req[:required] %></span>
+          </div>
+        <% end %>
+        <% if requirement_progress.size > 3 %>
+          <p class="text-[11px] text-slate-400">+<%= requirement_progress.size - 3 %> more requirements</p>
+        <% end %>
+      </div>
+    <% else %>
+      <p class="text-[11px] text-slate-400 mt-2">No special requirements.</p>
+    <% end %>
+  <% end %>
+</div>

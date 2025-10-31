@@ -1,0 +1,41 @@
+-# app/views/admin/evolution_rules/index.html.haml
+%h1.text-2xl.font-bold.mb-4 Evolution Rules
+
+.mb-4
+  = link_to "New Rule", new_admin_evolution_rule_path, class: "px-3 py-2 bg-blue-600 text-white rounded"
+  = link_to "Dry Run", dry_run_admin_evolution_rules_path, class: "ml-2 px-3 py-2 bg-slate-600 text-white rounded"
+
+%table.w-full.mt-4
+  %thead
+    %tr.text-left
+      %th ID
+      %th Parent
+      %th Child
+      %th Window
+      %th Priority
+      %th One-shot
+      %th Seasonal
+      %th Actions
+  %tbody
+    - @rules.each do |rule|
+      %tr.border-t
+        %td= rule.id
+        %td= rule.parent_pet&.name
+        %td= rule.child_pet&.name
+        %td
+          - if rule.trigger_level.present?
+            = "L#{rule.trigger_level}"
+          - elsif rule.window_event.present?
+            = "event:#{rule.window_event}"
+          - else
+            = "L#{rule.window_min_level || '?'}-#{rule.window_max_level || '?'}"
+        %td= rule.priority
+        %td= rule.one_shot? ? 'Yes' : 'No'
+        %td= rule.seasonal_tag.presence || '-'
+        %td
+          = link_to 'Show', admin_evolution_rule_path(rule), class: 'text-blue-600'
+          = ' | '
+          = link_to 'Edit', edit_admin_evolution_rule_path(rule), class: 'text-amber-600'
+          = ' | '
+          = link_to 'Delete', admin_evolution_rule_path(rule), data: { turbo_confirm: 'Delete this rule?' }, method: :delete, class: 'text-red-600'
+

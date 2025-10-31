@@ -1,27 +1,31 @@
 - relevant_item_ids = EggItemCost.distinct.pluck(:item_id)
 - user_items = current_user.user_items.includes(:item).where(item_id: relevant_item_ids)
-- eggs = Egg.includes(:egg_item_costs => :item).all
+- eggs = Egg.enabled.includes(:currency, egg_item_costs: :item)
+- stat = current_user.user_stat&.reload
+- highlighted_id = @egg&.id
+
+- if stat
+  = turbo_stream.update "user-currency-trophies" do
+    = number_with_delimiter(stat.trophies)
+  = turbo_stream.update "user-currency-diamonds" do
+    = number_with_delimiter(stat.diamonds)
+  = turbo_stream.update "user-currency-glow-essence" do
+    = number_with_delimiter(stat.glow_essence)
+
+= turbo_stream.replace "currency_balances", partial: "shared/currency_badges", locals: { currencies: currency_balances_for(current_user) }
+
+= turbo_stream.update "user-inventory" do
+  = render "adopt/user_inventory", user_items: user_items, user_stat: stat
 
 - user_items.each do |user_item|
   = turbo_stream.update "user-item-quantity-#{user_item.item_id}" do
     = "x#{user_item.quantity}"
 
 = turbo_stream.update "egg-list" do
-  .grid.grid-cols-2.md:grid-cols-3.lg:grid-cols-4.gap-4
+  .grid.grid-cols-1.md:grid-cols-2.xl:grid-cols-3.gap-8
     - eggs.each do |egg|
       - can_afford = current_user.can_afford_egg?(egg)
+      = render "adopt/egg_card", egg: egg, can_afford: can_afford, highlight: (highlighted_id == egg.id)
 
-      .border.rounded-lg.p-4.bg-white.shadow
-        %h2.text-lg.font-semibold.text-gray-800= egg.name
-        %p.text-sm.text-gray-600.mb-2 Hatches in #{distance_of_time_in_words(egg.hatch_duration.seconds.from_now)}
-
-        %p.text-sm.text-gray-600.mb-1 Required Items:
-        %ul.text-sm.mb-3
-          - egg.egg_item_costs.each do |cost|
-            %li= "#{cost.item.name}: #{cost.quantity}"
-
-        = form_with url: user_eggs_path, method: :post, data: { turbo: true } do |f|
-          = hidden_field_tag :egg_id, egg.id
-          = f.submit "Adopt",
-              class: "w-full mt-2 py-2 rounded #{can_afford ? 'bg-blue-500 hover:bg-blue-600 text-white' : 'bg-gray-300 text-gray-500 cursor-not-allowed'}",
-              disabled: !can_afford
+= turbo_stream.append "toast-container" do
+  = render "shared/toast", message: "Adopted a #{@egg.name}!"

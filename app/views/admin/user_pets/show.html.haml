@@ -1,0 +1,97 @@
+-# app/views/admin/user_pets/show.html.haml
+%h1.text-3xl.font-bold.text-slate-900.mb-1= @user_pet.name.presence || @user_pet.pet.name
+%p.text-sm.text-slate-600.mb-6= "Owned by #{@user_pet.user.email}"
+
+.card.bg-white.shadow-sm.rounded-2xl.p-6.space-y-6
+  .flex.items-center.gap-4
+    %img.h-20.w-20.rounded-full.object-cover{ src: pet_sprite_path(@user_pet.pet), alt: @user_pet.pet.name }
+    .space-y-1
+      %p.text-sm.text-slate-600
+        %strong Species:
+        = @user_pet.pet.name
+      %p.text-sm.text-slate-600
+        %strong Rarity:
+        = @user_pet.rarity.name
+      %p.text-sm.text-slate-600
+        %strong Status:
+        = @user_pet.exploring? ? "Exploring" : "Idle"
+
+  .grid.grid-cols-1.md:grid-cols-2.gap-6
+    .space-y-3
+      %h2.text-lg.font-semibold.text-slate-800 Core Stats
+      %ul.text-sm.text-slate-600.space-y-2
+        %li
+          %strong Level:
+          = @user_pet.level
+        %li
+          %strong EXP:
+          = @user_pet.exp
+        %li
+          %strong Energy:
+          = @user_pet.energy
+        %li
+          %strong Interactions remaining:
+          = @user_pet.interactions_remaining
+        %li
+          %strong Last energy update:
+          = @user_pet.last_energy_update_at || "–"
+        %li
+          %strong Needs updated:
+          = @user_pet.needs_updated_at || "–"
+    .space-y-3
+      %h2.text-lg.font-semibold.text-slate-800 Needs
+      %ul.text-sm.text-slate-600.space-y-2
+        %li
+          %strong Hunger:
+          = @user_pet.hunger
+        %li
+          %strong Hygiene:
+          = @user_pet.hygiene
+        %li
+          %strong Entertainment:
+          = @user_pet.boredom
+        %li
+          %strong Injury level:
+          = @user_pet.injury_level
+        %li
+          %strong Mood:
+          = @user_pet.mood
+
+  .grid.grid-cols-1.md:grid-cols-2.gap-6
+    .space-y-3
+      %h2.text-lg.font-semibold.text-slate-800 Personality
+      %ul.text-sm.text-slate-600.space-y-2
+        %li
+          %strong Playfulness:
+          = @user_pet.playfulness
+        %li
+          %strong Affection:
+          = @user_pet.affection
+        %li
+          %strong Temperament:
+          = @user_pet.temperament
+        %li
+          %strong Curiosity:
+          = @user_pet.curiosity
+        %li
+          %strong Confidence:
+          = @user_pet.confidence
+    .space-y-3
+      %h2.text-lg.font-semibold.text-slate-800 Progress
+      %ul.text-sm.text-slate-600.space-y-2
+        %li
+          %strong Good day streak:
+          = @user_pet.care_good_days_count
+        %li
+          %strong Last good day:
+          = @user_pet.last_good_day || "–"
+        %li
+          %strong Badges:
+          = (@user_pet.badges.presence || []).join(", ")
+        %li
+          %strong State flags:
+          = (@user_pet.state_flags.presence || {}).to_json
+
+  .flex.items-center.justify-end.gap-3.mt-4
+    = link_to "Back", admin_user_pets_path, class: "text-sm font-semibold text-slate-600 hover:text-slate-800"
+    = link_to "Edit", edit_admin_user_pet_path(@user_pet), class: "inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700"

@@ -1,7 +1,7 @@
 # app/services/item_awarder.rb
 
 class ItemAwarder
-  REWARDS = YAML.load_file(Rails.root.join("config/item_rewards.yml")).with_indifferent_access.freeze
+  CONFIG_PATH = Rails.root.join("config", "item_rewards.yml")
 
   class << self
     # Opens a named bucket (e.g. "world_1_chest_common"),
@@ -12,8 +12,8 @@ class ItemAwarder
     #   awarded = ItemAwarder.open_bucket(current_user, "world_1_chest_common")
     #   # => [<UserItem frisbee x1>, <UserItem starter_item x1>, <UserItem blanket x1>]
     def open_bucket(user, bucket_name)
-      bucket = REWARDS[bucket_name]
-      raise ArgumentError, "Bucket ‘#{bucket_name}’ not found in config/item_rewards.yml" unless bucket
+      bucket = rewards[bucket_name]
+      return [] unless bucket.present?
 
       awarded = []
 
@@ -59,6 +59,19 @@ class ItemAwarder
       raise ActiveRecord::RecordNotFound, "No Item with item_type=#{item_type}" unless item
 
       item
+    end
+
+    def rewards
+      @rewards ||= load_rewards
+    end
+
+    def load_rewards
+      return {}.with_indifferent_access unless CONFIG_PATH.exist?
+
+      YAML.load_file(CONFIG_PATH).with_indifferent_access
+    rescue StandardError => e
+      Rails.logger.warn("[ItemAwarder] Failed to load rewards: #{e.message}")
+      {}.with_indifferent_access
     end
   end
 end

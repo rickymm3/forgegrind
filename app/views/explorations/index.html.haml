@@ -1,30 +1,63 @@
--# app/views/explorations/index.html.haml
+- rescout_disabled = @rescout_cooldown_remaining.to_i.positive?
+- rescout_wait_human = @rescout_wait_human
 
-%h1.text-2xl.font-semibold.mb-4 Exploration Zones
+.container.mx-auto.mt-12.px-4
+  .flex.flex-col.sm:flex-row.sm:items-end.sm:justify-between.gap-4.mb-8
+    .space-y-2
+      %h1.text-3xl.font-bold.text-slate-900 Expeditions
+      %p.text-sm.text-slate-600
+        Scout the world for fresh opportunities, tailor your party, and chase rare rewards.
+    - if @generated_explorations.blank?
+      = render "explorations/scout_button",
+               **scout_button_options(:primary),
+               disabled: rescout_disabled,
+               wait_human: rescout_wait_human,
+               unlock_at: @rescout_available_at
 
-%ul.space-y-3
-  - @worlds.each do |world|
-    - user_exploration = @user_explorations.find { |ue| ue.world_id == world.id }
-    - world_types = world.pet_types.pluck(:name)
-    = turbo_frame_tag "exploration_#{world.id}" do
-      - # If exploration exists and the timer has already run out, show the button:
-      - if user_exploration.present? && user_exploration.timer_expired?
-        = render "user_explorations/ready_to_complete", user_exploration: user_exploration
+  - if @generated_explorations.any?
+    %div{ class: "grid grid-cols-1 gap-6 lg:grid-cols-[minmax(260px,320px)_1fr]" }
+      %aside.bg-white.shadow-sm.rounded-2xl.p-4{ data: { controller: "exploration-list" } }
+        .flex.items-center.justify-between.mb-3
+          %h2.text-xs.font-semibold.uppercase.text-slate-400 Active Zones
+          = render "explorations/scout_button",
+                   **scout_button_options(:sidebar),
+                   disabled: rescout_disabled,
+                   wait_human: rescout_wait_human,
+                   unlock_at: @rescout_available_at
+        = turbo_frame_tag "worlds-list" do
+          = render "explorations/worlds_list",
+                   generated_explorations: @generated_explorations,
+                   active_explorations: @active_explorations,
+                   requirement_map: @requirement_map,
+                   selected_generated: @selected_generated
 
-      - elsif user_exploration.present? && !user_exploration.timer_expired?
-        = render "explorations/countdown", user_exploration: user_exploration, world: world
-
-      - else
-        %li.border.p-4.rounded-lg.flex.items-center.justify-between
-          .flex.items-center.space-x-4
-            %span.font-medium= world.name
-            %small.text-gray-500= "#{world.duration / 60}m #{world.duration % 60}s"
-            - if world_types.any?
-              %p.text-xs.text-green-600.mt-1
-                %strong Types:
-                = world_types.join(", ")
-          = button_to "Explore",
-              preview_exploration_path(world),
-              method: :post,
-              data: { turbo_frame: "exploration_#{world.id}" },
-              class: "px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
+      - selected_entry = @selected_generated && @requirement_map[@selected_generated.id]
+      - selected_user_exploration = @selected_generated && @active_explorations.find { |ue| ue.generated_exploration_id == @selected_generated.id }
+      %section
+        = render "explorations/detail_panel",
+                 generated_exploration: @selected_generated,
+                 requirement_progress: selected_entry ? selected_entry[:progress] : [],
+                 requirement_groups: selected_entry ? selected_entry[:grouped] : {},
+                 user_exploration: selected_user_exploration
+  - elsif @active_explorations.any?
+    .flex.flex-col.gap-4
+      = render "explorations/detail_panel",
+               generated_exploration: @active_explorations.first.generated_exploration,
+               requirement_progress: (@active_explorations.first.generated_exploration&.requirements_progress_for(@active_explorations.first.user_pets)) || [],
+               requirement_groups: {},
+               user_exploration: @active_explorations.first
+      = render "explorations/scout_button",
+               **scout_button_options(:secondary),
+               disabled: rescout_disabled,
+               wait_human: rescout_wait_human,
+               unlock_at: @rescout_available_at
+  - else
+    .bg-white.shadow-sm.rounded-xl.p-6.text-center.text-slate-500.space-y-4
+      %p.font-semibold No expeditions discovered yet.
+      %p.text-sm.text-slate-400
+        Send your scouting party to uncover new zones with unique challenges and rewards.
+      = render "explorations/scout_button",
+               **scout_button_options(:empty_state),
+               disabled: rescout_disabled,
+               wait_human: rescout_wait_human,
+               unlock_at: @rescout_available_at

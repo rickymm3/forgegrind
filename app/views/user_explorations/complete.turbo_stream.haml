@@ -1,3 +1,9 @@
--# Update the frame for this world
-= turbo_stream.update "exploration_#{@world.id}" do
+= turbo_stream.update "exploration_detail" do
   = render partial: "user_explorations/complete"
+
+= turbo_stream.replace "worlds-list" do
+  = render "explorations/worlds_list",
+           generated_explorations: @generated_explorations,
+           active_explorations: @active_explorations,
+           requirement_map: @requirement_map,
+           selected_generated: @generated_explorations.first

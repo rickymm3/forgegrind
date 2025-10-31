@@ -1,8 +1,25 @@
-.grid.grid-cols-2.md:grid-cols-4.lg:grid-cols-6.gap-4.mb-6
+- stat = local_assigns[:user_stat]
+- currencies = []
+- if stat
+  - currencies << { name: "Trophies", amount: stat.trophies, dom_id: "user-currency-trophies" }
+  - currencies << { name: "Diamonds", amount: stat.diamonds, dom_id: "user-currency-diamonds" }
+  - currencies << { name: "Glow Essence", amount: stat.glow_essence, dom_id: "user-currency-glow-essence" }
+
+- currencies.reject! { |c| c[:amount].nil? }
+
+- if currencies.any?
+  .flex.flex-wrap.items-center.gap-3.mb-6
+    - currencies.each do |currency|
+      %div.bg-slate-100.border.border-slate-200.rounded-full.py-1.px-3.text-sm.font-medium.flex.items-center.space-x-2
+        %span.text-slate-500= currency[:name]
+        %span.text-slate-900{ id: currency[:dom_id] }= number_with_delimiter(currency[:amount])
+
+.grid.grid-cols-2.md:grid-cols-4.xl:grid-cols-5.gap-5.mb-6
   - user_items.each do |user_item|
-    .flex.flex-col.items-center.text-center.border.p-3.rounded
-      = image_tag asset_path("items/#{user_item.item.item_type}.png"),
-          class: "w-16 h-16 object-contain mb-2 border border-gray-300 rounded"
-      %div.font-medium= user_item.item.name
-      %div.text-sm.text-gray-600{ id: "user-item-quantity-#{user_item.item_id}" }
+    .flex.flex-col.items-center.text-center.bg-white.shadow-sm.rounded-2xl.p-5
+      .w-24.h-24.flex.items-center.justify-center.bg-slate-100.rounded-full.mb-3
+        = image_tag care_item_image_path(user_item.item.item_type),
+            class: "w-16 h-16 object-contain"
+      %div.font-medium.text-slate-800= user_item.item.name
+      %div.text-sm.text-slate-500{ id: "user-item-quantity-#{user_item.item_id}" }
         = "x#{user_item.quantity}"

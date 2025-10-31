@@ -1,15 +1,20 @@
--# app/views/pets/show.html.haml
+-# app/views/user_pets/show.html.haml
 .container.mx-auto.mt-16.text-center
   %h1.text-3xl.font-bold.mb-6= @pet.name
+
+  - if flash[:evolution_reveal].present?
+    = render "user_pets/evolution_reveal", reveal: flash[:evolution_reveal]
+
   - if @pet.pet_types.any?
     %p.text-sm.text-gray-600.mb-4
       %strong Types:
       = @pet.pet_types.map(&:name).join(", ")
-  -# — Show Current Pet Thought (if present) —#
+
   - if @user_pet.pet_thought
     %div.mb-6
       %p.text-lg.font-semibold.text-purple-700
         = "\"#{@user_pet.pet_thought.thought}\""
+
   .section.mb-4
     %p
       %strong Level:
@@ -17,15 +22,51 @@
     %p
       %strong EXP:
       = "#{@user_pet.exp} / #{UserPet::EXP_PER_LEVEL}"
-  -# — REFRESH ENERGY ON PAGE LOAD —#
-  - @user_pet.catch_up_energy!
 
-  -# — ENERGY PROGRESS BAR —#
+  -# Energy catch-up handled in controller before_action
+
   = turbo_frame_tag "pet_energy_#{@user_pet.id}" do
     = render "energy_display", user_pet: @user_pet
 
-  -# — SLEEP COUNTDOWN, IF APPLICABLE —#
-  - if @user_pet.asleep_until.present? && Time.current < @user_pet.asleep_until
+  .mt-8.grid.grid-cols-1.lg:grid-cols-2.gap-6.text-left
+    .rounded-2xl.bg-white.shadow-sm.p-6.space-y-4
+      %h2.text-lg.font-semibold.text-slate-900 Daily Care Needs
+      .space-y-4
+        - [:hunger, :hygiene, :boredom, :injury_level, :mood].each do |need|
+          - value = @user_pet.send(need).to_i
+          .space-y-2
+            .flex.items-center.justify-between.text-xs.font-semibold.text-slate-600
+              %span= need_label(need)
+              %span{ class: need_trend_badge(value) }= "#{value}/100"
+            .h-3.w-full.bg-slate-200.rounded-full.overflow-hidden
+              .h-full.rounded-full{ class: "#{need_bar_color(value)} transition-all duration-300", style: "width: #{[[value,0].max,100].min}%" }
+      .flex.items-center.justify-between.text-xs.text-slate-500.border-t.border-slate-100.pt-3
+        %span.font-semibold Care streak
+        %span= "#{@user_pet.care_good_days_count} good day#{'s' if @user_pet.care_good_days_count != 1}"
+
+    .rounded-2xl.bg-white.shadow-sm.p-6.space-y-4
+      %h2.text-lg.font-semibold.text-slate-900 Badges & Flags
+      - if @user_pet.badges.any?
+        .flex.flex-wrap.gap-2
+          - @user_pet.badges.each do |badge|
+            %span.inline-flex.items-center.rounded-full.bg-indigo-50.text-indigo-600.text-xs.font-semibold.px-3.py-1.uppercase= badge.to_s.humanize
+      - else
+        %p.text-sm.text-slate-500 No badges earned yet.
+      - if @user_pet.state_flags.present?
+        .space-y-2
+          %h3.text-xs.font-semibold.uppercase.text-slate-400 Active Flags
+          %ul.text-xs.text-slate-600.space-y-1
+            - @user_pet.state_flags.each do |key, val|
+              %li.flex.items-center.justify-between
+                %span.font-semibold= key.to_s.humanize
+                %span= val.is_a?(TrueClass) ? "Yes" : val
+      - else
+        %p.text-xs.text-slate-400.mt-2 No active flags.
+
+  - exploring = @user_pet.exploring?
+  - if exploring
+    %p.text-indigo-600.mb-4= "#{@user_pet.name} is currently exploring and can’t interact until they return."
+  - elsif @user_pet.asleep_until.present? && Time.current < @user_pet.asleep_until
     %div.mt-3.mb-4{"data-controller" => "sleep", "data-sleep-until-value" => @user_pet.asleep_until.to_i}
       %p.text-red-600.mb-1
         = "Sleeping until: "
@@ -33,17 +74,30 @@
   - else
     %p.text-green-600.mb-4= "Pet is awake and ready to play!"
 
-  -# — INTERACTION BUTTONS (COST = 10 ENERGY) —#
   - cost = 10
-  - disabled = (@user_pet.asleep_until.present? && Time.current < @user_pet.asleep_until) || @user_pet.energy < cost
+  - disabled = exploring || (@user_pet.asleep_until.present? && Time.current < @user_pet.asleep_until) || @user_pet.energy < cost
 
-  %div#interactions.mt-6.flex.justify-center.space-x-4
+  %div#interactions.mt-6.flex.flex-wrap.justify-center.gap-3
     = button_to "Play",
         interact_preview_user_pet_path(@user_pet),
         params: { interaction_type: "play" },
         method: :post,
         data: { turbo_frame: "interaction-action" },
         class: "bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded",
+        disabled: disabled
+    = button_to "Wash",
+        interact_preview_user_pet_path(@user_pet),
+        params: { interaction_type: "wash" },
+        method: :post,
+        data: { turbo_frame: "interaction-action" },
+        class: "bg-sky-500 hover:bg-sky-600 text-white px-4 py-2 rounded",
+        disabled: disabled
+    = button_to "Treat",
+        interact_preview_user_pet_path(@user_pet),
+        params: { interaction_type: "treat" },
+        method: :post,
+        data: { turbo_frame: "interaction-action" },
+        class: "bg-lime-500 hover:bg-lime-600 text-white px-4 py-2 rounded",
         disabled: disabled
     = button_to "Cuddle",
         interact_preview_user_pet_path(@user_pet),
@@ -73,48 +127,92 @@
         data: { turbo_frame: "interaction-action" },
         class: "bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded",
         disabled: disabled
+    = button_to "Walk",
+        interact_preview_user_pet_path(@user_pet),
+        params: { interaction_type: "walk" },
+        method: :post,
+        data: { turbo_frame: "interaction-action" },
+        class: "bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded",
+        disabled: disabled
 
-%div.interactions-actions.mt-6.w-full.border-t.border-b.py-4.flex.justify-center
-  = turbo_frame_tag "interaction-action" do
-    %p.text-gray-500 Select an action above to see details here.
+  - if exploring
+    %p.mt-2.text-xs.text-slate-500.text-center Interactions are disabled while this pet is away on an exploration.
 
--# — Level Up Section —#
-- if @user_pet.exp >= UserPet::EXP_PER_LEVEL
-  .mt-8.p-4.border-t
-    %h2.text-2xl.font-semibold.mb-4 Level Up Your Pet
-    %p.mb-4 You have #{@user_pet.exp} EXP (need #{UserPet::EXP_PER_LEVEL} to level).
-    = form_with url: level_up_user_pet_path(@user_pet),
-                method: :post,
-                local: true,
-                class: "space-y-4 max-w-sm mx-auto" do |f|
-      .field
-        = f.label :held_user_item_id, "Select an item to hold (will be consumed):"
-        - items = current_user.user_items.joins(:item).where("quantity > 0")
-        - options = items.map { |ui| ["#{ui.item.name} (#{ui.quantity})", ui.id] }
-        = f.select :held_user_item_id,
-                   options_for_select(options, @user_pet.held_user_item_id),
-                   { include_blank: "Choose an item" },
-                   class: "border rounded p-2 w-full"
-      = f.submit "Level Up to #{@user_pet.level + 1}",
-                 class: "px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+  %div.interactions-actions.mt-6.w-full.border-t.border-b.py-4.flex.justify-center
+    = turbo_frame_tag "interaction-action" do
+      %p.text-gray-500 Select an action above to see details here.
 
--# — Stats & Details —#
-.grid.grid-cols-2.sm:grid-cols-3.lg:grid-cols-6.gap-4.mt-8
-  .text-gray-700
-    %span.font-semibold HP:
-    = @pet.hp
-  .text-gray-700
-    %span.font-semibold ATK:
-    = @pet.atk
-  .text-gray-700
-    %span.font-semibold DEF:
-    = @pet.def
-  .text-gray-700
-    %span.font-semibold SP ATK:
-    = @pet.sp_atk
-  .text-gray-700
-    %span.font-semibold SP DEF:
-    = @pet.sp_def
-  .text-gray-700
-    %span.font-semibold Speed:
-    = @pet.speed
+  - if @user_pet.level >= UserPet::LEVEL_CAP
+    .mt-8.p-4.border-t.text-center.text-slate-600
+      %h2.text-2xl.font-semibold.mb-2 Max Level Reached
+      %p #{@user_pet.name} has reached level #{UserPet::LEVEL_CAP}. Further training will come in a future update.
+  - elsif @user_pet.exp >= UserPet::EXP_PER_LEVEL
+    - stones = current_user.user_items.joins(:item).includes(:item)
+    - stones = stones.where("user_items.quantity > 0")
+    - stones = stones.where(items: { item_type: UserPet.leveling_stone_types })
+    - stone_options = stones.map { |ui| ["#{ui.item.name} (#{ui.quantity})", ui.id] }
+    .mt-8.p-4.border-t
+      %h2.text-2xl.font-semibold.mb-4 Level Up Your Pet
+      %p.mb-4
+        You have #{@user_pet.exp} EXP (need #{UserPet::EXP_PER_LEVEL} to level). Each level consumes one leveling stone.
+      - if stones.blank?
+        .rounded-lg.border.border-amber-300.bg-amber-50.p-3.text-sm.text-amber-700
+          You need a leveling stone in your inventory before #{@user_pet.name} can level up. Explore zones to find them.
+      = form_with url: level_up_user_pet_path(@user_pet),
+                  method: :post,
+                  local: true,
+                  class: "space-y-4 max-w-sm mx-auto" do |f|
+        .field
+          = f.label :held_user_item_id, "Choose a leveling stone:"
+          = f.select :held_user_item_id,
+            options_for_select(stone_options),
+            { include_blank: "Select a stone" },
+            class: "border rounded p-2 w-full",
+            disabled: stones.blank?
+        - button_classes = "px-4 py-2 rounded text-white #{stones.present? ? 'bg-green-600 hover:bg-green-700' : 'bg-slate-400 cursor-not-allowed'}"
+        = f.submit "Level Up to #{@user_pet.level + 1}",
+                   class: button_classes,
+                   disabled: stones.blank?
+
+  .mt-10.mx-auto.max-w-md.p-4.border.rounded.bg-slate-50
+    %h2.text-xl.font-semibold.text-red-600.mb-2 Release Pet
+    %p.text-sm.text-gray-600.mb-4
+      = "Release #{@user_pet.name} back into the wild to receive #{@user_pet.glow_essence_reward} Glow Essence."
+    = button_to "Release #{@user_pet.name}",
+                user_pet_path(@user_pet),
+                method: :delete,
+                data: { turbo_confirm: "Are you sure you want to release #{@user_pet.name}? This cannot be undone.",
+                        turbo_frame: "_top" },
+                class: "w-full bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded"
+
+  .grid.grid-cols-2.sm:grid-cols-3.lg:grid-cols-6.gap-4.mt-8
+    .text-gray-700
+      %span.font-semibold HP:
+      = @pet.hp
+    .text-gray-700
+      %span.font-semibold ATK:
+      = @pet.atk
+    .text-gray-700
+      %span.font-semibold DEF:
+      = @pet.def
+    .text-gray-700
+      %span.font-semibold SP ATK:
+      = @pet.sp_atk
+    .text-gray-700
+      %span.font-semibold SP DEF:
+      = @pet.sp_def
+    .text-gray-700
+      %span.font-semibold Speed:
+      = @pet.speed
+
+  .section.mb-6
+    %h2.text-xl.font-semibold.mb-2 Abilities
+    - if @user_pet.learned_abilities.any?
+      %ul.list-disc.list-inside.mt-2
+        - @user_pet.learned_abilities.each do |ability|
+          %li
+            %strong= ability.name
+            - if ability.description.present?
+              = " – #{ability.description}"
+    - else
+      %p.text-gray-500.mt-2 No abilities learned yet.

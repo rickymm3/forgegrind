@@ -1,6 +1,6 @@
 = turbo_frame_tag "equip_slots" do
   .container.mx-auto.mt-6.flex.justify-center.space-x-4
-    - sorted_equipped = current_user.user_pets.equipped.sort_by { |up| -up.pet.power }
+    - sorted_equipped = current_user.user_pets.active.equipped.sort_by { |up| -up.pet.power }
     - 3.times do |slot_index|
       - equipped_pet = sorted_equipped[slot_index]
       .w-16.h-16.border-2.rounded.flex.items-center.justify-center.cursor-pointer.bg-gray-100.hover:bg-gray-200{

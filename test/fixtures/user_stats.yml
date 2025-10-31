@@ -2,12 +2,24 @@
 
 one:
   user: one
-  energy: 1
-  trophies: 1
-  rebirths: 1
+  energy: 10
+  trophies: 5
+  player_level: 1
+  hp_level: 1
+  attack_level: 1
+  defense_level: 1
+  luck_level: 1
+  attunement_level: 1
+  glow_essence: 0
 
 two:
   user: two
-  energy: 1
-  trophies: 1
-  rebirths: 1
+  energy: 8
+  trophies: 3
+  player_level: 1
+  hp_level: 1
+  attack_level: 1
+  defense_level: 1
+  luck_level: 1
+  attunement_level: 1
+  glow_essence: 0

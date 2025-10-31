@@ -1,0 +1,38 @@
+-# Renders a Turbo Frame wrapped scout/rescout button with optional cooldown text.
+- button_id     ||= "scout_button"
+- label         ||= "Scout"
+- button_class  ||= ""
+- form_class    ||= nil
+- disabled      ||= false
+- wait_human    ||= nil
+- info_class    ||= "text-xs text-slate-500 mt-1"
+- show_wait_text = local_assigns.fetch(:show_wait_text, true)
+- unlock_at     ||= nil
+- frame_class   ||= nil
+- wrapper_class ||= nil
+
+= turbo_frame_tag button_id, class: frame_class do
+  - wrapper_attrs = {}
+  - button_data   = {}
+  - message_data  = {}
+
+  - if disabled && unlock_at.present?
+    - wrapper_attrs[:data] = { controller: "rescout-button", "rescout-button-unlock-at-value": unlock_at.to_i }
+    - button_data["rescout-button-target"]  = "button"
+    - message_data["rescout-button-target"] = "message"
+
+  - wrapper_attrs[:class] = wrapper_class if wrapper_class.present?
+
+  %div{ wrapper_attrs }
+    = button_to label,
+                scout_explorations_path,
+                method: :post,
+                disabled: disabled,
+                class: button_class,
+                data: button_data,
+                form: (form_class.present? ? { class: form_class } : {})
+
+    - if show_wait_text && disabled && wait_human.present?
+      %p{ class: info_class, data: message_data }
+        Next scout available in
+        %span= wait_human

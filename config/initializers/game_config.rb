@@ -21,10 +21,27 @@ module GameConfig
     "forest"  => 20,
   }.freeze
 
+  WORLD_DIAMONDS = {
+    "starter_zone" => 50,
+    "forest"       => 75,
+  }.freeze
+
   # Shortcut for lookup, e.g.
   #   GameConfig.exp_for("forest")  #=> 20
   def self.exp_for(key)
+    reward = ExplorationRewards.for(key)
+    exp = reward.exp
+    return exp if exp.positive?
+
     WORLD_EXP[key.to_s] || 0
+  end
+
+  def self.diamonds_for(key)
+    reward = ExplorationRewards.for(key)
+    diamonds = reward.diamonds
+    return diamonds if diamonds.positive?
+
+    WORLD_DIAMONDS[key.to_s] || 0
   end
 
   # Trophy‐cost to gain the next player level (level → cost)

@@ -1,6 +1,24 @@
--# app/views/user_explorations/ready.turbo_stream.haml
+- generated = @user_exploration.generated_exploration
+- progress = generated&.requirements_progress_for(@user_exploration.user_pets) || []
+- detail_dom_id = generated ? dom_id(generated, :detail) : dom_id(@user_exploration.world, :detail)
+- list_dom_id = generated ? dom_id(generated, :card) : nil
 
-- exploration_frame_id = "exploration_#{@user_exploration.world_id}"
+= turbo_stream.update detail_dom_id do
+  = render "explorations/zone_card",
+           generated_exploration: generated || GeneratedExploration.new(world: @user_exploration.world, name: @user_exploration.world.name, duration_seconds: @user_exploration.duration_seconds, requirements: []),
+           user_exploration: @user_exploration,
+           state: :ready,
+           requirement_progress: progress,
+           requirement_groups: progress.group_by { |entry| entry[:source] || 'base' },
+           available_pets: [],
+           selected_pet_ids: [],
+           filters: {}
 
-= turbo_stream.update exploration_frame_id do
-  = render "user_explorations/ready_to_complete", user_exploration: @user_exploration
+- if list_dom_id
+  = turbo_stream.update list_dom_id do
+    = render "explorations/world_list_item",
+             generated_exploration: generated,
+             requirement_progress: progress,
+             requirement_groups: progress.group_by { |entry| entry[:source] || 'base' },
+             active: true,
+             user_exploration: @user_exploration

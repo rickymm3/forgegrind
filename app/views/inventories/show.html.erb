@@ -1,0 +1,59 @@
+<div class="container mx-auto mt-12 px-4"
+     data-controller="inventory"
+     data-inventory-active-tab-value="all">
+  <div class="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+    <div class="space-y-2">
+      <h1 class="text-3xl font-bold text-slate-50 uppercase tracking-tight">Inventory</h1>
+      <p class="text-sm text-slate-300 max-w-2xl">
+        Manage your containers and supplies. Open pet care boxes to reveal rewards, or inspect consumables before putting them to use.
+      </p>
+    </div>
+    <div class="flex items-center gap-2 bg-slate-900/70 border border-slate-700/60 rounded-xl px-4 py-2 text-xs text-slate-200 uppercase">
+      <span>Total Items</span>
+      <span class="inline-flex items-center gap-1 rounded-full bg-indigo-500/70 px-2 py-0.5 text-white font-semibold">
+        <%= @items.sum(&:quantity) %>
+      </span>
+      <span>Total Containers</span>
+      <span class="inline-flex items-center gap-1 rounded-full bg-emerald-500/60 px-2 py-0.5 text-white font-semibold">
+        <%= @containers.sum(&:count) %>
+      </span>
+    </div>
+  </div>
+
+  <div class="mt-6 flex flex-wrap gap-2"
+       data-inventory-target="tabs">
+    <% [["All", "all"], ["Containers", "containers"], ["Items", "items"]].each do |label, tab| %>
+      <button type="button"
+              class="tab-button rounded-full px-4 py-2 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-slate-800/60 text-slate-300"
+              data-tab="<%= tab %>"
+              data-action="inventory#switchTab">
+        <%= label %>
+      </button>
+    <% end %>
+  </div>
+
+  <div class="mt-6 grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_320px] gap-6 items-start">
+    <div data-inventory-target="sections" class="space-y-8">
+      <div data-section="containers" class="space-y-4">
+        <%= render "inventories/containers_grid", containers: @containers %>
+      </div>
+      <div data-section="items" class="space-y-4">
+        <%= render "inventories/items_grid", items: @items %>
+      </div>
+    </div>
+
+    <aside class="rounded-2xl border border-slate-700/60 bg-slate-900/60 p-5 text-slate-200 sticky top-6 max-h-[calc(100vh-5rem)] overflow-y-auto"
+           data-inventory-target="detail">
+      <div class="space-y-3">
+        <p class="text-sm text-indigo-200">Select a container or item to see its details.</p>
+        <p class="text-xs text-slate-400 leading-relaxed">
+          Containers hold pet care supplies. Open them from the grid to reveal items.
+          Consumables and equipment appear here with descriptions and actions when selected.
+        </p>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<div id="container-open-errors" class="mt-4"></div>
+<turbo-frame id="container-reveal"></turbo-frame>

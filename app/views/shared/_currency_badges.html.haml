@@ -1,0 +1,12 @@
+-# app/views/shared/_currency_badges.html.haml
+- currencies = local_assigns.fetch(:currencies, [])
+
+= turbo_frame_tag "currency_balances" do
+  - if currencies.any?
+    .flex.items-center.space-x-3
+      - currencies.each do |currency|
+        %div.bg-slate-100.border.border-slate-200.rounded-full.py-1.px-3.text-sm.font-medium.flex.items-center.space-x-2
+          %span.text-slate-500= currency.name
+          %span.text-slate-900= number_with_delimiter(currency.amount)
+  - else
+    %div.hidden

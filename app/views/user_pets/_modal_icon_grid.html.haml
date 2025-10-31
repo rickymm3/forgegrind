@@ -4,8 +4,8 @@
   = f.submit "🗑", class: "w-12 h-12 flex items-center justify-center border rounded bg-red-100 hover:bg-red-200 text-xs font-semibold"
 
 
-/ Loop through all user pets
-- current_user.user_pets.includes(:pet).each do |user_pet|
+/ Loop through active user pets
+- current_user.user_pets.active.includes(:pet).each do |user_pet|
   = form_with url: preview_user_pet_path(user_pet), method: :post, data: { turbo_frame: "equip_detail" } do |f|
     = hidden_field_tag :slot, "", data: { equip_modal_target: "slotField" }
     = f.submit user_pet.pet.name.first(3).upcase, class: "w-12 h-12 flex items-center justify-center border rounded bg-gray-100 hover:bg-gray-200 text-xs font-semibold truncate"

@@ -1,0 +1,177 @@
+# config/pet_default_abilities.yml
+
+sprig:
+  standard:
+    - tackle
+    - growl
+    - venom_dart
+  rare:
+    - whirlwind
+
+twigster:
+  standard:
+    - tackle
+    - growl
+    - venom_dart
+  rare:
+    - whirlwind
+
+barkling:
+  standard:
+    - tackle
+    - ember_burst
+    - growl
+  rare:
+    - whirlwind
+
+verdant:
+  standard:
+    - tackle
+    - growl
+  rare:
+    - whirlwind
+
+cat:
+  standard:
+    - tackle
+    - ember_burst
+    - growl
+  rare:
+    - whirlwind
+
+dog:
+  standard:
+    - tackle
+    - ember_burst
+    - growl
+  rare:
+    - whirlwind
+
+mouse:
+  standard:
+    - tackle
+    - growl
+  rare:
+    - whirlwind
+
+fish:
+  standard:
+    - tackle
+    - growl
+    - frost_shard
+  rare:
+    - whirlwind
+
+deer:
+  standard:
+    - tackle
+    - growl
+  rare:
+    - whirlwind
+
+owl:
+  standard:
+    - tackle
+    - growl
+    - tempest_slash
+  rare:
+    - whirlwind
+
+bear:
+  standard:
+    - tackle
+    - ember_burst
+    - growl
+  rare:
+    - whirlwind
+
+dryad:
+  standard:
+    - tackle
+    - growl
+  rare:
+    - whirlwind
+
+lupin:
+  standard:
+    - tackle
+    - growl
+  rare:
+    - whirlwind
+
+fenra:
+  standard:
+    - tackle
+    - growl
+    - frost_shard
+  rare:
+    - whirlwind
+
+blazewulf:
+  standard:
+    - tackle
+    - ember_burst
+    - growl
+  rare:
+    - whirlwind
+
+duskhound:
+  standard:
+    - tackle
+    - growl
+    - shadow_bind
+  rare:
+    - whirlwind
+
+ironfang:
+  standard:
+    - tackle
+    - growl
+  rare:
+    - whirlwind
+
+galeclaw:
+  standard:
+    - tackle
+    - growl
+    - tempest_slash
+  rare:
+    - whirlwind
+
+fenshadow:
+  standard:
+    - tackle
+    - growl
+    - shadow_bind
+  rare:
+    - whirlwind
+
+pyrolune:
+  standard:
+    - tackle
+    - ember_burst
+    - growl
+  rare:
+    - whirlwind
+
+tempestral:
+  standard:
+    - tackle
+    - growl
+    - tempest_slash
+  rare:
+    - whirlwind
+
+steelbane:
+  standard:
+    - tackle
+    - growl
+  rare:
+    - whirlwind
+
+aetherfang:
+  standard:
+    - tackle
+    - growl
+  rare:
+    - whirlwind

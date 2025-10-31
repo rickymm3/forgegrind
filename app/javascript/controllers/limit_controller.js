@@ -2,7 +2,7 @@ import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
   static values = { max: Number }
-  static targets = ["checkbox"]
+  static targets = ["checkbox", "indicator"]
 
   connect() {
     this.update()
@@ -21,6 +21,16 @@ export default class extends Controller {
       if (!cb.checked) {
         cb.disabled = disableOthers
       }
+    })
+
+    this.updateIndicators(checked)
+  }
+
+  updateIndicators(checked) {
+    if (!this.hasIndicatorTarget) return
+
+    this.indicatorTargets.forEach(target => {
+      target.textContent = `${checked}/${this.maxValue} selected`
     })
   }
 }

@@ -2,23 +2,18 @@ bucket_starter_zone:
   "Starter Item":
     weight: 0
     guaranteed: true
-
   "Frisbee":
     weight: 30
     guaranteed: false
-
   "Whistle":
     weight: 15
     guaranteed: false
-
   "Blanket":
     weight: 20
     guaranteed: false
-
   "Treat":
     weight: 20
     guaranteed: false
-
   "Map":
     weight: 15
     guaranteed: false
@@ -46,4 +41,70 @@ bucket_forest:
 
   "Map":
     weight: 15
+    guaranteed: false
+
+blazing_zone_drops:
+  "Fire Stone":
+    weight: 25
+    guaranteed: false
+  "Treat":
+    weight: 20
+    guaranteed: false
+  "Whistle":
+    weight: 10
+    guaranteed: false
+
+frozen_zone_drops:
+  "Ice Stone":
+    weight: 25
+    guaranteed: false
+  "Blanket":
+    weight: 20
+    guaranteed: false
+  "Soap":
+    weight: 10
+    guaranteed: false
+
+toxic_zone_drops:
+  "Treat":
+    weight: 20
+    guaranteed: false
+  "Map":
+    weight: 15
+    guaranteed: false
+  "Shadow Stone":
+    weight: 25
+    guaranteed: false
+
+verdant_zone_drops:
+  "Grass Stone":
+    weight: 30
+    guaranteed: false
+  "Treat":
+    weight: 20
+    guaranteed: false
+  "Map":
+    weight: 10
+    guaranteed: false
+
+storm_zone_drops:
+  "Electric Stone":
+    weight: 20
+    guaranteed: false
+  "Wind Stone":
+    weight: 20
+    guaranteed: false
+  "Normal Stone":
+    weight: 10
+    guaranteed: false
+
+celestial_zone_drops:
+  "Celestial Stone":
+    weight: 20
+    guaranteed: false
+  "Normal Stone":
+    weight: 15
+    guaranteed: false
+  "Leveling Stone":
+    weight: 10
     guaranteed: false

@@ -1,18 +1,27 @@
+# app/models/ability.rb
 class Ability < ApplicationRecord
+  # Which pet types and specific pets may learn this ability
   has_many :ability_permissions, dependent: :destroy
-  has_many :permitted_pet_types, through: :ability_permissions,
-           source: :permitted, source_type: 'PetType'
-  has_many :permitted_pets,      through: :ability_permissions,
-           source: :permitted, source_type: 'Pet'
+  has_many :permitted_pet_types,
+           through: :ability_permissions,
+           source: :permitted,
+           source_type: 'PetType'
+  has_many :permitted_pets,
+           through: :ability_permissions,
+           source: :permitted,
+           source_type: 'Pet'
+
+  # Which UserPets have learned this ability
   has_many :user_pet_abilities, dependent: :destroy
-  has_many :user_pets, through: :user_pet_abilities
+  has_many :user_pets,
+           through: :user_pet_abilities
 
-  validates :damage, presence: true, numericality: { greater_than_or_equal_to: 0 }
-  validates :element_type, presence: true
-
-  # back-reference for default assignment
-  has_many :pets_as_default, class_name: 'Pet', foreign_key: 'default_ability_id'
-
+  # Any additional effects (buffs/debuffs, etc.)
   has_many :ability_effects, dependent: :destroy
-  has_many :effects, through: :ability_effects
+  has_many :effects,
+           through: :ability_effects
+
+  # Core metadata stored in the DB
+  validates :name, :reference, :description, :element_type, presence: true
+  validates :reference, uniqueness: true
 end

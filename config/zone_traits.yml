@@ -1,0 +1,29 @@
+traits:
+  blazing:
+    label: "Blazing"
+    required_abilities:
+      - fire
+    drop_table_override: "blazing_zone_drops"
+  frozen:
+    label: "Frozen"
+    required_abilities:
+      - ice
+    drop_table_override: "frozen_zone_drops"
+  toxic:
+    label: "Toxic"
+    required_abilities:
+      - resilience
+      - poison
+    drop_table_override: "toxic_zone_drops"
+  verdant:
+    label: "Verdant"
+    required_abilities:
+      - foraging
+      - grass
+    drop_table_override: "verdant_zone_drops"
+  stormcharged:
+    label: "Stormcharged"
+    required_abilities:
+      - electric
+      - wind
+    drop_table_override: "storm_zone_drops"

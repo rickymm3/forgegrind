@@ -4,3 +4,34 @@
   %li= link_to "Manage Eggs", admin_eggs_path
   %li= link_to "Manage Pets", admin_pets_path
   %li= link_to "Manage Abilities", admin_abilities_path 
+  %li= link_to "Manage User Pets", admin_user_pets_path 
+
+.admin-section
+  %h2.mt-6 Grant Items to User
+  %p.text-sm.text-slate-600
+    Select a player and enter quantities to add items directly to their inventory.
+
+  = form_with url: grant_items_admin_dashboard_index_path, method: :post, local: true do |f|
+    .field-group
+      = f.label :user_id, "User", class: "block font-semibold mb-1"
+      = f.collection_select :user_id, @users, :id, :email, { prompt: "Select a user" }, class: "border rounded px-2 py-1 w-full"
+
+    %table.table-auto.w-full.mt-4.text-left
+      %thead
+        %tr
+          %th.py-2 Item
+          %th.py-2 Current Qty
+          %th.py-2 Quantity To Add
+      %tbody
+        - @items.each do |item|
+          - existing = @selected_user_items&.dig(item.id)
+          %tr.border-t
+            %td.py-2
+              %strong= item.name
+              %div.text-xs.text-slate-500= item.item_type
+            %td.py-2= existing ? existing.quantity : "-"
+            %td.py-2
+              = number_field_tag "items[#{item.id}]", 0, min: 0, step: 1, class: "border rounded px-2 py-1 w-24"
+
+    .mt-4
+      = f.submit "Grant Items", class: "bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700"

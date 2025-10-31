@@ -3,6 +3,7 @@ class UserEggsController < ApplicationController
 
   def create
     egg = Egg.find(params[:egg_id])
+    @egg = egg
   
     unless current_user.can_afford_egg?(egg)
       respond_to do |format|
@@ -13,6 +14,7 @@ class UserEggsController < ApplicationController
     end
   
     UserEgg.transaction do
+      current_user.spend_currency_for_egg!(egg)
       current_user.spend_items_for_egg!(egg)
       current_user.user_eggs.create!(egg: egg, hatched: false)
     end

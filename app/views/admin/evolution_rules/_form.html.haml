@@ -1,0 +1,64 @@
+-# app/views/admin/evolution_rules/_form.html.haml
+= form_with model: [:admin, @rule], local: true do |f|
+  - if @rule.errors.any?
+    #error_explanation
+      %h2= "#{pluralize(@rule.errors.count, 'error')} prohibited this rule from being saved:"
+      %ul
+        - @rule.errors.full_messages.each do |msg|
+          %li= msg
+
+  .grid.grid-cols-1.md:grid-cols-2.gap-4
+    .field
+      = f.label :parent_pet_id, 'Parent Pet'
+      = f.collection_select :parent_pet_id, Pet.all, :id, :name, { include_blank: true }, class: 'border rounded p-2 w-full'
+
+    .field
+      = f.label :child_pet_id, 'Child Pet'
+      = f.collection_select :child_pet_id, Pet.all, :id, :name, { include_blank: true }, class: 'border rounded p-2 w-full'
+
+    .field
+      = f.label :required_item_id, 'Required Item (optional)'
+      = f.collection_select :required_item_id, Item.all, :id, :name, { include_blank: true }, class: 'border rounded p-2 w-full'
+
+    .field
+      = f.label :priority
+      = f.number_field :priority, class: 'border rounded p-2 w-full'
+
+    .field
+      = f.label :one_shot
+      = f.check_box :one_shot
+
+    .field
+      = f.label :seasonal_tag
+      = f.text_field :seasonal_tag, class: 'border rounded p-2 w-full'
+
+  %hr.my-4
+  %h3.font-semibold.mb-2 Window
+  .grid.grid-cols-1.md:grid-cols-3.gap-4
+    .field
+      = f.label :trigger_level
+      = f.number_field :trigger_level, class: 'border rounded p-2 w-full'
+    .field
+      = f.label :window_min_level
+      = f.number_field :window_min_level, class: 'border rounded p-2 w-full'
+    .field
+      = f.label :window_max_level
+      = f.number_field :window_max_level, class: 'border rounded p-2 w-full'
+    .field
+      = f.label :window_event, 'Event key (optional)'
+      = f.text_field :window_event, class: 'border rounded p-2 w-full'
+
+  %hr.my-4
+  %h3.font-semibold.mb-2 Guards (JSON)
+  .field
+    = f.label :guard_json, 'Guard JSON'
+    - json_value = (@rule.guard_json.presence || {}).to_json
+    = text_area_tag 'evolution_rule[guard_json]', json_value, rows: 8, class: 'border rounded p-2 w-full font-mono'
+
+  .field
+    = f.label :notes
+    = f.text_area :notes, rows: 4, class: 'border rounded p-2 w-full'
+
+  .actions.mt-4
+    = f.submit 'Save Rule', class: 'px-4 py-2 bg-blue-600 text-white rounded'
+

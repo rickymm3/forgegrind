@@ -1,7 +1,7 @@
 class BattleSession < ApplicationRecord
   belongs_to :user
   belongs_to :world
-  has_and_belongs_to_many :user_pets
+  has_and_belongs_to_many :user_pets, -> { active }
 
   # Returns a Time when that ability can next be used, or nil if never used
   def next_available_at_for(ability)

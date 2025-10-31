@@ -2,7 +2,7 @@ class AdoptController < ApplicationController
   before_action :authenticate_user!
 
   def index
-    @eggs = Egg.includes(egg_item_costs: :item).all
+    @eggs = Egg.enabled.includes(:currency, egg_item_costs: :item)
 
     # Only fetch items used in Egg costs for this page
     relevant_item_ids = EggItemCost.distinct.pluck(:item_id)

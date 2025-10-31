@@ -1,0 +1,35 @@
+<% generated_explorations ||= [] %>
+<% requirement_map ||= {} %>
+<% selected_generated ||= nil %>
+<% active_explorations ||= [] %>
+
+<% max_slots = ExplorationGenerator::DEFAULT_COUNT %>
+<% total_slots = 0 %>
+
+<div class="space-y-2">
+  <% active_explorations.each do |user_exploration| %>
+    <% break if total_slots >= max_slots %>
+    <% generated = user_exploration.generated_exploration %>
+    <% next unless generated %>
+    <% progress = generated.requirements_progress_for(user_exploration.user_pets) %>
+    <%= render "explorations/world_list_item",
+               generated_exploration: generated,
+               requirement_progress: progress,
+               requirement_groups: progress.group_by { |req| req[:source] || 'base' },
+               active: (selected_generated&.id == generated.id),
+               user_exploration: user_exploration %>
+    <% total_slots += 1 %>
+  <% end %>
+
+  <% generated_explorations.each do |generated| %>
+    <% break if total_slots >= max_slots %>
+    <% entry = requirement_map[generated.id] || { progress: [], grouped: {} } %>
+    <%= render "explorations/world_list_item",
+               generated_exploration: generated,
+               requirement_progress: entry[:progress],
+               requirement_groups: entry[:grouped],
+               active: (selected_generated&.id == generated.id),
+               user_exploration: nil %>
+    <% total_slots += 1 %>
+  <% end %>
+</div>

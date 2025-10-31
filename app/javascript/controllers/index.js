@@ -13,8 +13,8 @@ application.register("countdown", CountdownController)
 import EnergyController from "./energy_controller"
 application.register("energy", EnergyController)
 
-import HatchController from "./hatch_controller"
-application.register("hatch", HatchController)
+import PetRevealController from "./pet_reveal_controller"
+application.register("pet-reveal", PetRevealController)
 
 import HelloController from "./hello_controller"
 application.register("hello", HelloController)
@@ -27,3 +27,33 @@ application.register("modal", ModalController)
 
 import SleepController from "./sleep_controller"
 application.register("sleep", SleepController)
+
+import PetDetailController from "./pet_detail_controller"
+application.register("pet-detail", PetDetailController)
+
+import PetListController from "./pet_list_controller"
+application.register("pet-list", PetListController)
+
+import GlowPreviewController from "./glow_preview_controller"
+application.register("glow-preview", GlowPreviewController)
+
+import ExplorationListController from "./exploration_list_controller"
+application.register("exploration-list", ExplorationListController)
+
+import LoadingButtonController from "./loading_button_controller"
+application.register("loading-button", LoadingButtonController)
+
+import ToastController from "./toast_controller"
+application.register("toast", ToastController)
+
+import ExplorationPreviewController from "./exploration_preview_controller"
+application.register("exploration-preview", ExplorationPreviewController)
+
+import RescoutButtonController from "./rescout_button_controller"
+application.register("rescout-button", RescoutButtonController)
+
+import InventoryController from "./inventory_controller"
+application.register("inventory", InventoryController)
+
+import OpenContainerController from "./open_container_controller"
+application.register("open-container", OpenContainerController)

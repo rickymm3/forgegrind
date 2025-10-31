@@ -6,7 +6,7 @@ Rails.application.routes.draw do
   get "home/index"
   get "profile", to: "users#show", as: :user_profile  # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
-  resources :user_pets, only: [:index, :show] do
+  resources :user_pets, only: [:index, :show, :destroy] do
     member do
       post :preview
       post :equip
@@ -20,18 +20,6 @@ Rails.application.routes.draw do
     end
   end
 
-  resources :battle_sessions, only: [] do
-    # POST /battle_sessions/:id/attack    → BattleSessionsController#attack
-    # POST /battle_sessions/:id/complete  → BattleSessionsController#complete
-    member do
-      post :wave_complete
-      post :attack
-      post :sync
-      post :complete
-    end
-  end
-
-  # Battle gauntlet per world
   # Per-world battle:
   resources :worlds, only: [:index] do
     resource :battle_session, only: [:new, :create], controller: 'battle_sessions'
@@ -43,28 +31,46 @@ Rails.application.routes.draw do
     post :upgrade, on: :member
   end
 
-  get "/items", to: "items#index", as: :items
+  get "/items", to: redirect("/inventory")
+  resource :inventory, only: [:show]
+
+  namespace :containers do
+    post :open, to: "open#create"
+  end
 
 
   namespace :admin do
     root to: "dashboard#index"
+    resources :dashboard, only: [:index] do
+      collection do
+        post :grant_items
+      end
+    end
   
     resources :eggs do
       post :assign_pets, on: :member
     end
     resources :abilities
     resources :pets
+    resources :user_pets, only: [:index, :show, :edit, :update]
+    resources :evolution_rules do
+      collection do
+        get :dry_run
+      end
+    end
   end
   
 
   resources :explorations, only: [:index] do
+    collection do
+      post :scout
+    end
     member do
       post :start
       post :preview
-      post :complete
     end
-  end  
-  
+  end
+
   resources :pets, only: [:index, :show]
 
   resources :user_explorations, only: [] do

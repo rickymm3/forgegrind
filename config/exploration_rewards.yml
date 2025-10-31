@@ -1,0 +1,44 @@
+starter_zone:
+  exp: 10
+  diamonds: 50
+  items:
+    starter_item:
+      quantity: 1
+      chance: 1.0
+    leveling_stone:
+      quantity: 1
+      chance: 0.2
+    normal_stone:
+      quantity: 1
+      chance: 0.05
+    fire_stone:
+      quantity: 1
+      chance: 0.05
+    water_stone:
+      quantity: 1
+      chance: 0.05
+  flags: {}
+forest:
+  exp: 20
+  diamonds: 75
+  items:
+    wooden_stick:
+      quantity: 1
+      chance: 1.0
+    leveling_stone:
+      quantity: 1
+      chance: 0.2
+    grass_stone:
+      quantity: 1
+      chance: 0.05
+    wind_stone:
+      quantity: 1
+      chance: 0.05
+    spirit_stone:
+      quantity: 1
+      chance: 0.05
+  flags:
+    forest_explorer:
+      type: counter
+      counter_key: forest_explorer_runs
+      threshold: 5

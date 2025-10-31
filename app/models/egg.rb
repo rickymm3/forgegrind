@@ -3,6 +3,8 @@ class Egg < ApplicationRecord
   has_many :pets, dependent: :destroy
   has_many :egg_item_costs, dependent: :destroy
   has_many :items, through: :egg_item_costs
+
+  scope :enabled, -> { where(enabled: true) }
   
   validates :name, :cost_amount, presence: true
   

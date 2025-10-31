@@ -1,0 +1,79 @@
+-# locals: egg, can_afford
+-# locals: egg, can_afford, highlight
+
+- highlight ||= false
+
+.egg-card.border.border-slate-200.rounded-2xl.bg-white.shadow-lg.overflow-hidden.flex.flex-col{ class: highlight ? "ring-4 ring-emerald-400 shadow-emerald-200/80" : nil }
+  - image_path = egg_image_path(egg)
+  - limited = egg.name.to_s.casecmp("Nature Egg").zero?
+  .relative
+    - if image_path
+      %img.w-full.h-48.object-cover{ src: image_path, alt: egg.name }
+    - else
+      .w-full.h-48.bg-slate-200.flex.items-center.justify-center.text-slate-500.text-sm No image
+    - if limited
+      %span{class: "absolute top-3 left-3 inline-flex items-center gap-1 bg-amber-500/90 text-white text-xs font-semibold uppercase rounded-full py-1 px-3 shadow"}
+        %span ★
+        Limited
+
+  .flex-1.p-5.flex.flex-col.gap-4
+    .flex.items-start.justify-between.gap-3
+      %div
+        %h3.text-xl.font-semibold.text-slate-900= egg.name
+        %p.text-xs.uppercase.text-slate-400 Tracking Code:
+        %p.text-sm.text-slate-600.font-medium= egg.currency ? "#{egg.cost_amount} #{egg.currency.name}" : "Requires items"
+      %div.text-right.text-xs.text-slate-400
+        %p Hatch Time
+        %p.font-semibold.text-slate-600= distance_of_time_in_words(Time.current, egg.hatch_duration.seconds.from_now)
+
+    - if highlight
+      .bg-emerald-50.border.border-emerald-200.rounded-xl.px-4.py-3.flex.items-center.gap-3.text-emerald-700.text-sm.shadow-inner
+        %span.text-base.leading-none ✓
+        %span= "#{egg.name} added to your nursery!"
+
+    %details.bg-slate-50.rounded-xl.p-4.transition
+      %summary.cursor-pointer.text-sm.font-semibold.text-slate-700.flex.items-center.justify-between
+        %span Requirements & Rewards
+        %span.text-xs.text-slate-500 (click to expand)
+      .mt-3.space-y-2.text-sm.text-slate-600
+        - if egg.currency && egg.cost_amount.to_i.positive?
+          %p
+            %strong Cost:
+            = " #{egg.cost_amount} #{egg.currency.name}"
+        - if egg.egg_item_costs.any?
+          %div
+            %strong Required Items
+            %ul.mt-1.space-y-1
+              - egg.egg_item_costs.each do |cost|
+                %li.flex.items-center.gap-2
+                  - icon = care_item_image_path(cost.item.item_type)
+                  - if icon
+                    %img.h-6.w-6.object-contain{ src: icon, alt: cost.item.name }
+                  %span= "#{cost.item.name}: #{cost.quantity}"
+        - else
+          %p No items required.
+
+    - if highlight
+      .bg-emerald-50.border.border-emerald-200.rounded-xl.px-4.py-3.flex.items-center.gap-3.text-emerald-700.text-sm.shadow-inner
+        %span.text-base.leading-none ✓
+        %span= "#{egg.name} added to your nursery!"
+      = link_to "OK",
+                adopt_path,
+                data: { turbo_frame: "_top" },
+                class: "w-full inline-flex justify-center items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+    - else
+      = form_with url: user_eggs_path,
+                  method: :post,
+                  data: { controller: "loading-button", action: "turbo:submit-start->loading-button#start turbo:submit-end->loading-button#stop" },
+                  class: "mt-auto" do |f|
+        = hidden_field_tag :egg_id, egg.id
+
+        - button_text     = can_afford ? "Adopt" : "Unavailable"
+        - button_disabled = !can_afford
+        - button_classes = can_afford ? "w-full py-3 rounded-xl text-sm font-semibold transition flex items-center justify-center gap-2 bg-indigo-600 text-white hover:bg-indigo-700" : "w-full py-3 rounded-xl text-sm font-semibold transition bg-slate-200 text-slate-400 cursor-not-allowed"
+
+        = f.button type: :submit,
+                  class: button_classes,
+                  disabled: button_disabled,
+                  data: { "loading-button-target": "button" } do
+          %span= button_text

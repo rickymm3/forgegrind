@@ -4,8 +4,10 @@ one:
   name: MyString
   color: MyString
   weight: 1
+  glow_essence_multiplier: 5
 
 two:
   name: MyString
   color: MyString
   weight: 1
+  glow_essence_multiplier: 10

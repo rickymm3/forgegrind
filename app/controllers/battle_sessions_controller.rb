@@ -7,7 +7,7 @@ class BattleSessionsController < ApplicationController
 
   def new
     @stat           = current_user.user_stat
-    @available_pets = current_user.user_pets
+    @available_pets = current_user.user_pets.active
     @battle_session = BattleSession.new
   end
 
@@ -26,7 +26,7 @@ class BattleSessionsController < ApplicationController
       status:              "in_progress",
       last_sync_at:        Time.current
     )
-    @battle_session.user_pets << current_user.user_pets.where(id: pet_ids)
+    @battle_session.user_pets << current_user.user_pets.active.where(id: pet_ids)
 
     respond_to do |format|
       format.html { redirect_to world_battle_session_path(@world) }

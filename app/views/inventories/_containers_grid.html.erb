@@ -1,0 +1,72 @@
+<div id="inventory-containers-grid" class="space-y-4">
+  <div class="flex items-center justify-between">
+    <div>
+      <h2 class="text-lg font-semibold text-slate-100">Containers</h2>
+      <p class="text-xs text-slate-400">Pet care boxes and other chests you can open for rewards.</p>
+    </div>
+    <span class="text-xs text-slate-400 uppercase">Total: <%= containers.sum(&:count) %></span>
+  </div>
+
+  <% if containers.blank? %>
+    <div class="rounded-2xl border border-slate-700/60 bg-slate-900/50 px-6 py-8 text-center text-sm text-slate-400">
+      You don't have any containers yet. Complete explorations to earn Pet Care Boxes.
+    </div>
+  <% else %>
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+      <% containers.each do |container| %>
+        <% chest = container.chest_type %>
+        <% next unless chest %>
+        <% count = container.count.to_i %>
+        <div class="group flex flex-col justify-between rounded-2xl border border-slate-700/60 bg-slate-900/60 p-4 transition hover:border-indigo-400/60 hover:shadow-lg"
+             data-action="click->inventory#selectEntry"
+             data-entry-type="container"
+             data-name="<%= chest.name %>"
+             data-description="A container filled with pet care supplies. Open it to reveal rewards."
+             data-icon="<%= chest.icon %>"
+             data-count="<%= count %>"
+             data-key="<%= chest.key %>">
+          <div class="flex items-start gap-3">
+            <img alt="<%= chest.name %>" src="<%= chest.icon %>" class="h-12 w-12 rounded-xl bg-slate-800/80 object-contain p-2">
+            <div class="space-y-1">
+              <p class="text-sm font-semibold text-slate-100"><%= chest.name %></p>
+              <p class="text-xs text-slate-400 uppercase tracking-wide">Min Level <%= chest.min_level %></p>
+              <p class="text-xs text-slate-500">
+                <span class="inline-flex items-center gap-1 rounded-full bg-indigo-500/20 px-2 py-0.5 text-[11px] text-indigo-200">
+                  Owned: <%= count %>
+                </span>
+              </p>
+            </div>
+          </div>
+
+          <div class="mt-4 flex flex-wrap gap-2"
+               data-action="click->inventory#stopPropagation">
+            <%= render "inventories/container_open_form",
+                       chest: chest,
+                       quantity: 1,
+                       label: "Open 1",
+                       css: "inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-400",
+                       disabled: count.zero? %>
+
+            <% if chest.open_batch_allowed? && count >= 5 %>
+              <%= render "inventories/container_open_form",
+                         chest: chest,
+                         quantity: 5,
+                         label: "Open 5",
+                         css: "inline-flex items-center gap-2 rounded-lg bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-200 transition hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-400",
+                         disabled: count < 5 %>
+            <% end %>
+
+            <% if chest.open_batch_allowed? && count > 1 %>
+              <%= render "inventories/container_open_form",
+                         chest: chest,
+                         quantity: count,
+                         label: "Open All",
+                         css: "inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-400",
+                         disabled: count.zero? %>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+</div>

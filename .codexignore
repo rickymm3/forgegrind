@@ -1,0 +1,31 @@
+# Big folders
+node_modules/
+tmp/
+log/
+storage/
+public/packs/
+public/assets/
+coverage/
+.yarn/
+.bundle/
+vendor/
+db/dumps/
+
+# VCS & editor stuff
+.git/
+.github/
+.gitlab/
+.vscode/
+.idea/
+
+# Generated & caches
+*.log
+*.cache
+*.tmp
+*.min.*
+*.map
+
+# Frontend build outputs
+app/assets/builds/
+app/javascript/build/
+dist/

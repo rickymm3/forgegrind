@@ -12,3 +12,11 @@
   %p.text-sm.text-gray-600.mt-1= "Rarity: #{user_pet.rarity.name}"
   %p.text-sm.text-gray-600.mt-1= "Power: #{user_pet.power}"
   %p.text-sm.text-gray-600.mt-1= "From Egg: #{user_pet.egg.name}"
+  %p.text-sm.text-gray-600.mt-1= "Level: #{user_pet.level}"
+  %p.text-sm.text-indigo-600.mt-3.font-medium= "Release Reward: #{user_pet.glow_essence_reward} Glow Essence"
+
+  = button_to "Release #{user_pet.name}",
+              user_pet_path(user_pet),
+              method: :delete,
+              data: { turbo_confirm: "Release #{user_pet.name}? You will receive #{user_pet.glow_essence_reward} Glow Essence." },
+              class: "mt-4 inline-block w-full bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded"

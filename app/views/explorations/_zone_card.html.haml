@@ -1,0 +1,153 @@
+- generated = generated_exploration
+- user_exploration ||= nil
+- state = (local_assigns[:state] || :selection).to_sym
+- requirement_progress ||= []
+- requirement_groups ||= {}
+- available_pets ||= []
+- selected_pet_ids ||= []
+- filters ||= {}
+- filters_hash = if filters.respond_to?(:to_unsafe_h)
+  -filters.to_unsafe_h
+-elsif filters.respond_to?(:to_h)
+  -filters.to_h
+-else
+  -filters || {}
+- filters_hash = filters_hash.stringify_keys if filters_hash.respond_to?(:stringify_keys)
+- filters_hash = filters_hash.reject { |_k, value| value.blank? } if filters_hash.respond_to?(:reject)
+- filters_json = filters_hash.to_json
+- duration_seconds = generated.duration_seconds
+- duration_minutes = (duration_seconds / 60).floor
+- duration_remainder = duration_seconds % 60
+- duration_label = []
+- duration_label << "#{duration_minutes}m" unless duration_minutes.zero?
+- duration_label << "#{duration_remainder}s"
+- all_requirements_met = requirement_progress.present? && requirement_progress.all? { |entry| entry[:fulfilled] }
+- detail_dom_id = dom_id(generated, :detail)
+
+.card.group.relative.rounded-2xl.bg-white.shadow-lg.transition-shadow.duration-200.hover:shadow-xl.overflow-hidden{id: detail_dom_id}
+  .relative.h-40.bg-slate-900
+    %img.absolute.inset-0.h-full.w-full.object-cover{:alt => generated.world.name, :src => world_zone_image_path(generated.world)}/
+    .absolute.inset-0.bg-gradient-to-t{:class => "from-slate-900/85 via-slate-900/30 to-slate-900/60"}
+    .absolute.top-4.left-4.flex.items-center.gap-2.text-white.text-xs.uppercase.tracking-wider.font-semibold
+      %span.rounded-full.px-3.py-1{ class: "bg-white/20" } Expedition
+    .absolute.bottom-4.left-4.text-white
+      %h3.text-2xl.font-semibold= generated.name
+      %p.text-xs.flex.items-center.gap-2{ class: "text-white/80" }
+        %span.inline-flex.items-center.gap-1
+          %svg.h-3.w-3{:fill => "none", :stroke => "currentColor", :viewbox => "0 0 24 24", :xmlns => "http://www.w3.org/2000/svg"}
+            %path{:d => "M12 6v6l4 2", "stroke-linecap" => "round", "stroke-linejoin" => "round", "stroke-width" => "2"}
+          "Duration · #{duration_label.join(' ')}"
+        %span.inline-flex.items-center.gap-1
+          %svg.h-3.w-3{:fill => "none", :stroke => "currentColor", :viewbox => "0 0 24 24", :xmlns => "http://www.w3.org/2000/svg"}
+            %path{:d => "M3 12h3m12 0h3M12 3v3m0 12v3", "stroke-linecap" => "round", "stroke-linejoin" => "round", "stroke-width" => "2"}
+          = generated.world.name
+  .p-5.space-y-4
+    - if requirement_groups.any?
+      .space-y-2
+        %h4.text-xs.font-semibold.text-slate-400.uppercase Requirements
+        - requirement_progress.each do |entry|
+          .flex.items-center.justify-between.rounded-lg.bg-slate-50.px-3.py-2
+            %span.text-xs.font-semibold.text-slate-600= entry[:label] || entry[:key].to_s.titleize
+            %span.text-xs.font-semibold{ class: entry[:fulfilled] ? "text-emerald-600" : "text-slate-500" }= "#{entry[:current]} / #{entry[:required]}"
+      - if all_requirements_met
+        .inline-flex.items-center.gap-2.rounded-full.bg-emerald-100.text-emerald-700.px-3.py-1.text-xs.font-semibold.uppercase
+          %svg.h-3.w-3{:fill => "none", :stroke => "currentColor", :viewbox => "0 0 24 24", :xmlns => "http://www.w3.org/2000/svg"}
+            %path{:d => "M5 13l4 4L19 7", "stroke-linecap" => "round", "stroke-linejoin" => "round", "stroke-width" => "2"}
+          %span Bonus rewards unlocked
+
+    - case state
+    - when :selection
+      .space-y-4{ data: { controller: "exploration-preview", "exploration-preview-url-value": preview_exploration_path(generated), "exploration-preview-filters-value": filters_json } }
+        .bg-slate-50.rounded-xl.p-4.space-y-3
+          %p.text-sm.text-slate-600.leading-relaxed
+            Choose up to three companions to accompany you into this expedition. Requirements grant bonus rewards when fulfilled.
+          = form_with url: preview_exploration_path(generated),
+                      method: :post,
+                      data: { turbo_frame: detail_dom_id },
+                      class: "space-y-3" do
+            .grid.grid-cols-1.sm:grid-cols-2.gap-3
+              = text_field_tag :name,
+                               filters[:name],
+                               placeholder: "Search by name",
+                               class: "w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+              = select_tag :pet_type_id,
+                           options_for_select(PetType.pluck(:name, :id), filters[:pet_type_id]),
+                           include_blank: "All pet types",
+                           class: "w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+            = hidden_field_tag :id, generated.id
+            = hidden_field_tag :selected_pet_ids,
+                               selected_pet_ids.join(','),
+                               data: { "exploration-preview-target": "selectedField" }
+            = submit_tag "Filter",
+                         class: "inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white hover:bg-slate-800"
+
+        = form_with url: start_exploration_path(generated),
+                    method: :post,
+                    data: { turbo_frame: detail_dom_id, controller: "limit", "limit-max-value": 3 },
+                    class: "space-y-4" do
+          - if available_pets.empty?
+            .rounded-xl.border.border-dashed.border-slate-200.bg-slate-50.p-6.text-center.text-sm.text-slate-500
+              No available pets for this expedition right now.
+          - else
+            .grid.grid-cols-1.sm:grid-cols-2.gap-3.max-h-72.overflow-y-auto.pr-1
+              - available_pets.each do |pet|
+                - disabled = pet.exploring?
+                %label.relative.block
+                  = check_box_tag "user_pet_ids[]",
+                                  pet.id,
+                                  selected_pet_ids.include?(pet.id),
+                                  class: "peer hidden",
+                                  disabled: disabled,
+                                  data: { action: "limit#toggle exploration-preview#refresh", "limit-target": "checkbox", "exploration-preview-target": "checkbox", permanent_disabled: disabled }
+                  .rounded-xl.border.border-slate-200.bg-white.p-3.transition-shadow.duration-150.peer-checked:border-indigo-500.peer-checked:bg-indigo-50.peer-checked:shadow-md{ class: [disabled ? "opacity-60" : "hover:shadow", disabled ? "pointer-events-none" : nil].compact.join(' ') }
+                    .flex.items-start.gap-3
+                      - sprite = defined?(pet_sprite_path) ? pet_sprite_path(pet.pet) : asset_path("pets/#{pet.pet.name.parameterize}.png")
+                      %img.h-12.w-12.rounded-full.object-cover{ alt: pet.pet.name, src: sprite }
+                      .flex-1.space-y-1
+                        .flex.items-center.justify-between
+                          %span.text-sm.font-semibold.text-slate-800= pet.name.presence || pet.pet.name
+                          %span.text-xs.font-semibold.text-slate-500= "Lvl #{pet.level}"
+                        %p.text-xs.text-slate-500.flex.items-center.gap-2
+                          %span.inline-flex.items-center.gap-1
+                            %span.font-semibold Power
+                            = pet.pet.power
+                        - if disabled
+                          %span.inline-flex.items-center.gap-1.rounded-full.bg-slate-100.px-2.py-0.5.text-10px.font-semibold.text-slate-600
+                            %span.inline-block.h-1.5.w-1.5.rounded-full.bg-indigo-500
+                            Exploring
+          .flex.items-center.justify-between.text-xs.text-slate-500
+            %span Select up to three companions.
+          = submit_tag "Send Party",
+                       class: "w-full inline-flex justify-center items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+
+    - when :active
+      - remaining_seconds = user_exploration.explore_time_remaining
+      .space-y-3{ "data-controller" => "countdown", "data-countdown-seconds-value" => remaining_seconds, "data-user-exploration-id" => "#{user_exploration.id}" }
+        .flex.items-center.justify-between
+          %p.text-sm.font-semibold.text-indigo-600.flex.items-center.gap-2
+            %span.inline-flex.h-2.w-2.rounded-full.bg-indigo-500.animate-pulse
+            Expedition in progress
+          %p.text-xs.text-slate-500
+            Started: #{l(user_exploration.started_at, format: :short)}
+        .bg-slate-50.rounded-lg.px-3.py-2.flex.items-center.justify-between
+          %span.text-xs.font-semibold.text-slate-500.uppercase Tracking
+          %span.text-sm.font-semibold.text-slate-900{ "data-countdown-target" => "output" }
+            = distance_of_time_in_words(remaining_seconds.seconds.from_now)
+        - if requirement_progress.any?
+          .space-y-1
+            %h4.text-xs.font-semibold.text-slate-400.uppercase Requirements
+            - requirement_progress.each do |entry|
+              .flex.items-center.justify-between.text-xs.text-slate-500
+                %span= entry[:label] || entry[:key].to_s.titleize
+                %span.font-semibold{ class: entry[:fulfilled] ? "text-emerald-600" : "text-slate-500" }= "#{entry[:current]} / #{entry[:required]}"
+
+    - when :ready
+      .space-y-3
+        %p.text-sm.text-green-600.font-semibold.flex.items-center.gap-2
+          %span.inline-flex.h-2.w-2.rounded-full.bg-green-500
+          Expedition complete! Collect your rewards.
+          = button_to "Complete Expedition",
+                      complete_user_exploration_path(user_exploration),
+                      method: :post,
+                      class: "w-full inline-flex justify-center items-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-400",
+                      form: { data: { turbo_frame: "_top" } }

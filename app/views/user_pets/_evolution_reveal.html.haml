@@ -1,0 +1,17 @@
+- reveal = local_assigns[:reveal] || {}
+- old_name = reveal[:old_name]
+- new_name = reveal[:new_name]
+- old_image = reveal[:old_image_path]
+- new_image = reveal[:new_image_path]
+
+= render "shared/pet_reveal",
+         wrapper_class: "relative overflow-hidden rounded-2xl bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 text-white shadow-lg mb-6 px-6 py-8",
+         initial_title: "#{old_name} is evolving...",
+         final_title: "#{new_name} evolved!",
+         final_subtitle: "A stronger form emerges.",
+         delay: 2200,
+         initial_image_path: old_image,
+         final_image_path: new_image,
+         initial_alt: old_name,
+         final_alt: new_name,
+         sparkles: true

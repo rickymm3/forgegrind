@@ -1,3 +1,3 @@
 -# app/views/user_pets/energy_tick.turbo_stream.haml
 = turbo_stream.update "pet_energy_#{@user_pet.id}" do
-  = render "pets/energy_display", user_pet: @user_pet
+  = render "user_pets/energy_display", user_pet: @user_pet
