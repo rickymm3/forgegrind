@@ -22,8 +22,14 @@ module Containers
       }
 
       @containers = current_user.user_containers.includes(:chest_type).order("chest_types.min_level ASC")
-      @container_lookup = @containers.index_by { |c| c.chest_type.key }
+      @container_lookup = @containers.each_with_object({}) do |record, memo|
+        chest = record.chest_type
+        memo[chest.key] = record if chest
+      end
       @items = current_user.user_items.includes(:item).order("items.name ASC")
+      @containers_total = @containers.sum(&:count)
+      @items_total = @items.sum(&:quantity)
+      @user_stats = current_user.user_stat || current_user.create_user_stat!(User::STAT_DEFAULTS.merge(energy_updated_at: Time.current))
 
       respond_to do |format|
         format.turbo_stream

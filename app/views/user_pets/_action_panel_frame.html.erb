@@ -1,0 +1,21 @@
+<% context ||= :page %>
+<% state ||= :idle %>
+<% message ||= nil %>
+<% requirements ||= [] %>
+<% interaction ||= nil %>
+<% energy_cost ||= nil %>
+<% needs_preview ||= [] %>
+<% personality_changes ||= [] %>
+
+<turbo-frame id="<%= action_panel_dom_id(user_pet) %>">
+  <%= render "user_pets/action_panel",
+             user_pet: user_pet,
+             context: context,
+             state: state,
+             message: message,
+             requirements: requirements,
+             interaction: interaction,
+             energy_cost: energy_cost,
+             needs_preview: needs_preview,
+             personality_changes: personality_changes %>
+</turbo-frame>

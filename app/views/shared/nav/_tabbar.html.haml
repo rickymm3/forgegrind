@@ -110,9 +110,11 @@
                 %path{ d: "M6 6l12 12" }
                 %path{ d: "M18 6L6 18" }
           %ul.space-y-3.text-sm.text-slate-200
-            %li{ class: "flex items-center justify-between rounded-2xl bg-slate-800/70 px-4 py-3" }
-              %span Inventory
-              %span.text-xs.uppercase.text-slate-400 Coming soon
+            %li
+              = link_to inventory_path,
+                        class: "flex items-center justify-between rounded-2xl bg-slate-800/70 px-4 py-3 text-slate-100 transition hover:bg-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950" do
+                %span Inventory
+                %span.text-xs.uppercase.text-slate-400 View
             %li{ class: "flex items-center justify-between rounded-2xl bg-slate-800/70 px-4 py-3" }
               %span Hero Profile
               %span.text-xs.uppercase.text-slate-400 Hidden

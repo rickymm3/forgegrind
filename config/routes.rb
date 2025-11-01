@@ -32,7 +32,10 @@ Rails.application.routes.draw do
   end
 
   get "/items", to: redirect("/inventory")
-  resource :inventory, only: [:show]
+  resource :inventory, only: [:show] do
+    post :container_panel
+    post :item_panel
+  end
 
   namespace :containers do
     post :open, to: "open#create"

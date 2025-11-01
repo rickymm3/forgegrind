@@ -7,10 +7,12 @@
 starter_item:
   name: "Starter Item"
   description: "A basic supplies kit - humble beginnings for any caretaker."
+  rarity: common
 
 wooden_stick:
   name: "Wooden Stick"
   description: "A sturdy stick; simple, reliable, and oddly comforting."
+  rarity: common
 
 frisbee:
   name: "Frisbee"
@@ -20,6 +22,9 @@ frisbee:
   temperament_mod: 0.0
   curiosity_mod: 0.2
   confidence_mod: 0.0
+  usable: true
+  target_type: pet
+  rarity: uncommon
 
 blanket:
   name: "Blanket"
@@ -29,6 +34,9 @@ blanket:
   temperament_mod: 0.1
   curiosity_mod: 0.0
   confidence_mod: 0.2
+  usable: true
+  target_type: pet
+  rarity: uncommon
 
 soap:
   name: "Soap"
@@ -38,6 +46,9 @@ soap:
   temperament_mod: 0.1
   curiosity_mod: 0.0
   confidence_mod: 0.2
+  usable: true
+  target_type: pet
+  rarity: rare
 
 whistle:
   name: "Whistle"
@@ -47,6 +58,9 @@ whistle:
   temperament_mod: 0.5
   curiosity_mod: 0.0
   confidence_mod: 0.1
+  usable: true
+  target_type: pet
+  rarity: rare
 
 treat:
   name: "Treat"
@@ -56,6 +70,9 @@ treat:
   temperament_mod: 0.0
   curiosity_mod: 0.4
   confidence_mod: 0.0
+  usable: true
+  target_type: pet
+  rarity: common
 
 map:
   name: "Map"
@@ -65,55 +82,71 @@ map:
   temperament_mod: 0.0
   curiosity_mod: 0.5
   confidence_mod: 0.2
+  usable: true
+  target_type: pet
+  rarity: uncommon
 
 leveling_stone:
   name: "Leveling Stone"
   description: "A steady stone that safely channels growth for any pet."
+  rarity: rare
 
 normal_stone:
   name: "Normal Stone"
   description: "A versatile stone attuned to well-balanced companions."
+  rarity: uncommon
 
 fire_stone:
   name: "Fire Stone"
   description: "Warm to the touch - fire-aligned pets resonate with its ember core."
+  rarity: rare
 
 water_stone:
   name: "Water Stone"
   description: "Cool and fluid, perfect for aquatic or flowy personalities."
+  rarity: rare
 
 electric_stone:
   name: "Electric Stone"
   description: "Crackling with residual charge, it energizes electric pets."
+  rarity: rare
 
 grass_stone:
   name: "Grass Stone"
   description: "Verdant moss covers this stone; nurturing for nature-aligned pets."
+  rarity: rare
 
 ice_stone:
   name: "Ice Stone"
   description: "Chilled frost clings to its surface, harmonizing with icy temperaments."
+  rarity: rare
 
 shadow_stone:
   name: "Shadow Stone"
   description: "Whispers of dusk swirl inside, guiding shadow-bound companions."
+  rarity: rare
 
 metal_stone:
   name: "Metal Stone"
   description: "Dense and steady, forged for metallic hides and hardy shells."
+  rarity: rare
 
 wind_stone:
   name: "Wind Stone"
   description: "Light as air; its currents thrill agile, wind-loving pets."
+  rarity: rare
 
 spirit_stone:
   name: "Spirit Stone"
   description: "Glows softly, responding to ethereal, spirit-touched allies."
+  rarity: rare
 
 storm_stone:
   name: "Storm Stone"
   description: "Rumbles faintly inside, ideal for tempestuous partners."
+  rarity: rare
 
 celestial_stone:
   name: "Celestial Stone"
   description: "Starlight flickers within - perfect for pets attuned to the cosmos."
+  rarity: epic

@@ -7,3 +7,9 @@
            active_explorations: @active_explorations,
            requirement_map: @requirement_map,
            selected_generated: @generated_explorations.first
+
+= turbo_stream.update "user-currency-trophies" do
+  = number_with_delimiter(@user_stats.trophies)
+
+= turbo_stream.update "user-currency-diamonds" do
+  = number_with_delimiter(@user_stats.diamonds)

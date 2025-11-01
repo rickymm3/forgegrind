@@ -1,54 +1,39 @@
-<div id="inventory-items-grid" class="space-y-4">
-  <div class="flex items-center justify-between">
-    <div>
-      <h2 class="text-lg font-semibold text-slate-100">Items</h2>
-      <p class="text-xs text-slate-400">Consumables, equipment, and materials currently in your pack.</p>
-    </div>
-    <span class="text-xs text-slate-400 uppercase">Stacks: <%= items.count %></span>
-  </div>
-
+<div id="inventory-items-grid">
   <% if items.blank? %>
-    <div class="rounded-2xl border border-slate-700/60 bg-slate-900/50 px-6 py-8 text-center text-sm text-slate-400">
-      You do not have any items yet. Hatch eggs or open containers to receive supplies.
+    <div class="rounded-3xl border border-slate-800 bg-slate-900/60 px-6 py-10 text-center text-sm text-slate-300">
+      You'll see pet-care and upgrade items here as you open containers and progress.
     </div>
   <% else %>
-    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+    <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
       <% items.each do |user_item| %>
         <% item = user_item.item %>
-        <% icon = ApplicationController.helpers.care_item_image_path(item.item_type) %>
-        <% description = item_description(item) || "A useful item for caring for your pets." %>
-        <div class="flex flex-col justify-between rounded-2xl border border-slate-700/60 bg-slate-900/60 p-4 transition hover:border-emerald-400/60 hover:shadow-lg"
-             data-action="click->inventory#selectEntry"
-             data-entry-type="item"
-             data-name="<%= item.name %>"
-             data-description="<%= description %>"
-             data-icon="<%= icon %>"
-             data-quantity="<%= user_item.quantity %>"
-             data-item-type="<%= item.item_type %>">
-          <div class="flex items-start gap-3">
-            <img alt="<%= item.name %>" src="<%= icon %>" class="h-12 w-12 rounded-xl bg-slate-800/80 object-contain p-2">
-            <div class="space-y-1">
-              <p class="text-sm font-semibold text-slate-100"><%= item.name %></p>
-              <p class="text-xs text-slate-400 uppercase tracking-wide"><%= item.item_type.humanize %></p>
-              <p class="text-xs text-slate-500">
-                <span class="inline-flex items-center gap-1 rounded-full bg-emerald-500/20 px-2 py-0.5 text-[11px] text-emerald-200">
-                  Qty: <%= user_item.quantity %>
-                </span>
-              </p>
-            </div>
-          </div>
-          <div class="mt-4 flex gap-2"
-               data-action="click->inventory#stopPropagation">
-            <button type="button"
-                    class="inline-flex items-center gap-1 rounded-lg bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-200 transition hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-400"
-                    data-entry-action="inspect">
-              Inspect
-            </button>
-            <button type="button"
-                    class="inline-flex items-center gap-1 rounded-lg bg-slate-700/70 px-3 py-1.5 text-xs font-semibold text-slate-400 cursor-not-allowed"
-                    disabled>
-              Use
-            </button>
+        <% metadata = inventory_item_metadata(item) %>
+        <% rarity = metadata[:rarity] || "common" %>
+        <% frame_class = rarity_frame_class(rarity) %>
+        <% icon_path = care_item_image_path(item.item_type) %>
+        <div class="space-y-2">
+          <%= link_to item_panel_inventory_path(item_id: user_item.id),
+                      data: { turbo_frame: "inventory-detail-panel", turbo_method: :post },
+                      class: "group relative block aspect-square overflow-hidden rounded-3xl border-2 #{frame_class} bg-slate-900/60 shadow-inner shadow-slate-950/40 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 hover:scale-[1.01]" do %>
+            <span class="sr-only"><%= item.name %></span>
+            <% if icon_path.present? %>
+              <%= image_tag icon_path,
+                            alt: "",
+                            class: "absolute inset-0 h-full w-full object-contain p-4 transition duration-200 group-hover:scale-105" %>
+            <% else %>
+              <div class="absolute inset-0 flex items-center justify-center text-sm text-slate-300">No Art</div>
+            <% end %>
+            <span class="absolute bottom-2 right-2 inline-flex items-center rounded-full bg-emerald-600/90 px-3 py-1 text-[11px] font-semibold text-white shadow-md">
+              x<%= user_item.quantity %>
+              <span class="sr-only">in stack</span>
+            </span>
+            <span class="absolute top-2 left-2 inline-flex items-center rounded-full bg-slate-950/80 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-<%= rarity_color_class(rarity) %>">
+              <%= rarity.titleize %>
+            </span>
+          <% end %>
+          <div class="flex items-center justify-between text-xs text-slate-400">
+            <span class="font-semibold text-slate-100 text-sm truncate"><%= item.name %></span>
+            <span><%= item.item_type.to_s.humanize %></span>
           </div>
         </div>
       <% end %>

@@ -48,6 +48,7 @@ module Containers
 
         rewards_map = roll_rewards(quantity)
         rewards_array = apply_rewards(rewards_map)
+        rewards_array.concat(grant_currency_rewards)
 
         container.count -= quantity
         if container.count.positive?
@@ -81,16 +82,15 @@ module Containers
       entries = loot_table.loot_entries.includes(:item).to_a
       raise Error, "Loot table #{loot_table.key} has no entries" if entries.empty?
 
-      rng = Random.new
       rewards = {}
 
       open_count.times do
-        rolls = rng.rand(loot_table.rolls_min..loot_table.rolls_max)
+        rolls = random.rand(loot_table.rolls_min..loot_table.rolls_max)
         rolls.times do
-          entry = WeightedPicker.pick(entries.map { |loot_entry| { value: loot_entry, weight: loot_entry.weight } }, rng: rng)
+          entry = WeightedPicker.pick(entries.map { |loot_entry| { value: loot_entry, weight: loot_entry.weight } }, rng: random)
           next unless entry
 
-          quantity = rng.rand(entry.qty_min..entry.qty_max)
+          quantity = random.rand(entry.qty_min..entry.qty_max)
           next if quantity <= 0
 
           data = (rewards[entry.item_id] ||= {
@@ -157,5 +157,57 @@ module Containers
     def rarity_rank(rarity)
       RARITY_ORDER[rarity.to_s] || 0
     end
+
+    def grant_currency_rewards
+      config = CHEST_CURRENCY_REWARDS[chest_type.key]
+      return [] unless config
+
+      total_amount = Array.new(quantity) { random.rand(config[:min]..config[:max]) }.sum
+      return [] if total_amount <= 0
+
+      stat = ensure_user_stat
+      stat.increment!(config[:stat_column], total_amount)
+
+      display_name = config[:currency_name]
+      symbol = config[:symbol] || currency_symbol(display_name)
+
+      [{
+        "currency" => display_name,
+        "name" => display_name,
+        "qty" => total_amount,
+        "rarity" => "currency",
+        "icon" => config[:icon],
+        "symbol" => symbol
+      }]
+    end
+
+    def currency_symbol(name)
+      Currency.find_by(name: name)&.symbol
+    end
+
+    def ensure_user_stat
+      user.user_stat || user.create_user_stat!(User::STAT_DEFAULTS.merge(energy_updated_at: Time.current))
+    end
+
+    def random
+      @random ||= Random.new
+    end
+
+    CHEST_CURRENCY_REWARDS = {
+      "pet_care_box_lvl1" => {
+        currency_name: "Diamonds",
+        stat_column: :diamonds,
+        min: 100,
+        max: 200,
+        symbol: "💎"
+      },
+      "pet_care_box_lvl2" => {
+        currency_name: "Diamonds",
+        stat_column: :diamonds,
+        min: 100,
+        max: 200,
+        symbol: "💎"
+      }
+    }.freeze
   end
 end

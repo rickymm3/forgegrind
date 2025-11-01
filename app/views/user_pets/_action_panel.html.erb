@@ -5,7 +5,7 @@
 <% needs_preview = (defined?(local_assigns) && local_assigns.fetch(:needs_preview, nil)) || [] %>
 <% personality_changes = (defined?(local_assigns) && local_assigns.fetch(:personality_changes, nil)) || [] %>
 <% visible   = state != :idle %>
-<% action_frame_dom_id = dom_id(user_pet, :action_panel) %>
+<% action_frame_dom_id = action_panel_dom_id(user_pet) %>
 <% sheet_style = "bottom: calc(env(safe-area-inset-bottom, 0px) + 5.5rem);" %>
 <% sheet_classes = ["fixed", "left-0", "right-0", "z-40", "px-4", "transition-all", "duration-200", "ease-out", (visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6 pointer-events-none")] %>
 <% overlay_classes = ["fixed", "inset-0", "z-30", "bg-slate-950/70", "backdrop-blur-sm", "transition-opacity", "duration-200", "ease-out", (visible ? "opacity-100" : "opacity-0 pointer-events-none")] %>
@@ -92,38 +92,52 @@
           <% end %>
         </div>
 
-        <% if needs_preview.any? %>
-          <div class="space-y-3">
-            <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Needs Impact</p>
-            <div class="grid gap-3 sm:grid-cols-2">
-              <% needs_preview.each do |entry| %>
-                <% delta_class = entry[:delta] > 0 ? "text-emerald-300" : entry[:delta] < 0 ? "text-rose-300" : "text-slate-300" %>
-                <% formatted_before = entry[:before] % 1 == 0 ? entry[:before].to_i : entry[:before] %>
-                <% formatted_after  = entry[:after] % 1 == 0 ? entry[:after].to_i : entry[:after] %>
-                <% formatted_delta  = entry[:delta] % 1 == 0 ? entry[:delta].to_i : entry[:delta] %>
-                <% delta_value = formatted_delta > 0 ? "+#{formatted_delta}" : formatted_delta.to_s %>
-                <div class="space-y-2 rounded-2xl border border-slate-800/80 bg-slate-900/60 px-4 py-3 text-xs text-slate-300">
-                  <div class="flex items-center justify-between">
-                    <span class="font-semibold text-slate-100"><%= entry[:label] %></span>
-                    <span class="font-semibold <%= delta_class %>"><%= delta_value %></span>
-                  </div>
-                  <div class="flex items-center justify-between text-[11px] text-slate-400">
-                    <span>Current <span class="font-semibold text-slate-200"><%= formatted_before %></span></span>
-                    <span>After <span class="font-semibold text-slate-200"><%= formatted_after %></span></span>
-                  </div>
-                  <div class="relative h-2 w-full overflow-hidden rounded-full bg-slate-800">
-                    <div class="absolute inset-y-0 left-0 rounded-full bg-slate-700" style="width: <%= entry[:before_percent] %>%" aria-hidden="true"></div>
-                    <div class="absolute inset-y-0 left-0 rounded-full <%= entry[:delta] >= 0 ? 'bg-emerald-500/80' : 'bg-rose-500/80' %>" style="width: <%= entry[:after_percent] %>%" aria-hidden="true"></div>
-                  </div>
-                  <p class="sr-only">
-                    <%= entry[:label] %> changes from <%= formatted_before %> to <%= formatted_after %>.
-                  </p>
+        <% display_needs = [:hunger, :hygiene, :boredom, :injury_level, :mood] %>
+        <% preview_lookup = needs_preview.each_with_object({}) { |entry, memo| memo[entry[:key]] = entry } %>
+        <div class="space-y-2">
+          <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Pet Care Needs</p>
+          <div class="grid grid-cols-2 gap-2">
+            <% display_needs.each do |need_key| %>
+              <% entry        = preview_lookup[need_key] %>
+              <% current_val  = (need_key == :mood ? user_pet.mood.to_f : user_pet.send(need_key).to_f) rescue 0.0 %>
+              <% before       = entry ? entry[:before].to_f : current_val %>
+              <% after        = entry ? entry[:after].to_f : current_val %>
+              <% delta        = (after - before).round(1) %>
+              <% before_pct   = entry ? entry[:before_percent].to_f : [[before, 0.0].max, 100.0].min %>
+              <% after_pct    = entry ? entry[:after_percent].to_f  : [[after, 0.0].max, 100.0].min %>
+              <% change_width = (after_pct - before_pct).abs %>
+              <% change_start = [before_pct, after_pct].min %>
+              <% delta_class  = delta > 0 ? "text-emerald-300" : delta < 0 ? "text-rose-300" : "text-slate-400" %>
+              <% after_fill_class = after_pct >= 60 ? "bg-emerald-600/80" : "bg-rose-600/80" %>
+              <% change_fill_class = delta >= 0 ? "bg-emerald-300/90" : "bg-rose-400/90" %>
+              <% formatted_before = before % 1 == 0 ? before.to_i : before %>
+              <% formatted_after  = after % 1 == 0 ? after.to_i : after %>
+              <% formatted_delta  = delta % 1 == 0 ? delta.to_i : delta %>
+              <% delta_value = formatted_delta > 0 ? "+#{formatted_delta}" : formatted_delta.to_s %>
+              <div class="space-y-1.5 rounded-xl border border-slate-800/70 bg-slate-900/60 px-3 py-2 text-[11px] text-slate-300">
+                <div class="flex items-center justify-between text-xs">
+                  <span class="font-semibold text-slate-100 truncate"><%= need_label(need_key) %></span>
+                  <span class="font-semibold <%= delta_class %>"><%= delta_value %></span>
                 </div>
-              <% end %>
-            </div>
+                <div class="flex items-center justify-between text-[11px] text-slate-400">
+                  <span>Current <span class="font-semibold text-slate-200"><%= formatted_before %></span></span>
+                  <span>After <span class="font-semibold text-slate-200"><%= formatted_after %></span></span>
+                </div>
+                <div class="relative h-2 w-full overflow-hidden rounded-full bg-slate-800">
+                  <div class="absolute inset-y-0 left-0 rounded-full <%= after_fill_class %>" style="width: <%= after_pct %>%;" aria-hidden="true"></div>
+                  <% unless change_width.zero? %>
+                    <div class="absolute inset-y-0 rounded-full <%= change_fill_class %>"
+                         style="left: <%= change_start %>%; width: <%= change_width %>%;" aria-hidden="true"></div>
+                  <% end %>
+                </div>
+                <p class="sr-only">
+                  <%= need_label(need_key) %> changes from <%= formatted_before %> to <%= formatted_after %>.
+                </p>
+              </div>
+            <% end %>
           </div>
-        <% end %>
-
+        </div>
+<!--
         <% if personality_changes.any? %>
           <div class="space-y-2">
             <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Personality Shift</p>
@@ -140,7 +154,7 @@
             </ul>
           </div>
         <% end %>
-
+-->
         <% primary_item = requirements.present? ? requirements.first : nil %>
         <% primary_item_type = primary_item&.dig(:item)&.item_type || primary_item&.dig(:type) %>
         <% primary_icon = primary_item_type ? ApplicationController.helpers.care_item_image_path(primary_item_type) : nil %>

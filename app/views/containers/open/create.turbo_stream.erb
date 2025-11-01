@@ -6,8 +6,24 @@
                          partial: "inventories/items_grid",
                          locals: { items: @items } %>
 
+<%= turbo_stream.update "inventory-containers-count" do %>
+  <%= @containers_total %>
+<% end %>
+
+<%= turbo_stream.update "inventory-items-count" do %>
+  <%= @items_total %>
+<% end %>
+
+<%= turbo_stream.replace "inventory-detail-panel",
+                         partial: "inventories/detail_panel",
+                         locals: { state: :idle } %>
+
 <%= turbo_stream.replace "container-open-errors", "" %>
 
 <%= turbo_stream.replace "container-reveal",
                          partial: "containers/reveal",
                          locals: { payload: @rewards_payload, container_lookup: @container_lookup } %>
+
+<%= turbo_stream.update "user-currency-diamonds" do %>
+  <%= number_with_delimiter(@user_stats.diamonds) %>
+<% end %>

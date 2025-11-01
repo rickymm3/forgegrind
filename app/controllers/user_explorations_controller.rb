@@ -9,14 +9,15 @@ class UserExplorationsController < ApplicationController
 
     @reward = adjusted_reward(reward_config.exp, outcome.reward_multiplier)
     @diamond_reward = adjusted_reward(reward_config.diamonds, outcome.diamond_multiplier)
+    @trophy_reward = rand(50..100)
 
     @user_pets = @user_exploration.user_pets.to_a
     apply_experience_and_needs!(@user_pets, @user_exploration.duration_seconds, outcome.need_penalty_multiplier)
 
-    if @diamond_reward.positive?
-      stat = current_user.user_stat || current_user.create_user_stat
-      stat.increment!(:diamonds, @diamond_reward)
-    end
+    stat = current_user.user_stat || current_user.create_user_stat!(User::STAT_DEFAULTS.merge(energy_updated_at: Time.current))
+    stat.increment!(:trophies, @trophy_reward)
+    stat.increment!(:diamonds, @diamond_reward) if @diamond_reward.positive?
+    @user_stats = stat.reload
 
     reward_result = Explorations::ExplorationCompletionRewarder.call(user: current_user, world: @world)
     @granted_chest_type = reward_result[:chest_type]
@@ -69,6 +70,8 @@ class UserExplorationsController < ApplicationController
 
   def completion_notice
     base = "Exploration complete! Each pet gained #{@reward} EXP."
+    trophy_text = " You earned #{@trophy_reward} Trophies."
+    base += trophy_text
     return base unless @diamond_reward.to_i.positive?
 
     "#{base} You earned #{@diamond_reward} Diamonds."

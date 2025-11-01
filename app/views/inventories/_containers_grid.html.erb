@@ -1,58 +1,56 @@
-<div id="inventory-containers-grid" class="space-y-4">
-  <div class="flex items-center justify-between">
-    <div>
-      <h2 class="text-lg font-semibold text-slate-100">Containers</h2>
-      <p class="text-xs text-slate-400">Pet care boxes and other chests you can open for rewards.</p>
-    </div>
-    <span class="text-xs text-slate-400 uppercase">Total: <%= containers.sum(&:count) %></span>
-  </div>
-
+<div id="inventory-containers-grid">
   <% if containers.blank? %>
-    <div class="rounded-2xl border border-slate-700/60 bg-slate-900/50 px-6 py-8 text-center text-sm text-slate-400">
-      You don't have any containers yet. Complete explorations to earn Pet Care Boxes.
+    <div class="rounded-3xl border border-slate-800 bg-slate-900/60 px-6 py-10 text-center text-sm text-slate-300">
+      Earn boxes by completing explorations. Rewards include pet care supplies, currency, and rare bonuses.
     </div>
   <% else %>
-    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+    <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
       <% containers.each do |container| %>
         <% chest = container.chest_type %>
         <% next unless chest %>
         <% count = container.count.to_i %>
-        <div class="group flex flex-col justify-between rounded-2xl border border-slate-700/60 bg-slate-900/60 p-4 transition hover:border-indigo-400/60 hover:shadow-lg"
-             data-action="click->inventory#selectEntry"
-             data-entry-type="container"
-             data-name="<%= chest.name %>"
-             data-description="A container filled with pet care supplies. Open it to reveal rewards."
-             data-icon="<%= chest.icon %>"
-             data-count="<%= count %>"
-             data-key="<%= chest.key %>">
-          <div class="flex items-start gap-3">
-            <img alt="<%= chest.name %>" src="<%= chest.icon %>" class="h-12 w-12 rounded-xl bg-slate-800/80 object-contain p-2">
-            <div class="space-y-1">
-              <p class="text-sm font-semibold text-slate-100"><%= chest.name %></p>
-              <p class="text-xs text-slate-400 uppercase tracking-wide">Min Level <%= chest.min_level %></p>
-              <p class="text-xs text-slate-500">
-                <span class="inline-flex items-center gap-1 rounded-full bg-indigo-500/20 px-2 py-0.5 text-[11px] text-indigo-200">
-                  Owned: <%= count %>
-                </span>
-              </p>
-            </div>
+        <% frame_class = chest_frame_class(chest) %>
+        <% icon_path = chest_icon_path(chest) %>
+        <div class="space-y-2">
+          <%= link_to container_panel_inventory_path(key: chest.key),
+                      data: { turbo_frame: "inventory-detail-panel", turbo_method: :post },
+                      class: "group relative block aspect-square overflow-hidden rounded-3xl border-2 #{frame_class} bg-slate-900/60 shadow-inner shadow-slate-950/40 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 hover:scale-[1.01]" do %>
+            <span class="sr-only"><%= chest.name %></span>
+            <% if icon_path.present? %>
+              <%= image_tag icon_path,
+                            alt: "",
+                            class: "absolute inset-0 h-full w-full object-contain p-4 transition duration-200 group-hover:scale-105" %>
+            <% else %>
+              <div class="absolute inset-0 flex items-center justify-center text-sm text-slate-300">No Art</div>
+            <% end %>
+            <span class="absolute bottom-2 right-2 inline-flex items-center rounded-full bg-indigo-600/90 px-3 py-1 text-[11px] font-semibold text-white shadow-md">
+              x<%= count %>
+              <span class="sr-only">owned</span>
+            </span>
+            <span class="absolute top-2 left-2 inline-flex items-center rounded-full bg-slate-950/80 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-indigo-200">
+              Level <%= chest.min_level %>
+            </span>
+          <% end %>
+
+          <div class="flex items-center justify-between text-xs text-slate-400">
+            <span class="font-semibold text-slate-100 text-sm truncate"><%= chest.name %></span>
+            <span><%= container_count_badge_text(count) %></span>
           </div>
 
-          <div class="mt-4 flex flex-wrap gap-2"
-               data-action="click->inventory#stopPropagation">
+          <div class="flex flex-wrap gap-2">
             <%= render "inventories/container_open_form",
                        chest: chest,
                        quantity: 1,
-                       label: "Open 1",
-                       css: "inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-400",
+                       label: "Open",
+                       css: "inline-flex items-center gap-2 rounded-full bg-indigo-600 px-3 py-1.5 text-[11px] font-semibold text-white transition hover:bg-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950",
                        disabled: count.zero? %>
 
             <% if chest.open_batch_allowed? && count >= 5 %>
               <%= render "inventories/container_open_form",
                          chest: chest,
                          quantity: 5,
-                         label: "Open 5",
-                         css: "inline-flex items-center gap-2 rounded-lg bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-200 transition hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-400",
+                         label: "×5",
+                         css: "inline-flex items-center gap-2 rounded-full bg-slate-800 px-3 py-1.5 text-[11px] font-semibold text-slate-200 transition hover:bg-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950",
                          disabled: count < 5 %>
             <% end %>
 
@@ -60,8 +58,8 @@
               <%= render "inventories/container_open_form",
                          chest: chest,
                          quantity: count,
-                         label: "Open All",
-                         css: "inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-400",
+                         label: "All",
+                         css: "inline-flex items-center gap-2 rounded-full bg-emerald-600 px-3 py-1.5 text-[11px] font-semibold text-white transition hover:bg-emerald-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950",
                          disabled: count.zero? %>
             <% end %>
           </div>

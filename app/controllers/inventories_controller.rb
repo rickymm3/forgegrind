@@ -1,7 +1,58 @@
 class InventoriesController < ApplicationController
   before_action :authenticate_user!
 
+  helper ItemsHelper
+  helper InventoriesHelper
+
   def show
+    load_inventory
+  end
+
+  def container_panel
+    load_inventory
+
+    if params[:cancel].present?
+      render_detail_panel(state: :idle) and return
+    end
+
+    key = params[:key].to_s
+    container = @containers.find { |record| record.chest_type&.key == key }
+    chest = container&.chest_type || ChestType.includes(:default_loot_table).find_by!(key: key)
+    count = container&.count.to_i
+
+    render_detail_panel(
+      state: :container,
+      chest: chest,
+      container_count: count,
+      close_path: container_panel_inventory_path
+    )
+  end
+
+  def item_panel
+    load_inventory
+
+    if params[:cancel].present?
+      render_detail_panel(state: :idle) and return
+    end
+
+    user_item = @items.find { |record| record.id == params[:item_id].to_i }
+    raise ActiveRecord::RecordNotFound, "Item not found" unless user_item
+
+    item = user_item.item
+    metadata = item_metadata(item)
+
+    render_detail_panel(
+      state: :item,
+      user_item: user_item,
+      item: item,
+      metadata: metadata,
+      close_path: item_panel_inventory_path
+    )
+  end
+
+  private
+
+  def load_inventory
     @containers = current_user.user_containers
                                .includes(:chest_type)
                                .joins(:chest_type)
@@ -10,10 +61,21 @@ class InventoriesController < ApplicationController
                          .includes(:item)
                          .joins(:item)
                          .order("items.name ASC")
+  end
 
-    respond_to do |format|
-      format.html
-      format.turbo_stream
-    end
+  def render_detail_panel(state:, close_path: container_panel_inventory_path, **locals)
+    render turbo_stream: turbo_stream.replace(
+      "inventory-detail-panel",
+      partial: "inventories/detail_panel",
+      locals: {
+        state: state,
+        close_path: close_path,
+        **locals
+      }
+    )
+  end
+
+  def item_metadata(item)
+    view_context.inventory_item_metadata(item)
   end
 end

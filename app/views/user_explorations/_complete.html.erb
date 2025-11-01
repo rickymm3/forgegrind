@@ -42,6 +42,10 @@
         <span class="font-semibold text-indigo-600"><%= " #{@reward} EXP" %></span>
         from this expedition.
       </p>
+      <p class="text-sm text-slate-600 leading-relaxed">
+        You earned
+        <span class="font-semibold text-amber-500"><%= " #{@trophy_reward} Trophies" %></span>.
+      </p>
       <% if @diamond_reward.to_i.positive? %>
         <p class="text-sm text-slate-600 leading-relaxed">
           You also earned

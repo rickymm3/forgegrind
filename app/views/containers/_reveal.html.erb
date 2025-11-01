@@ -40,21 +40,30 @@
         </div>
       <% else %>
         <% rewards.each do |reward| %>
+          <% is_currency = reward["currency"].present? %>
+          <% display_name = reward["name"].presence || reward["currency"].to_s.titleize %>
+          <% amount = reward["qty"].to_i %>
+          <% qty_label = is_currency ? "+#{number_with_delimiter(amount)}" : "x#{amount}" %>
+          <% symbol = reward["symbol"].presence || (is_currency ? "¤" : nil) %>
           <div class="flex items-center justify-between rounded-xl border border-slate-700/60 bg-slate-900/60 px-4 py-3">
             <div class="flex items-center gap-3">
-              <% if reward["icon"].present? %>
-                <img alt="<%= reward["name"] %>" src="<%= reward["icon"] %>" class="h-10 w-10 rounded-lg bg-slate-800/80 object-contain p-2">
+              <% if is_currency %>
+                <div class="h-10 w-10 rounded-lg bg-emerald-600/10 text-emerald-300 flex items-center justify-center text-lg font-semibold">
+                  <%= symbol %>
+                </div>
+              <% elsif reward["icon"].present? %>
+                <img alt="<%= display_name %>" src="<%= reward["icon"] %>" class="h-10 w-10 rounded-lg bg-slate-800/80 object-contain p-2">
               <% else %>
                 <div class="h-10 w-10 rounded-lg bg-slate-800/80 flex items-center justify-center text-slate-500 text-xs uppercase">Item</div>
               <% end %>
               <div>
-                <p class="text-sm font-semibold text-slate-100"><%= reward["name"] %></p>
+                <p class="text-sm font-semibold text-slate-100"><%= display_name %></p>
                 <p class="text-xs uppercase tracking-wide text-<%= rarity_color_class(reward["rarity"]) %>">
-                  <%= reward["rarity"].to_s.titleize %>
+                  <%= is_currency ? "Currency" : reward["rarity"].to_s.titleize %>
                 </p>
               </div>
             </div>
-            <span class="text-sm font-semibold text-slate-200">x<%= reward["qty"] %></span>
+            <span class="text-sm font-semibold <%= is_currency ? 'text-emerald-300' : 'text-slate-200' %>"><%= qty_label %></span>
           </div>
         <% end %>
       <% end %>

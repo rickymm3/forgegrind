@@ -1,5 +1,5 @@
 <% context       = (defined?(local_assigns) && local_assigns.fetch(:context, nil)) || :page %>
-<% action_dom_id = (defined?(local_assigns) && local_assigns.fetch(:action_dom_id, nil)) || dom_id(user_pet, :action_panel) %>
+<% action_dom_id = (defined?(local_assigns) && local_assigns.fetch(:action_dom_id, nil)) || action_panel_dom_id(user_pet) %>
 <% pet             = user_pet.pet %>
 <% rarity_name     = user_pet.rarity&.name || "Unknown" %>
 <% pet_types       = pet.pet_types %>

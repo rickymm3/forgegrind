@@ -1,4 +1,11 @@
 module UserPetsHelper
+  def info_panel_dom_id(user_pet)
+    ActionView::RecordIdentifier.dom_id(user_pet, :info_card)
+  end
+
+  def action_panel_dom_id(user_pet)
+    ActionView::RecordIdentifier.dom_id(user_pet, :action_panel)
+  end
   SPRITE_OVERRIDES = {
     "lupin"      => "nature-egg/lupin/lupin.webp",
     "fenra"      => "nature-egg/lupin/fenra.webp",
