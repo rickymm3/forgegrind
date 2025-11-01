@@ -2,7 +2,7 @@ bases:
   ember_fields:
     label: "Ember Fields"
     world_name: "Ember Fields"
-    default_duration: 900
+    default_duration: 9
     flavor: "Ash-swept plains with scattered pyre blooms."
     rewards:
       base_drop_key: "starter_zone"
@@ -10,7 +10,7 @@ bases:
   aurora_tundra:
     label: "Aurora Tundra"
     world_name: "Aurora Tundra"
-    default_duration: 960
+    default_duration: 12
     flavor: "Iridescent ice fields under a crackling sky."
     rewards:
       base_drop_key: "forest"
@@ -18,7 +18,7 @@ bases:
   verdant_canopy:
     label: "Verdant Canopy"
     world_name: "Verdant Canopy"
-    default_duration: 840
+    default_duration: 6
     flavor: "Layered jungles pulsing with life."
     rewards:
       base_drop_key: "forest"
@@ -86,7 +86,7 @@ suffixes:
   of_embers:
     weight: 9
     label: "of Embers"
-    duration_bonus: 120
+    duration_bonus: 8
     requirements:
       - type: "level_min"
         value: 3
@@ -97,7 +97,7 @@ suffixes:
   of_the_hunt:
     weight: 7
     label: "of the Hunt"
-    duration_bonus: 60
+    duration_bonus: 6
     requirements:
       - type: "pet_type"
         key: "Beast"
@@ -108,7 +108,7 @@ suffixes:
   of_whispers:
     weight: 6
     label: "of Whispers"
-    duration_bonus: 90
+    duration_bonus: 9
     requirements:
       - type: "ability"
         key: "shadow"
@@ -119,7 +119,7 @@ suffixes:
   of_legends:
     weight: 2
     label: "of Legends"
-    duration_bonus: 180
+    duration_bonus: 5
     requirements:
       - type: "species"
         key: "Blazewulf"

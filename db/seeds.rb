@@ -39,27 +39,41 @@ rare      = rarities["Rare"]
 legendary = rarities["Legendary"]
 
 # === Items ===
-starter_item = Item.find_or_create_by!(item_type: "starter_item") { |i| i.name = "Starter Item" }
-wooden_stick = Item.find_or_create_by!(item_type: "wooden_stick")   { |i| i.name = "Wooden Stick" }
-frisbee      = Item.find_or_create_by!(item_type: "frisbee")        { |i| i.name = "Frisbee" }
-blanket      = Item.find_or_create_by!(item_type: "blanket")        { |i| i.name = "Blanket" }
-whistle      = Item.find_or_create_by!(item_type: "whistle")        { |i| i.name = "Whistle" }
-treat        = Item.find_or_create_by!(item_type: "treat")          { |i| i.name = "Treat" }
-map          = Item.find_or_create_by!(item_type: "map")            { |i| i.name = "Map" }
-soap         = Item.find_or_create_by!(item_type: "soap")           { |i| i.name = "Soap" }
-leveling_stone  = Item.find_or_create_by!(item_type: "leveling_stone")  { |i| i.name = "Leveling Stone" }
-normal_stone    = Item.find_or_create_by!(item_type: "normal_stone")    { |i| i.name = "Normal Stone" }
-fire_stone      = Item.find_or_create_by!(item_type: "fire_stone")      { |i| i.name = "Fire Stone" }
-water_stone     = Item.find_or_create_by!(item_type: "water_stone")     { |i| i.name = "Water Stone" }
-electric_stone  = Item.find_or_create_by!(item_type: "electric_stone")  { |i| i.name = "Electric Stone" }
-grass_stone     = Item.find_or_create_by!(item_type: "grass_stone")     { |i| i.name = "Grass Stone" }
-ice_stone       = Item.find_or_create_by!(item_type: "ice_stone")       { |i| i.name = "Ice Stone" }
-shadow_stone    = Item.find_or_create_by!(item_type: "shadow_stone")    { |i| i.name = "Shadow Stone" }
-metal_stone     = Item.find_or_create_by!(item_type: "metal_stone")     { |i| i.name = "Metal Stone" }
-wind_stone      = Item.find_or_create_by!(item_type: "wind_stone")      { |i| i.name = "Wind Stone" }
-spirit_stone    = Item.find_or_create_by!(item_type: "spirit_stone")    { |i| i.name = "Spirit Stone" }
-storm_stone     = Item.find_or_create_by!(item_type: "storm_stone")     { |i| i.name = "Storm Stone" }
-celestial_stone = Item.find_or_create_by!(item_type: "celestial_stone") { |i| i.name = "Celestial Stone" }
+items_config_path = Rails.root.join("config", "items.yml")
+raise "Missing config/items.yml" unless items_config_path.exist?
+
+item_definitions = YAML.load_file(items_config_path)
+raise "config/items.yml is empty" unless item_definitions.present?
+
+items = item_definitions.each_with_object({}) do |(item_type, attrs), memo|
+  attrs = attrs || {}
+  record = Item.find_or_initialize_by(item_type: item_type.to_s)
+  record.name = attrs["name"].presence || attrs[:name].presence || item_type.to_s.humanize
+  record.save!
+  memo[item_type.to_sym] = record
+end
+
+starter_item      = items.fetch(:starter_item)
+wooden_stick      = items.fetch(:wooden_stick)
+frisbee           = items.fetch(:frisbee)
+blanket           = items.fetch(:blanket)
+whistle           = items.fetch(:whistle)
+treat             = items.fetch(:treat)
+map               = items.fetch(:map)
+soap              = items.fetch(:soap)
+leveling_stone    = items.fetch(:leveling_stone)
+normal_stone      = items.fetch(:normal_stone)
+fire_stone        = items.fetch(:fire_stone)
+water_stone       = items.fetch(:water_stone)
+electric_stone    = items.fetch(:electric_stone)
+grass_stone       = items.fetch(:grass_stone)
+ice_stone         = items.fetch(:ice_stone)
+shadow_stone      = items.fetch(:shadow_stone)
+metal_stone       = items.fetch(:metal_stone)
+wind_stone        = items.fetch(:wind_stone)
+spirit_stone      = items.fetch(:spirit_stone)
+storm_stone       = items.fetch(:storm_stone)
+celestial_stone   = items.fetch(:celestial_stone)
 
 # === Worlds ===
 starter_zone = World.find_or_create_by!(name: "Starter Zone") do |w|
@@ -163,7 +177,7 @@ forest.pet_types = [grass]
 starter_egg = Egg.find_or_create_by!(name: "Starter Egg") do |e|
   e.currency       = trophies
   e.cost_amount    = 10
-  e.hatch_duration = 300
+  e.hatch_duration = 5
 end
 
 forest_egg = Egg.find_or_create_by!(name: "Forest Egg") do |e|
@@ -200,10 +214,12 @@ pet_care_loot_tables = {
     rolls_min: 1,
     rolls_max: 2,
     entries: [
-      { item: treat, weight: 60, qty_min: 3, qty_max: 5, rarity: "common" },
-      { item: frisbee, weight: 20, qty_min: 1, qty_max: 2, rarity: "uncommon" },
-      { item: blanket, weight: 15, qty_min: 1, qty_max: 1, rarity: "uncommon" },
-      { item: soap, weight: 5, qty_min: 1, qty_max: 1, rarity: "rare" }
+      { item: treat, weight: 17, qty_min: 3, qty_max: 5, rarity: "common" },
+      { item: frisbee, weight: 17, qty_min: 1, qty_max: 3, rarity: "uncommon" },
+      { item: blanket, weight: 17, qty_min: 1, qty_max: 3, rarity: "uncommon" },
+      { item: soap, weight: 17, qty_min: 1, qty_max: 3, rarity: "rare" },
+      { item: whistle, weight: 16, qty_min: 1, qty_max: 3, rarity: "rare" },
+      { item: map, weight: 16, qty_min: 3, qty_max: 5, rarity: "rare" }
     ]
   },
   "lt_pet_care_plus" => {
@@ -216,6 +232,79 @@ pet_care_loot_tables = {
       { item: blanket, weight: 20, qty_min: 1, qty_max: 2, rarity: "uncommon" },
       { item: whistle, weight: 10, qty_min: 1, qty_max: 1, rarity: "rare" },
       { item: map, weight: 5, qty_min: 1, qty_max: 1, rarity: "rare" }
+    ]
+  }
+}
+
+zone_loot_tables = {
+  "lt_zone_starter" => {
+    name: "Starter Zone Loot",
+    entries: [
+      { item: starter_item, weight: 0, qty_min: 1, qty_max: 1, rarity: "common", constraints: { "guaranteed" => true } },
+      { item: frisbee, weight: 30, qty_min: 1, qty_max: 1, rarity: "uncommon" },
+      { item: whistle, weight: 15, qty_min: 1, qty_max: 1, rarity: "uncommon" },
+      { item: blanket, weight: 20, qty_min: 1, qty_max: 1, rarity: "uncommon" },
+      { item: treat, weight: 20, qty_min: 1, qty_max: 1, rarity: "common" },
+      { item: map, weight: 15, qty_min: 1, qty_max: 1, rarity: "uncommon" }
+    ]
+  },
+  "lt_zone_forest" => {
+    name: "Forest Loot",
+    entries: [
+      { item: wooden_stick, weight: 0, qty_min: 1, qty_max: 1, rarity: "common", constraints: { "guaranteed" => true } },
+      { item: frisbee, weight: 30, qty_min: 1, qty_max: 1, rarity: "uncommon" },
+      { item: whistle, weight: 15, qty_min: 1, qty_max: 1, rarity: "uncommon" },
+      { item: blanket, weight: 20, qty_min: 1, qty_max: 1, rarity: "uncommon" },
+      { item: treat, weight: 20, qty_min: 1, qty_max: 1, rarity: "common" },
+      { item: map, weight: 15, qty_min: 1, qty_max: 1, rarity: "uncommon" }
+    ]
+  },
+  "lt_zone_blazing" => {
+    name: "Blazing Zone Loot",
+    entries: [
+      { item: fire_stone, weight: 25, qty_min: 1, qty_max: 1, rarity: "rare" },
+      { item: treat, weight: 20, qty_min: 1, qty_max: 2, rarity: "common" },
+      { item: whistle, weight: 10, qty_min: 1, qty_max: 1, rarity: "uncommon" }
+    ]
+  },
+  "lt_zone_frozen" => {
+    name: "Frozen Zone Loot",
+    entries: [
+      { item: ice_stone, weight: 25, qty_min: 1, qty_max: 1, rarity: "rare" },
+      { item: blanket, weight: 20, qty_min: 1, qty_max: 1, rarity: "uncommon" },
+      { item: soap, weight: 10, qty_min: 1, qty_max: 1, rarity: "uncommon" }
+    ]
+  },
+  "lt_zone_toxic" => {
+    name: "Toxic Zone Loot",
+    entries: [
+      { item: treat, weight: 20, qty_min: 1, qty_max: 2, rarity: "common" },
+      { item: map, weight: 15, qty_min: 1, qty_max: 1, rarity: "uncommon" },
+      { item: shadow_stone, weight: 25, qty_min: 1, qty_max: 1, rarity: "rare" }
+    ]
+  },
+  "lt_zone_verdant" => {
+    name: "Verdant Zone Loot",
+    entries: [
+      { item: grass_stone, weight: 30, qty_min: 1, qty_max: 1, rarity: "rare" },
+      { item: treat, weight: 20, qty_min: 1, qty_max: 2, rarity: "common" },
+      { item: map, weight: 10, qty_min: 1, qty_max: 1, rarity: "uncommon" }
+    ]
+  },
+  "lt_zone_storm" => {
+    name: "Storm Zone Loot",
+    entries: [
+      { item: electric_stone, weight: 20, qty_min: 1, qty_max: 1, rarity: "rare" },
+      { item: wind_stone, weight: 20, qty_min: 1, qty_max: 1, rarity: "rare" },
+      { item: normal_stone, weight: 10, qty_min: 1, qty_max: 1, rarity: "uncommon" }
+    ]
+  },
+  "lt_zone_celestial" => {
+    name: "Celestial Zone Loot",
+    entries: [
+      { item: celestial_stone, weight: 20, qty_min: 1, qty_max: 1, rarity: "epic" },
+      { item: normal_stone, weight: 15, qty_min: 1, qty_max: 1, rarity: "uncommon" },
+      { item: leveling_stone, weight: 10, qty_min: 1, qty_max: 1, rarity: "rare" }
     ]
   }
 }
@@ -235,7 +324,8 @@ pet_care_loot_tables.each do |key, config|
       weight: entry[:weight],
       qty_min: entry[:qty_min],
       qty_max: entry[:qty_max],
-      rarity: entry[:rarity]
+      rarity: entry[:rarity],
+      constraints_json: entry[:constraints] || {}
     )
   end
 end

@@ -7,17 +7,12 @@ class UserPetsController < ApplicationController
 
   def index
     @user_pets = current_user.user_pets.active.includes({ pet: :pet_types }, :rarity)
-    @selected_pet = @user_pets.first
-    @pet_types = PetType.order(:name)
+    @user_eggs = current_user.user_eggs.unhatched.includes(:egg).order(created_at: :asc)
+    @active_collection = params[:collection].presence_in(%w[pets eggs]) || "pets"
   end
 
   def show
     @pet = @user_pet.pet
-
-    if turbo_frame_request?
-      render partial: "user_pets/detail_frame", locals: { user_pet: @user_pet }
-      return
-    end
   end
 
   def equip
@@ -46,74 +41,78 @@ class UserPetsController < ApplicationController
   end
 
   def interact_preview
-    @interaction = params[:interaction_type]
-    definition = PetCareService::ACTIONS[@interaction]
-    unless definition
-      head :unprocessable_entity and return
+    context = panel_context
+
+    if params[:cancel].present?
+      render_action_panel(state: :idle, context: context) and return
     end
 
-    if @user_pet.exploring?
-      respond_to do |format|
-        format.turbo_stream do
-          render turbo_stream: turbo_stream.update(
-            "interaction-action",
-            partial: "user_pets/interaction_locked",
-            locals: { user_pet: @user_pet }
-          )
-        end
-        format.html do
-          redirect_to user_pet_path(@user_pet), alert: "#{@user_pet.name} is currently exploring."
-        end
-      end
+    interaction = params[:interaction_type].to_s
+    payload = interaction_payload(interaction)
+    definition = payload&.dig(:definition)
+    unless definition
+      render_action_panel(
+        state: :error,
+        context: context,
+        message: "That action is not available."
+      )
       return
     end
 
-    details = YAML.load_file(Rails.root.join("config/item_details.yml")).with_indifferent_access
-
-    energy_cost       = definition[:energy_cost].to_i
-    needs_delta       = definition[:needs] || {}
-    personality_delta = definition[:personality] || {}
-
-    requirements = Array(definition[:required_item_types]).map do |item_type|
-      item = Item.find_by(item_type: item_type)
-      user_item = item ? current_user.user_items.find_by(item: item) : nil
-      detail_entry = details[item_type] || {}
-      description = detail_entry[:description] || detail_entry["description"]
-      {
-        item: item,
-        type: item_type,
-        quantity: user_item&.quantity.to_i,
-        required_quantity: 1,
-        description: description
-      }
+    if @user_pet.exploring?
+      render_action_panel(
+        state: :error,
+        context: context,
+        message: "#{@user_pet.name.presence || @user_pet.pet.name} is currently exploring."
+      )
+      return
     end
 
-    has_items = requirements.all? { |req| req[:quantity].to_i >= req[:required_quantity].to_i }
-    has_energy = @user_pet.energy.to_i >= energy_cost
-    can_perform = has_items && has_energy
-
-    glow_balance = current_user.user_stat&.glow_essence.to_i
-    glow_multiplier = PetCareService::GLOW_ESSENCE_BOOST
-
-    respond_to do |format|
-      format.turbo_stream do
-        render turbo_stream: turbo_stream.update(
-          "interaction-action",
-          partial: "user_pets/interact_preview",
-          locals: {
-            user_pet: @user_pet,
-            interaction: @interaction,
-            requirements: requirements,
-            energy_cost: energy_cost,
-            needs_delta: needs_delta,
-            personality_delta: personality_delta,
-            can_perform: can_perform,
-            glow_essence_balance: glow_balance,
-            glow_multiplier: glow_multiplier
-          }
-        )
-      end
+    if @user_pet.asleep_until.present? && Time.current < @user_pet.asleep_until
+      minutes_left = ((@user_pet.asleep_until - Time.current) / 60).ceil
+      render_action_panel(
+        state: :error,
+        context: context,
+        message: "#{@user_pet.name.presence || @user_pet.pet.name} is resting for another #{helpers.pluralize(minutes_left, 'minute')}."
+      )
+      return
     end
+
+    requirements = payload[:requirements]
+    energy_cost  = payload[:energy_cost]
+    has_items   = requirements.all? { |req| req[:quantity].to_i >= req[:required_quantity].to_i }
+    has_energy  = @user_pet.energy.to_i >= energy_cost
+
+    unless has_energy
+      render_action_panel(
+        state: :error,
+        context: context,
+        message: "#{@user_pet.name.presence || @user_pet.pet.name} needs #{energy_cost} energy (#{@user_pet.energy.to_i} available).",
+        requirements: requirements
+      )
+      return
+    end
+
+    unless has_items
+      render_action_panel(
+        state: :error,
+        context: context,
+        message: "You need additional items for #{interaction.humanize.downcase}.",
+        requirements: requirements
+      )
+      return
+    end
+
+    render_action_panel(
+      state: :confirm,
+      context: context,
+      interaction: interaction,
+      message: "#{interaction.humanize} will consume #{energy_cost} energy and use the listed items.",
+      requirements: requirements,
+      energy_cost: energy_cost,
+      needs_preview: payload[:needs_preview],
+      personality_changes: payload[:personality_changes]
+    )
   end
 
   def unequip
@@ -248,10 +247,15 @@ class UserPetsController < ApplicationController
 
   # POST /user_pets/:id/interact
   def interact
+    context = panel_context
     interaction = params[:interaction_type]
     if @user_pet.exploring?
-      flash[:alert] = "#{@user_pet.name} is currently exploring and can’t interact right now."
-      redirect_to user_pet_path(@user_pet) and return
+      render_action_panel(
+        state: :error,
+        context: context,
+        message: "#{@user_pet.name.presence || @user_pet.pet.name} is currently exploring."
+      )
+      return
     end
     glow_boost = ActiveModel::Type::Boolean.new.cast(params[:use_glow_essence])
 
@@ -265,11 +269,60 @@ class UserPetsController < ApplicationController
 
     result = service.run!
 
-    flash[:notice] = care_success_message(interaction, result)
-    redirect_to user_pet_path(@user_pet)
+    success_message = care_success_message(interaction, result)
+
+    respond_to do |format|
+      format.turbo_stream do
+        @user_pet.reload
+        info_dom    = helpers.dom_id(@user_pet, :info_card)
+        action_dom  = helpers.dom_id(@user_pet, :action_panel)
+        payload     = interaction_payload(interaction)
+        render turbo_stream: [
+          turbo_stream.replace(
+            info_dom,
+            partial: "user_pets/info_body",
+            locals: {
+              user_pet: @user_pet,
+              context: context,
+              action_dom_id: action_dom
+            }
+          ),
+          turbo_stream.replace(
+            action_dom,
+            partial: "user_pets/action_panel",
+            locals: {
+              user_pet: @user_pet,
+              context: context,
+              state: payload.present? ? :confirm : :success,
+              message: success_message,
+              interaction: interaction,
+              requirements: payload&.dig(:requirements) || [],
+              energy_cost: payload&.dig(:energy_cost),
+              needs_preview: payload&.dig(:needs_preview) || [],
+              personality_changes: payload&.dig(:personality_changes) || []
+            }
+          )
+        ]
+      end
+      format.html do
+        flash[:notice] = success_message
+        redirect_to user_pet_path(@user_pet)
+      end
+    end
   rescue UserPet::PetSleepingError, UserPet::NotEnoughEnergyError, PetCareService::CareError => e
-    flash[:alert] = e.message
-    redirect_to user_pet_path(@user_pet)
+    respond_to do |format|
+      format.turbo_stream do
+        render_action_panel(
+          state: :error,
+          context: context,
+          message: e.message
+        )
+      end
+      format.html do
+        flash[:alert] = e.message
+        redirect_to user_pet_path(@user_pet)
+      end
+    end
   end
 
   def preview
@@ -380,4 +433,113 @@ private
     @user_pet.update!(held_user_item: nil, evolution_journal: journal, state_flags: flags)
   end
 
+  def panel_context
+    params[:context].presence_in(%w[modal page])&.to_sym || :page
+  end
+
+  def build_needs_preview(definition)
+    needs = definition[:needs] || {}
+
+    needs.map do |attribute, change|
+      attr    = attribute.to_sym
+      current = attr == :mood ? @user_pet.mood.to_f : @user_pet.send(attr).to_f
+      target  = @user_pet.send(:clamp_need, current + change.to_f)
+      delta   = target - current
+
+      before_percent = [[current, 0.0].max, 100.0].min.round(2)
+      after_percent  = [[target, 0.0].max, 100.0].min.round(2)
+
+      {
+        key: attr,
+        label: helpers.need_label(attr),
+        before: current.round(1),
+        after: target.round(1),
+        delta: delta.round(1),
+        before_percent: before_percent,
+        after_percent: after_percent
+      }
+    end
+  end
+
+  def build_personality_preview(definition)
+    personalities = definition[:personality] || {}
+
+    personalities.map do |attribute, change|
+      {
+        key: attribute.to_sym,
+        label: attribute.to_s.humanize,
+        delta: change.to_f.round(1)
+      }
+    end
+  end
+
+  def render_action_panel(state:, context:, message: nil, requirements: nil, interaction: nil, energy_cost: nil, needs_preview: [], personality_changes: [])
+    requirements ||= []
+    action_dom = helpers.dom_id(@user_pet, :action_panel)
+
+    panel_locals = {
+      user_pet: @user_pet,
+      context: context,
+      state: state,
+      message: message,
+      requirements: requirements,
+      interaction: interaction,
+      energy_cost: energy_cost,
+      needs_preview: needs_preview,
+      personality_changes: personality_changes
+    }
+
+    respond_to do |format|
+      format.turbo_stream do
+        if turbo_frame_request?
+          render partial: "user_pets/action_panel", formats: :html, locals: panel_locals
+        else
+          render turbo_stream: turbo_stream.replace(
+            action_dom,
+            partial: "user_pets/action_panel",
+            formats: :html,
+            locals: panel_locals
+          )
+        end
+      end
+      format.html do
+        flash[:alert] = message if message.present? && state == :error
+        redirect_to user_pet_path(@user_pet)
+      end
+    end
+  end
+
+  def interaction_payload(interaction)
+    definition = PetCareService::ACTIONS[interaction]
+    return nil unless definition
+
+    energy_cost = definition[:energy_cost].to_i
+    requirements = Array(definition[:required_item_types]).map do |item_type|
+      item       = Item.find_by(item_type: item_type)
+      user_item  = item ? current_user.user_items.find_by(item: item) : nil
+      detail     = care_item_details[item_type] || {}
+      {
+        item: item,
+        type: item_type,
+        quantity: user_item&.quantity.to_i,
+        required_quantity: 1,
+        description: detail[:description] || detail["description"]
+      }
+    end
+
+    {
+      definition: definition,
+      energy_cost: energy_cost,
+      requirements: requirements,
+      needs_preview: build_needs_preview(definition),
+      personality_changes: build_personality_preview(definition)
+    }
+  end
+
+  def care_item_details
+    @care_item_details ||= begin
+      path = Rails.root.join("config/items.yml")
+      path.exist? ? YAML.load_file(path).with_indifferent_access : {}.with_indifferent_access
+    end
+  end
 end

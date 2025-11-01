@@ -1,6 +1,16 @@
 class UserEggsController < ApplicationController
   before_action :authenticate_user!
 
+  def show
+    @user_egg = current_user.user_eggs.includes(:egg).find(params[:id])
+
+    if turbo_frame_request?
+      render partial: "user_eggs/modal_detail", locals: { user_egg: @user_egg }
+    else
+      redirect_to user_pets_path(collection: "eggs")
+    end
+  end
+
   def create
     egg = Egg.find(params[:egg_id])
     @egg = egg

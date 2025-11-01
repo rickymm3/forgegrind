@@ -1,0 +1,21 @@
+<% context = (defined?(local_assigns) && local_assigns.fetch(:context, nil)) || :page %>
+<% info_dom_id = dom_id(user_pet, :info_card) %>
+<% action_dom_id = dom_id(user_pet, :action_panel) %>
+
+<% padding_class = context == :page ? "pb-32" : "pb-24" %>
+<div class="relative flex flex-col gap-6 <%= padding_class %>">
+  <turbo-frame id="<%= info_dom_id %>">
+    <%= render "user_pets/info_body", user_pet: user_pet, context: context, action_dom_id: action_dom_id %>
+  </turbo-frame>
+
+  <turbo-frame id="<%= action_dom_id %>">
+    <%= render "user_pets/action_panel",
+               user_pet: user_pet,
+               context: context,
+               state: :idle,
+               needs_preview: [],
+               personality_changes: [] %>
+  </turbo-frame>
+
+
+</div>

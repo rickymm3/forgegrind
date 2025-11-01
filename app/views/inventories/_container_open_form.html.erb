@@ -9,6 +9,11 @@
   <%= form.hidden_field :request_uuid, value: "", data: { open_container_target: "requestUuid" } %>
   <%= form.submit label,
                   class: css,
-                  data: { open_container_target: "submit" },
+                  data: {
+                    open_container_target: "submit",
+                    action: "click->inventory#rememberRevealTrigger",
+                    container_open_key: chest.key,
+                    container_open_quantity: quantity
+                  },
                   disabled: disabled %>
 <% end %>

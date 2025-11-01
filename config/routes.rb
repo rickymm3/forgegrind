@@ -79,7 +79,7 @@ Rails.application.routes.draw do
 
   end
 
-  resources :user_eggs, only: [:create] do
+  resources :user_eggs, only: [:create, :show] do
     member do
       post :incubate
       post :mark_ready

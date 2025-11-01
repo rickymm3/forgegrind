@@ -1,0 +1,119 @@
+# config/items.yml
+#
+# Centralised item catalogue used for seeding Items and rendering UI metadata.
+# Keys are the canonical `item_type` strings; values expose a display `name`,
+# descriptions, and optional personality modifiers that various UIs reference.
+
+starter_item:
+  name: "Starter Item"
+  description: "A basic supplies kit - humble beginnings for any caretaker."
+
+wooden_stick:
+  name: "Wooden Stick"
+  description: "A sturdy stick; simple, reliable, and oddly comforting."
+
+frisbee:
+  name: "Frisbee"
+  description: "A playful frisbee to toss around with your pet."
+  playfulness_mod: 0.5
+  affection_mod: 0.0
+  temperament_mod: 0.0
+  curiosity_mod: 0.2
+  confidence_mod: 0.0
+
+blanket:
+  name: "Blanket"
+  description: "A cozy blanket that makes your pet feel safe and warm."
+  playfulness_mod: 0.0
+  affection_mod: 0.5
+  temperament_mod: 0.1
+  curiosity_mod: 0.0
+  confidence_mod: 0.2
+
+soap:
+  name: "Soap"
+  description: "A gentle cleanser that keeps coats gleaming."
+  playfulness_mod: 0.0
+  affection_mod: 0.5
+  temperament_mod: 0.1
+  curiosity_mod: 0.0
+  confidence_mod: 0.2
+
+whistle:
+  name: "Whistle"
+  description: "A whistle that grabs your pet's attention instantly."
+  playfulness_mod: 0.0
+  affection_mod: -0.2
+  temperament_mod: 0.5
+  curiosity_mod: 0.0
+  confidence_mod: 0.1
+
+treat:
+  name: "Treat"
+  description: "A tasty treat that boosts your pet's mood."
+  playfulness_mod: 0.0
+  affection_mod: 0.3
+  temperament_mod: 0.0
+  curiosity_mod: 0.4
+  confidence_mod: 0.0
+
+map:
+  name: "Map"
+  description: "A detailed map to help you and your pet explore new areas."
+  playfulness_mod: 0.0
+  affection_mod: 0.0
+  temperament_mod: 0.0
+  curiosity_mod: 0.5
+  confidence_mod: 0.2
+
+leveling_stone:
+  name: "Leveling Stone"
+  description: "A steady stone that safely channels growth for any pet."
+
+normal_stone:
+  name: "Normal Stone"
+  description: "A versatile stone attuned to well-balanced companions."
+
+fire_stone:
+  name: "Fire Stone"
+  description: "Warm to the touch - fire-aligned pets resonate with its ember core."
+
+water_stone:
+  name: "Water Stone"
+  description: "Cool and fluid, perfect for aquatic or flowy personalities."
+
+electric_stone:
+  name: "Electric Stone"
+  description: "Crackling with residual charge, it energizes electric pets."
+
+grass_stone:
+  name: "Grass Stone"
+  description: "Verdant moss covers this stone; nurturing for nature-aligned pets."
+
+ice_stone:
+  name: "Ice Stone"
+  description: "Chilled frost clings to its surface, harmonizing with icy temperaments."
+
+shadow_stone:
+  name: "Shadow Stone"
+  description: "Whispers of dusk swirl inside, guiding shadow-bound companions."
+
+metal_stone:
+  name: "Metal Stone"
+  description: "Dense and steady, forged for metallic hides and hardy shells."
+
+wind_stone:
+  name: "Wind Stone"
+  description: "Light as air; its currents thrill agile, wind-loving pets."
+
+spirit_stone:
+  name: "Spirit Stone"
+  description: "Glows softly, responding to ethereal, spirit-touched allies."
+
+storm_stone:
+  name: "Storm Stone"
+  description: "Rumbles faintly inside, ideal for tempestuous partners."
+
+celestial_stone:
+  name: "Celestial Stone"
+  description: "Starlight flickers within - perfect for pets attuned to the cosmos."

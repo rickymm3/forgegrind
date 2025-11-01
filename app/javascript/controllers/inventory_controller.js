@@ -31,10 +31,16 @@ export default class extends Controller {
     event.stopPropagation()
   }
 
-  closeReveal(event) {
-    event.preventDefault()
-    const frame = document.getElementById("container-reveal")
-    if (frame) frame.innerHTML = ""
+  rememberRevealTrigger(event) {
+    const button = event.currentTarget
+    window.__containerRevealTrigger = button
+
+    const { containerOpenKey: key, containerOpenQuantity: quantity } = button.dataset
+    if (key) {
+      window.__containerRevealFocus = { key, quantity }
+    } else {
+      window.__containerRevealFocus = null
+    }
   }
 
   updateTabs(activeButton = null) {

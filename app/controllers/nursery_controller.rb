@@ -2,7 +2,7 @@ class NurseryController < ApplicationController
   before_action :authenticate_user!
 
   def index
-    @user_eggs = current_user.user_eggs.includes(:egg)
+    redirect_to user_pets_path(collection: "eggs")
   end
 
   def hatch

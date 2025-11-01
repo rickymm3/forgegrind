@@ -1,5 +1,5 @@
 module ItemsHelper
-  ITEM_DETAILS_PATH = Rails.root.join("config", "item_details.yml")
+  ITEM_CONFIG_PATH = Rails.root.join("config", "items.yml")
   CARE_ITEM_PLACEHOLDER = "items/care/placeholder.png"
   CARE_ITEM_PATTERNS = [
     "items/care/%{slug}.png",
@@ -30,8 +30,8 @@ module ItemsHelper
 
   def load_item_details
     @item_details_cache ||= begin
-      if ITEM_DETAILS_PATH.exist?
-        YAML.load_file(ITEM_DETAILS_PATH).with_indifferent_access
+      if ITEM_CONFIG_PATH.exist?
+        YAML.load_file(ITEM_CONFIG_PATH).with_indifferent_access
       else
         {}.with_indifferent_access
       end

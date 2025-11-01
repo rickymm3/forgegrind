@@ -1,185 +1,126 @@
-<% sort_options = [
-  ["Level (High → Low)", "level-desc"],
-  ["Level (Low → High)", "level-asc"],
-  ["Name (A → Z)", "name-asc"],
-  ["Name (Z → A)", "name-desc"],
-  ["Type (A → Z)", "type-asc"]
-] %>
-<% filter_options = [["All Archetypes", "all"]] + @pet_types.map { |type| [type.name, type.name.parameterize] } %>
-<% total_pets = @user_pets.size %>
+<% content_for :title, "Pets" %>
 
-<div class="container mx-auto mt-12 px-4">
-  <div class="space-y-6"
-       data-controller="pet-list"
-       data-action="turbo:frame-load->pet-list#frameLoaded pet-detail:close->pet-list#clearSelection"
-       data-pet-list-active-value="<%= @selected_pet&.id || 0 %>"
-       data-pet-list-default-sort-value="level-desc">
-    <div class="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-      <div class="space-y-2">
-        <h1 class="text-3xl font-bold text-slate-50 uppercase tracking-tight">Pet Inventory</h1>
-        <p class="text-sm	text-slate-300 max-w-xl">
-          Browse your companions, inspect their stats, and assemble the perfect party for your next adventure.
-        </p>
-      </div>
-      <% if total_pets.positive? %>
-        <span class="text-xs font-semibold tracking-wide text-slate-300 uppercase rounded-full bg-slate-800/70 border border-slate-700/60 px-3 py-1"
-              data-pet-list-target="count">
-          Showing <%= total_pets %> / <%= total_pets %> pets
+<div class="relative flex min-h-screen flex-col" data-controller="pet-hub" data-pet-hub-active-value="<%= @active_collection %>">
+  <header class="sticky top-0 z-40 border-b border-slate-800 bg-slate-950/85 backdrop-blur supports-[backdrop-filter]:bg-slate-950/60"
+          style="min-height: 10vh; max-height: 100px;">
+    <div class="mx-auto flex h-full w-full max-w-4xl items-center justify-between gap-4 px-4 py-3">
+      <button type="button"
+              class="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-700/60 bg-slate-900/60 text-slate-300 transition hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
+              data-action="click->pet-hub#select"
+              data-pet-hub-target="toggle"
+              data-collection="eggs"
+              aria-pressed="false"
+              aria-label="Show eggs">
+        <svg aria-hidden="true" class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.4">
+          <path d="M12 21c4.4 0 8-3.6 8-8 0-3.4-2.2-8-8-13-5.8 5-8 9.6-8 13 0 4.4 3.6 8 8 8z" />
+        </svg>
+      </button>
+
+      <div class="flex flex-col items-center text-center">
+        <span class="text-lg font-semibold uppercase tracking-wide text-slate-100">Pets</span>
+        <span class="text-xs text-slate-400">
+          <%= pluralize(@user_pets.size, "pet") %> · <%= pluralize(@user_eggs.size, "egg") %>
         </span>
-      <% end %>
+      </div>
+
+      <button type="button"
+              class="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-700/60 bg-slate-900/60 text-slate-300 transition hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
+              data-action="click->pet-hub#select"
+              data-pet-hub-target="toggle"
+              data-collection="pets"
+              aria-pressed="false"
+              aria-label="Show pets">
+        <svg aria-hidden="true" class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.4">
+          <path d="M4.8 10.2c0-2.7 2.3-4.9 5.2-4.9 1.3 0 2.5.5 3.5 1.3.9-.8 2.1-1.3 3.4-1.3 2.9 0 5.2 2.2 5.2 4.9 0 4.9-8.6 9.5-8.6 9.5S4.8 15.1 4.8 10.2z" />
+        </svg>
+      </button>
     </div>
+  </header>
 
-    <% if total_pets.positive? %>
-      <div class="space-y-6">
-        <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div class="flex flex-wrap items-center gap-4 bg-slate-900/70 border border-slate-700/60 rounded-2xl p-4 shadow-inner shadow-slate-900/40">
-            <div class="flex flex-col">
-              <label for="pet_inventory_sort" class="text-xs font-semibold text-slate-400 uppercase">Sort By</label>
-              <select id="pet_inventory_sort"
-                      class="w-56 rounded-lg border border-slate-600 bg-slate-800/80 px-3 py-2 text-sm text-slate-100 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-400"
-                      data-pet-list-target="sort"
-                      data-action="change->pet-list#sortChanged">
-                <% sort_options.each do |label, value| %>
-                  <option value="<%= value %>"><%= label %></option>
-                <% end %>
-              </select>
-            </div>
-            <div class="flex flex-col">
-              <label for="pet_inventory_filter" class="text-xs font-semibold text-slate-400 uppercase">Filter Archetype</label>
-              <select id="pet_inventory_filter"
-                      class="w-56 rounded-lg border border-slate-600 bg-slate-800/80 px-3 py-2 text-sm text-slate-100 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-400"
-                      data-pet-list-target="filter"
-                      data-action="change->pet-list#filterChanged">
-                <% filter_options.each do |label, value| %>
-                  <option value="<%= value %>"><%= label %></option>
-                <% end %>
-              </select>
-            </div>
-            <span class="hidden text-sm text-amber-300" data-pet-list-target="empty">
-              No pets match the selected filters.
-            </span>
-          </div>
-          <span class="inline-flex items-center gap-2 rounded-full bg-indigo-500/20 border border-indigo-400/40 px-3 py-1 text-xs font-semibold text-indigo-200 uppercase">
-            <span class="inline-flex h-6 w-6 items-center justify-center rounded-full bg-indigo-500/80 text-[10px] font-bold text-white"
-                  data-icon-slot="party-slot">PT</span>
-            Reserve three pets as your active party from this screen.
-          </span>
-        </div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_360px] gap-6 items-start">
-          <div class="space-y-4">
-            <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4"
-                 data-pet-list-target="grid">
-              <% @user_pets.each do |user_pet| %>
-                <% display_name = user_pet.name.presence || user_pet.pet.name %>
-                <% sprite_path = pet_sprite_path(user_pet.pet) %>
-                <% type_names = user_pet.pet.pet_types.map(&:name) %>
-                <% type_token = type_names.map { |name| name.parameterize }.join('|') %>
-                <% rarity_name = user_pet.rarity&.name || "Unknown" %>
-                <% energy_cap = UserPet::MAX_ENERGY %>
-                <% mood_score = user_pet.mood.to_i %>
-                <% mood_label =
-                     if mood_score >= 85
-                       "Radiant"
-                     elsif mood_score >= 65
-                       "Cheery"
-                     elsif mood_score >= 45
-                       "Steady"
-                     else
-                       "Gloomy"
-                     end %>
-
-                <%= link_to user_pet_path(user_pet),
-                            class: "group relative flex flex-col overflow-hidden rounded-3xl border border-slate-700/70 bg-slate-900/80 transition-all duration-150 hover:-translate-y-1 hover:shadow-xl hover:border-indigo-400/60 focus:outline-none",
-                            data: {
-                              turbo_frame: "pet_detail",
-                              action: "click->pet-list#select",
-                              "pet-list-target": "card",
-                              pet_id: user_pet.id,
-                              name: display_name.downcase,
-                              level: user_pet.level,
-                              types: type_token,
-                              selected_classes: "ring-2 ring-indigo-400 shadow-xl border-indigo-400/80"
-                            } do %>
-                  <div class="relative h-36 bg-slate-950/70">
-                    <%= image_tag sprite_path,
-                                   alt: "#{user_pet.pet.name} portrait",
-                                   class: "pet-card-image absolute inset-0 h-full w-full object-contain object-center opacity-95 mix-blend-screen" %>
-                    <div class="absolute inset-0 bg-gradient-to-b from-transparent via-slate-900/20 to-slate-950/90"></div>
-                    <div class="absolute top-4 left-4 inline-flex items-center gap-2 rounded-full bg-amber-500/20 border border-amber-400/40 px-3 py-1">
-                      <span class="inline-flex h-7 w-7 items-center justify-center rounded-full bg-amber-500 text-xs font-black text-white uppercase"
-                            data-icon-slot="level-badge">Lv</span>
-                      <span class="text-xs font-semibold text-amber-100"><%= user_pet.level %></span>
-                    </div>
-                    <div class="absolute top-4 right-4 inline-flex items-center gap-2 rounded-full bg-indigo-500/20 border border-indigo-400/40 px-3 py-1">
-                      <span class="inline-flex h-7 w-7 items-center justify-center rounded-full bg-indigo-500 text-xs font-black text-white uppercase"
-                            data-icon-slot="power-badge">PW</span>
-                      <span class="text-xs font-semibold text-indigo-100"><%= user_pet.power %></span>
-                    </div>
-                  </div>
-
-                  <div class="p-5 space-y-4">
-                    <div class="flex items-start justify-between">
-                      <div class="space-y-1">
-                        <p class="text-lg font-semibold text-slate-50"><%= display_name %></p>
-                        <p class="text-xs font-semibold uppercase tracking-wide text-slate-400"><%= user_pet.pet.name %></p>
-                      </div>
-                      <span class="inline-flex items-center gap-1 rounded-full bg-purple-500/20 border border-purple-400/40 px-3 py-1 text-xs font-semibold text-purple-100">
-                        <span class="inline-flex h-6 w-6 items-center justify-center rounded-full bg-purple-500 text-[10px] font-black text-white uppercase"
-                              data-icon-slot="rarity-badge">R</span>
-                        <%= rarity_name %>
-                      </span>
-                    </div>
-
-                    <% if type_names.any? %>
-                      <div class="flex flex-wrap gap-2">
-                        <% type_names.each do |type_name| %>
-                          <span class="inline-flex items-center gap-1 rounded-full bg-slate-800/70 border border-slate-600/60 px-2.5 py-1 text-[11px] font-semibold text-slate-200 uppercase">
-                            <span class="inline-flex h-5 w-5 items-center justify-center rounded bg-slate-700/70 text-[10px] font-bold text-slate-200"
-                                  data-icon-slot="<%= "type-#{type_name.parameterize}" %>">T</span>
-                            <%= type_name %>
-                          </span>
-                        <% end %>
-                      </div>
-                    <% end %>
-
-                    <div class="grid grid-cols-2 gap-3 text-xs text-slate-300">
-                      <div class="flex items-center gap-2">
-                        <span class="inline-flex h-6 w-6 items-center justify-center rounded-full bg-teal-500/20 border border-teal-400/40 text-[10px] font-bold text-teal-100 uppercase"
-                              data-icon-slot="energy-badge">EN</span>
-                        <span class="font-semibold"><%= "#{user_pet.energy.to_i}/#{energy_cap}" %></span>
-                      </div>
-                      <div class="flex items-center gap-2">
-                        <span class="inline-flex h-6 w-6 items-center justify-center rounded-full bg-rose-500/20 border border-rose-400/40 text-[10px] font-bold text-rose-100 uppercase"
-                              data-icon-slot="mood-badge">MO</span>
-                        <span class="font-semibold"><%= "#{mood_label} (#{mood_score})" %></span>
-                      </div>
-                    </div>
-
-                    <p class="text-[11px] leading-relaxed text-slate-400">
-                      <%= truncate(user_pet.pet.description.to_s, length: 100, omission: "…") %>
-                    </p>
-                  </div>
-                <% end %>
+  <div class="mx-auto w-full max-w-4xl flex-1 px-4 pb-28 pt-6">
+    <section class="space-y-6" data-pet-hub-target="panel" data-collection="pets">
+      <% if @user_pets.any? %>
+        <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+          <% @user_pets.each do |user_pet| %>
+            <% display_name = user_pet.name.presence || user_pet.pet.name %>
+            <% sprite_path = pet_sprite_path(user_pet.pet) %>
+            <% badge_text = "Lvl #{user_pet.level}" %>
+            <%= link_to user_pet_path(user_pet),
+                        class: "group relative block aspect-[3/4] overflow-hidden rounded-3xl border border-slate-800 bg-slate-900/60 shadow-inner shadow-slate-950/40 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950",
+                        data: { turbo_prefetch: false },
+                        aria: { label: "#{display_name} – #{badge_text}" } do %>
+              <span class="sr-only"><%= display_name %></span>
+              <% if sprite_path.present? %>
+                <%= image_tag sprite_path,
+                              alt: "",
+                              loading: "lazy",
+                              class: "absolute inset-0 h-full w-full object-cover transition duration-200 group-hover:scale-105" %>
+              <% else %>
+                <div class="absolute inset-0 flex items-center justify-center bg-slate-800 text-sm text-slate-300">
+                  <%= display_name %>
+                </div>
               <% end %>
-            </div>
-          </div>
-
-          <aside class="space-y-4">
-            <%= render "user_pets/detail_frame", user_pet: @selected_pet %>
-          </aside>
+              <span class="absolute top-2 right-2 inline-flex items-center rounded-full bg-slate-950/85 px-2 py-1 text-[11px] font-semibold text-indigo-200 drop-shadow-md" aria-label="Level <%= user_pet.level %>">
+                <%= badge_text %>
+              </span>
+            <% end %>
+          <% end %>
         </div>
-      </div>
-    <% else %>
-      <div class="mt-12 bg-slate-900/70 border border-slate-700/60 rounded-3xl p-10 text-center space-y-4 text-slate-300">
-        <h2 class="text-2xl font-semibold text-slate-50">It’s quiet in here…</h2>
-        <p class="text-sm max-w-lg mx-auto">
-          You haven’t adopted any pets yet. Visit the nursery to hatch eggs and start building your team of explorers.
-        </p>
-        <%= link_to "Visit the Nursery",
-                    nursery_path,
-                    class: "inline-flex items-center gap-2 rounded-full bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-400" %>
-      </div>
-    <% end %>
+      <% else %>
+        <div class="rounded-3xl border border-slate-800 bg-slate-900/60 p-10 text-center text-slate-300">
+          <p class="text-base font-semibold text-slate-100">No pets yet</p>
+          <p class="mt-2 text-sm">Open eggs to hatch your first companion.</p>
+          <%= link_to "Visit the Store",
+                      adopt_path,
+                      class: "mt-4 inline-flex items-center gap-2 rounded-full bg-indigo-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950" %>
+        </div>
+      <% end %>
+    </section>
+
+    <section class="space-y-6 hidden" data-pet-hub-target="panel" data-collection="eggs">
+      <% if @user_eggs.any? %>
+        <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+          <% @user_eggs.each do |user_egg| %>
+            <% egg = user_egg.egg %>
+            <% badge_text = if user_egg.hatched?
+                               "Hatched"
+                             elsif user_egg.hatching?
+                               remaining = user_egg.hatch_time_remaining
+                               remaining <= 0 ? "Ready" : "#{(remaining / 60.0).ceil}m"
+                             else
+                               "Idle"
+                             end %>
+            <% image_path = egg_image_path(egg) %>
+            <%= link_to user_egg_path(user_egg),
+                        class: "group relative block aspect-[3/4] overflow-hidden rounded-3xl border border-slate-800 bg-slate-900/60 shadow-inner shadow-slate-950/40 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950",
+                        data: { turbo_prefetch: false },
+                        aria: { label: "#{egg.name} egg – #{badge_text}" } do %>
+              <span class="sr-only"><%= egg.name %></span>
+              <% if image_path.present? %>
+                <%= image_tag image_path,
+                              alt: "",
+                              loading: "lazy",
+                              class: "absolute inset-0 h-full w-full object-cover transition duration-200 group-hover:scale-105" %>
+              <% else %>
+                <div class="absolute inset-0 flex items-center justify-center bg-slate-800 text-sm text-slate-300">
+                  <%= egg.name %>
+                </div>
+              <% end %>
+              <span class="absolute top-2 right-2 inline-flex items-center rounded-full bg-slate-950/85 px-2 py-1 text-[11px] font-semibold text-amber-200 drop-shadow-md" aria-label="Egg status <%= badge_text %>">
+                <%= badge_text %>
+              </span>
+            <% end %>
+          <% end %>
+        </div>
+      <% else %>
+        <div class="rounded-3xl border border-slate-800 bg-slate-900/60 p-10 text-center text-slate-300">
+          <p class="text-base font-semibold text-slate-100">No eggs in incubation</p>
+          <p class="mt-2 text-sm">Pick up a new egg from the store to start hatching.</p>
+          <%= link_to "Browse Store",
+                      adopt_path,
+                      class: "mt-4 inline-flex items-center gap-2 rounded-full bg-indigo-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950" %>
+        </div>
+      <% end %>
+    </section>
   </div>
 </div>

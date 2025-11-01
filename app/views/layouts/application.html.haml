@@ -16,8 +16,8 @@
     = stylesheet_link_tag "tailwind", "data-turbo-track": "reload"
     = javascript_include_tag "application", "data-turbo-track": "reload", type: "module"
 
-  %body
-    = render "shared/nav/navbar"
+  %body.bg-slate-950.text-slate-100
     = render "shared/flash_messages", flash_messages: flash
-
-    = yield
+    %main{ class: "min-h-screen pb-[112px]", style: "padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 7rem);" }
+      = yield
+    = render "shared/nav/tabbar"

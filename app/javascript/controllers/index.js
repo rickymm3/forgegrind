@@ -43,6 +43,9 @@ application.register("exploration-list", ExplorationListController)
 import LoadingButtonController from "./loading_button_controller"
 application.register("loading-button", LoadingButtonController)
 
+import ActionPanelController from "./action_panel_controller"
+application.register("action-panel", ActionPanelController)
+
 import ToastController from "./toast_controller"
 application.register("toast", ToastController)
 
@@ -57,3 +60,12 @@ application.register("inventory", InventoryController)
 
 import OpenContainerController from "./open_container_controller"
 application.register("open-container", OpenContainerController)
+
+import ContainerRevealController from "./container_reveal_controller"
+application.register("container-reveal", ContainerRevealController)
+
+import OverflowMenuController from "./overflow_menu_controller"
+application.register("overflow-menu", OverflowMenuController)
+
+import PetHubController from "./pet_hub_controller"
+application.register("pet-hub", PetHubController)

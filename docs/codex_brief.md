@@ -3,9 +3,11 @@
 ## Stack / Conventions
 - Rails 8, Ruby 3.3.0, PostgreSQL, Turbo + Stimulus, Tailwind.
 - Prefer `turbo_frame_tag` for replaceable blocks.
-- Views:  HTML ERB
+- Views:  use HTML ERB
 - Normalize core enums to tables (e.g., `rarities`, `currencies`).
 - Avoid generators if controller exists; edit methods directly.
+- Do not ever write tests
+- Do not ever use git when not necessary
 
 ## High-Level Loop
 - **Eggs → Pets → Evolutions**: pets provide multipliers, abilities; limited equip slots (3).
