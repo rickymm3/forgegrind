@@ -1,0 +1,631 @@
+<% generated = generated_exploration %>
+<% user_exploration ||= nil %>
+<% state = (local_assigns[:state] || :selection).to_sym %>
+<% requirement_progress ||= [] %>
+<% requirement_groups ||= {} %>
+<% available_pets ||= [] %>
+<% selected_pet_ids ||= [] %>
+<% filters ||= {} %>
+<% filters_hash =
+     if filters.respond_to?(:to_unsafe_h)
+       filters.to_unsafe_h
+     elsif filters.respond_to?(:to_h)
+       filters.to_h
+     else
+       filters || {}
+     end %>
+<% filters_hash = filters_hash.stringify_keys if filters_hash.respond_to?(:stringify_keys) %>
+<% filters_hash = filters_hash.reject { |_k, value| value.blank? } if filters_hash.respond_to?(:reject) %>
+<% filters_json = filters_hash.to_json %>
+<% duration_seconds = generated.duration_seconds %>
+<% duration_minutes = (duration_seconds / 60).floor %>
+<% duration_remainder = duration_seconds % 60 %>
+<% duration_label = [] %>
+<% duration_label << "#{duration_minutes}m" unless duration_minutes.zero? %>
+<% duration_label << "#{duration_remainder}s" %>
+<% all_requirements_met = requirement_progress.present? && requirement_progress.all? { |entry| entry[:fulfilled] } %>
+<% detail_dom_id = dom_id(generated, :detail) %>
+
+<div class="card group relative rounded-2xl bg-white shadow-lg transition-shadow duration-200 hover:shadow-xl overflow-hidden" id="<%= detail_dom_id %>">
+  <div class="relative h-40 bg-slate-900">
+    <%= image_tag world_zone_image_path(generated.world),
+                  alt: generated.world.name,
+                  class: "absolute inset-0 h-full w-full object-cover" %>
+    <div class="absolute inset-0 bg-gradient-to-t from-slate-900/85 via-slate-900/30 to-slate-900/60"></div>
+    <div class="absolute top-4 left-4 flex items-center gap-2 text-white text-xs uppercase tracking-wider font-semibold">
+      <span class="rounded-full px-3 py-1 bg-white/20">Expedition</span>
+    </div>
+    <div class="absolute bottom-4 left-4 text-white">
+      <h3 class="text-2xl font-semibold"><%= generated.name %></h3>
+      <p class="text-xs flex items-center gap-2 text-white/80">
+        <span class="inline-flex items-center gap-1">
+          <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path d="M12 6v6l4 2" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
+          </svg>
+          Duration · <%= duration_label.join(' ') %>
+        </span>
+        <span class="inline-flex items-center gap-1">
+          <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path d="M3 12h3m12 0h3M12 3v3m0 12v3" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
+          </svg>
+          <%= generated.world.name %>
+        </span>
+      </p>
+    </div>
+  </div>
+
+  <div class="p-5 space-y-4">
+    <% if requirement_groups.any? %>
+      <div class="space-y-2">
+        <h4 class="text-xs font-semibold text-slate-400 uppercase">Requirements</h4>
+        <% requirement_progress.each do |entry| %>
+          <div class="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2">
+            <span class="text-xs font-semibold text-slate-600"><%= entry[:label] || entry[:key].to_s.titleize %></span>
+            <span class="text-xs font-semibold <%= entry[:fulfilled] ? 'text-emerald-600' : 'text-slate-500' %>">
+              <%= "#{entry[:current]} / #{entry[:required]}" %>
+            </span>
+          </div>
+        <% end %>
+      </div>
+      <% if all_requirements_met %>
+        <div class="inline-flex items-center gap-2 rounded-full bg-emerald-100 text-emerald-700 px-3 py-1 text-xs font-semibold uppercase">
+          <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
+          </svg>
+          <span>Bonus rewards unlocked</span>
+        </div>
+      <% end %>
+    <% end %>
+
+    <% case state %>
+    <% when :selection %>
+      <div class="space-y-4"
+           data-controller="party-selector"
+           data-party-selector-max-value="3"
+           data-party-selector-preview-url-value="<%= preview_exploration_path(generated) %>"
+           data-party-selector-filters-value="<%= filters_json %>">
+        <div class="bg-slate-50 rounded-xl p-4 space-y-3">
+          <p class="text-sm text-slate-600 leading-relaxed">
+            Choose up to three companions to accompany you into this expedition. Requirements grant bonus rewards when fulfilled.
+          </p>
+          <%= form_with url: preview_exploration_path(generated),
+                        method: :post,
+                        data: { turbo_frame: detail_dom_id },
+                        class: "space-y-3" do %>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <%= text_field_tag :name,
+                                 filters[:name],
+                                 placeholder: "Search by name",
+                                 class: "w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-300" %>
+              <%= select_tag :pet_type_id,
+                             options_for_select(PetType.pluck(:name, :id), filters[:pet_type_id]),
+                             include_blank: "All pet types",
+                             class: "w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-300" %>
+            </div>
+            <%= hidden_field_tag :id, generated.id %>
+            <%= hidden_field_tag :selected_pet_ids,
+                                 selected_pet_ids.join(','),
+                                 data: { "party-selector-target": "selectedField" } %>
+            <%= hidden_field_tag :party_order,
+                                 selected_pet_ids.join(','),
+                                 data: { "party-selector-target": "orderField" } %>
+            <%= hidden_field_tag :primary_user_pet_id,
+                                 selected_pet_ids.first,
+                                 data: { "party-selector-target": "primaryField" } %>
+            <%= submit_tag "Filter",
+                           class: "inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white hover:bg-slate-800" %>
+          <% end %>
+        </div>
+
+        <%= form_with url: start_exploration_path(generated),
+                      method: :post,
+                      data: { turbo_frame: detail_dom_id },
+                      class: "space-y-5" do %>
+          <%= hidden_field_tag :selected_pet_ids,
+                               selected_pet_ids.join(','),
+                               data: { "party-selector-target": "selectedField" } %>
+          <%= hidden_field_tag :party_order,
+                               selected_pet_ids.join(','),
+                               data: { "party-selector-target": "orderField" } %>
+          <%= hidden_field_tag :primary_user_pet_id,
+                               selected_pet_ids.first,
+                               data: { "party-selector-target": "primaryField" } %>
+
+          <div class="rounded-2xl border border-slate-200 bg-white p-4 space-y-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <h4 class="text-sm font-semibold text-slate-700">Choose your exploration party</h4>
+                <p class="text-xs text-slate-500">Select up to three companions. Tap a portrait to promote them to leader or remove them.</p>
+              </div>
+              <span class="text-xs font-semibold text-slate-500"
+                    data-party-selector-target="selectionHint"></span>
+            </div>
+
+            <div class="flex flex-wrap justify-center gap-6">
+              <% ["Leader", "Companion", "Companion"].each do |label| %>
+                <div class="flex flex-col items-center gap-2"
+                     data-party-selector-target="slot">
+                  <div class="relative">
+                    <button type="button"
+                            class="h-20 w-20 rounded-full bg-slate-800/5 text-slate-400 flex items-center justify-center text-2xl font-semibold transition hover:bg-slate-800/10"
+                            data-slot-element="main"
+                            data-action="click->party-selector#setPrimaryFromSlot"
+                            disabled>
+                      <img class="hidden h-20 w-20 rounded-full object-cover"
+                           alt=""
+                           data-slot-element="image" />
+                      <span class="text-xl" data-slot-element="placeholder">+</span>
+                      <span class="hidden absolute -bottom-1 left-1/2 -translate-x-1/2 rounded-full bg-indigo-600 px-2 py-0.5 text-[10px] font-semibold text-white uppercase"
+                            data-slot-element="primary">
+                        Leader
+                      </span>
+                    </button>
+                    <button type="button"
+                            class="hidden absolute -top-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-slate-900 text-white text-xs"
+                            data-slot-element="remove"
+                            data-action="click->party-selector#removeFromSlot">
+                      ×
+                    </button>
+                  </div>
+                  <div class="text-center space-y-1">
+                    <p class="text-sm font-semibold text-slate-700" data-slot-element="name">Empty slot</p>
+                    <p class="text-xs text-slate-400" data-slot-element="ability">Select a companion</p>
+                  </div>
+                  <span class="text-[10px] uppercase font-semibold text-slate-400"><%= label %></span>
+                </div>
+              <% end %>
+            </div>
+          </div>
+
+          <% if available_pets.empty? %>
+            <div class="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-6 text-center text-sm text-slate-500">
+              No available pets for this expedition right now.
+            </div>
+          <% else %>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-72 overflow-y-auto pr-1">
+              <% available_pets.each do |pet| %>
+                <% disabled = pet.exploring? %>
+                <% display_name = pet.name.presence || pet.pet.name %>
+                <% ability = pet.pet.special_ability %>
+                <% ability_name = ability&.name %>
+                <% ability_tagline = ability&.tagline %>
+                <% ability_tags = ability&.encounter_tags_list&.join(',') %>
+                <% sprite = defined?(pet_sprite_path) ? pet_sprite_path(pet.pet) : asset_path("pets/#{pet.pet.name.parameterize}.png") %>
+                <% container_classes = ["party-card", "relative"] %>
+                <% container_classes << "party-selected" if selected_pet_ids.include?(pet.id) %>
+                <div class="<%= container_classes.join(' ') %>"
+                     data-party-selector-target="card"
+                     data-user-pet-id="<%= pet.id %>"
+                     data-display-name="<%= display_name %>"
+                     data-image-url="<%= sprite %>"
+                     data-ability-name="<%= ability_name %>"
+                     data-ability-tagline="<%= ability_tagline %>"
+                     data-ability-tags="<%= ability_tags %>"
+                     data-disabled="<%= disabled %>"
+                     data-action="click->party-selector#toggleCard">
+                  <%= check_box_tag "user_pet_ids[]",
+                                    pet.id,
+                                    selected_pet_ids.include?(pet.id),
+                                    class: "hidden",
+                                    disabled: disabled,
+                                    data: { "party-selector-target": "checkbox" } %>
+                  <% button_classes = ["w-full", "rounded-xl", "border", "border-slate-200", "bg-white",
+                                       "p-3", "transition", "text-left", "duration-150"] %>
+                  <% if disabled %>
+                    <% button_classes << "opacity-60 cursor-not-allowed" %>
+                  <% else %>
+                    <% button_classes << "hover:shadow-md hover:border-indigo-400" %>
+                  <% end %>
+                  <button type="button"
+                          class="<%= button_classes.join(' ') %>">
+                    <div class="flex items-start gap-3">
+                      <img class="h-12 w-12 rounded-full object-cover"
+                           alt="<%= pet.pet.name %>"
+                           src="<%= sprite %>" />
+                      <div class="flex-1 space-y-1">
+                        <div class="flex items-center justify-between">
+                          <span class="text-sm font-semibold text-slate-800"><%= display_name %></span>
+                          <span class="text-xs font-semibold text-slate-500">Lvl <%= pet.level %></span>
+                        </div>
+                        <p class="text-xs text-slate-500 flex items-center gap-2">
+                          <span class="inline-flex items-center gap-1">
+                            <span class="font-semibold">Power</span>
+                            <%= pet.pet.power %>
+                          </span>
+                        </p>
+                        <% if ability_name.present? %>
+                          <p class="text-xs text-indigo-600 font-semibold flex items-center gap-1">
+                            <span class="inline-flex h-1.5 w-1.5 rounded-full bg-indigo-400"></span>
+                            <%= ability_name %>
+                          </p>
+                        <% end %>
+                        <% if ability_tagline.present? %>
+                          <p class="text-[11px] text-slate-500"><%= ability_tagline %></p>
+                        <% end %>
+                        <% if disabled %>
+                          <span class="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">
+                            <span class="inline-block h-1.5 w-1.5 rounded-full bg-indigo-500"></span>
+                            Exploring
+                          </span>
+                        <% end %>
+                      </div>
+                    </div>
+                    <span class="hidden absolute top-2 right-2 rounded-full bg-indigo-600 px-2 py-0.5 text-[10px] font-semibold text-white uppercase"
+                          data-card-element="primary">
+                      Leader
+                    </span>
+                  </button>
+                </div>
+              <% end %>
+            </div>
+          <% end %>
+
+          <div class="flex items-center justify-between text-xs text-slate-500">
+            <span>Tap a slot to promote a leader or remove a companion.</span>
+          </div>
+          <button type="submit"
+                  class="w-full inline-flex justify-center items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-400 <%= 'opacity-60 cursor-not-allowed' if selected_pet_ids.empty? %>"
+                  data-party-selector-target="startButton"
+                  <%= 'disabled' if selected_pet_ids.empty? %>>
+            Send Party
+          </button>
+        <% end %>
+      </div>
+
+    <% when :active %>
+      <% if user_exploration.using_segments? %>
+        <% segment_entries = user_exploration.segment_progress_entries.sort_by { |entry| entry[:index].to_i } %>
+        <% active_segment = user_exploration.active_segment_entry %>
+        <% ready_encounter = user_exploration.ready_encounter_entry %>
+        <% upcoming_encounter = user_exploration.upcoming_encounter_entry %>
+        <% total_duration = user_exploration.duration_seconds %>
+        <% elapsed_seconds = user_exploration.elapsed_seconds %>
+        <% active_clock = user_exploration.active_segment_clock %>
+        <% remaining_seconds = (active_clock ? active_clock[:remaining_seconds] : 0).to_i %>
+        <% segment_duration = (active_clock ? active_clock[:duration_seconds] : active_segment&.[](:duration_seconds)).to_i %>
+        <% segment_elapsed = active_clock ? active_clock[:elapsed_seconds].to_i : (segment_duration - remaining_seconds) %>
+        <% segment_start_at = active_clock ? active_clock[:start_time] : (user_exploration.segment_started_at || user_exploration.started_at) %>
+        <% elapsed_before_segment = [elapsed_seconds - segment_elapsed, 0].max %>
+        <% progress_ratio = total_duration.positive? ? (elapsed_seconds.to_f / total_duration) : 0.0 %>
+        <% progress_percent = (progress_ratio * 100).clamp(0.0, 100.0) %>
+        <% checkpoint_url = checkpoint_user_exploration_path(user_exploration) %>
+        <% segment_end_at = if active_clock && active_clock[:end_time].present?
+                              active_clock[:end_time]
+                            elsif segment_start_at.present? && segment_duration.to_i.positive?
+                              segment_start_at + segment_duration.seconds
+                            end %>
+        <% timeline_nodes = [] %>
+        <% timeline_nodes << { label: "Start", status: 'completed' } %>
+        <% segment_entries.each do |segment| %>
+          <% node_label = segment[:label].presence || "Checkpoint #{segment[:index].to_i + 1}" %>
+          <% node_status =
+               case segment[:status].to_s
+               when 'completed' then 'completed'
+               when 'checkpoint' then 'checkpoint'
+               when 'active' then 'active'
+               else 'upcoming'
+               end %>
+          <% timeline_nodes << { label: node_label, status: node_status } %>
+        <% end %>
+        <% finish_status =
+             if segment_entries.all? { |segment| segment[:status].to_s == 'completed' } && user_exploration.complete?
+               'completed'
+             elsif user_exploration.checkpoint_segment_entry.present?
+               'checkpoint'
+             else
+               'upcoming'
+             end %>
+        <% timeline_nodes << { label: "Finish", status: finish_status } %>
+        <div class="space-y-4">
+          <div class="flex items-center justify-between">
+            <p class="text-sm font-semibold text-indigo-600 flex items-center gap-2">
+              <span class="inline-flex h-2 w-2 rounded-full bg-indigo-500 animate-pulse"></span>
+              Expedition in progress
+            </p>
+            <p class="text-xs text-slate-500">Started: <%= l(user_exploration.started_at, format: :short) %></p>
+          </div>
+
+          <% if active_segment.present? %>
+            <div data-controller="countdown"
+                 data-countdown-seconds-value="<%= remaining_seconds %>"
+                 data-countdown-total-value="<%= total_duration %>"
+                 data-countdown-elapsed-value="<%= elapsed_before_segment %>"
+                 data-countdown-checkpoint-url-value="<%= checkpoint_url %>"
+                 data-countdown-segment-index-value="<%= active_segment[:index].to_i %>"
+                 data-countdown-segment-total-value="<%= segment_duration %>"
+                 data-countdown-segment-elapsed-value="<%= segment_elapsed %>"
+                 <%= %(data-countdown-end-at-value="#{segment_end_at.iso8601}") if segment_end_at.present? %>
+                 data-countdown-active-encounter-value="<%= user_exploration.active_encounter? %>"
+                 data-user-exploration-id="<%= user_exploration.id %>">
+              <%= render "explorations/segment_timeline",
+                         nodes: timeline_nodes,
+                         progress_percent: progress_percent %>
+              <div class="rounded-xl border border-indigo-100 bg-white px-4 py-3 shadow-sm mt-3">
+                <div class="flex items-center justify-between text-[11px] font-semibold uppercase text-slate-500">
+                  <span>Current Segment</span>
+                  <span>Stage <%= active_segment[:index].to_i + 1 %> / <%= segment_entries.size %></span>
+                </div>
+                <div class="mt-2 flex items-end justify-between">
+                  <div>
+                    <p class="text-sm font-semibold text-slate-900">
+                      <%= active_segment[:label] || "Checkpoint #{active_segment[:index].to_i + 1}" %>
+                    </p>
+                    <p class="text-xs text-slate-500">Time remaining</p>
+                  </div>
+                  <span class="text-lg font-bold text-indigo-600"
+                        data-countdown-target="output">
+                    <%= exploration_duration_label(remaining_seconds) %>
+                  </span>
+                </div>
+              </div>
+            </div>
+          <% else %>
+            <%= render "explorations/segment_timeline",
+                       nodes: timeline_nodes,
+                       progress_percent: progress_percent %>
+            <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+              Awaiting the next stage to begin…
+            </div>
+          <% end %>
+
+          <% if ready_encounter.present? %>
+            <% encounter = ready_encounter.with_indifferent_access %>
+            <% title = encounter.dig(:encounter, :title) || encounter[:title] || "Encounter available" %>
+            <div class="rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3">
+              <p class="text-[11px] font-semibold uppercase text-indigo-500">Encounter queued</p>
+              <p class="text-sm font-semibold text-indigo-700"><%= title %></p>
+              <p class="text-xs text-indigo-500">Checkpoint reached—prepare for the challenge ahead.</p>
+            </div>
+          <% elsif upcoming_encounter.present? %>
+            <% encounter = upcoming_encounter.with_indifferent_access %>
+            <% label = encounter[:segment_label] || "Checkpoint #{encounter[:segment_index].to_i + 1}" %>
+            <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+              <p class="text-[11px] font-semibold uppercase text-slate-500">Next encounter check</p>
+              <p class="text-sm font-semibold text-slate-700"><%= label %></p>
+            </div>
+          <% end %>
+
+          <% if requirement_progress.any? %>
+            <div class="space-y-1">
+              <h4 class="text-xs font-semibold text-slate-400 uppercase">Requirements</h4>
+              <% requirement_progress.each do |entry| %>
+                <div class="flex items-center justify-between text-xs text-slate-500">
+                  <span><%= entry[:label] || entry[:key].to_s.titleize %></span>
+                  <span class="font-semibold <%= entry[:fulfilled] ? 'text-emerald-600' : 'text-slate-500' %>">
+                    <%= "#{entry[:current]} / #{entry[:required]}" %>
+                  </span>
+                </div>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      <% else %>
+        <% remaining_seconds = user_exploration.explore_time_remaining %>
+        <% elapsed_seconds = user_exploration.elapsed_seconds %>
+        <% total_duration = user_exploration.duration_seconds %>
+        <% schedule_entries = user_exploration.encounter_schedule_entries %>
+        <% next_pending_entry = schedule_entries
+                                 .reject { |entry| entry[:status].to_s == 'completed' || entry[:status].to_s == 'active' }
+                                 .min_by { |entry| entry[:offset_seconds].to_i } %>
+        <% next_pending_offset = next_pending_entry&.[](:offset_seconds)&.to_i %>
+        <% next_encounter_display =
+             if user_exploration.active_encounter?
+               user_exploration.active_encounter_data
+             elsif next_pending_entry.present?
+               next_pending_entry
+             else
+               nil
+             end %>
+        <% activation_url = activate_encounter_user_exploration_path(user_exploration) %>
+        <div class="space-y-3"
+             data-controller="countdown"
+             data-countdown-seconds-value="<%= remaining_seconds %>"
+             data-countdown-total-value="<%= total_duration %>"
+             data-countdown-elapsed-value="<%= elapsed_seconds %>"
+             <%= %(data-countdown-active-encounter-value="true") if user_exploration.active_encounter? %>
+             <%= %(data-countdown-encounter-url-value="#{activation_url}") if next_pending_entry.present? %>
+             <%= %(data-countdown-next-encounter-offset-value="#{next_pending_offset}") unless next_pending_offset.nil? %>
+             data-user-exploration-id="<%= user_exploration.id %>">
+          <div class="flex items-center justify-between">
+            <p class="text-sm font-semibold text-indigo-600 flex items-center gap-2">
+              <span class="inline-flex h-2 w-2 rounded-full bg-indigo-500 animate-pulse"></span>
+              Expedition in progress
+            </p>
+            <p class="text-xs text-slate-500">Started: <%= l(user_exploration.started_at, format: :short) %></p>
+          </div>
+          <div class="bg-slate-50 rounded-lg px-3 py-2 flex items-center justify-between">
+            <span class="text-xs font-semibold text-slate-500 uppercase">Tracking</span>
+            <span class="text-sm font-semibold text-slate-900"
+                  data-countdown-target="output">
+              <%= exploration_duration_label(remaining_seconds) %>
+            </span>
+          </div>
+          <% if next_encounter_display.present? %>
+            <% display_data = next_encounter_display.with_indifferent_access %>
+            <% title = display_data.dig(:encounter, :title) || display_data[:title] || "Encounter Ahead" %>
+            <div class="rounded-xl border border-indigo-400/60 bg-indigo-500/10 px-3 py-2 flex items-center justify-between gap-3">
+              <div class="flex flex-col">
+                <span class="text-xs font-semibold text-indigo-200 uppercase">Encounter Pending</span>
+                <span class="text-sm font-semibold text-indigo-100"><%= title %></span>
+              </div>
+              <% if user_exploration.active_encounter? %>
+                <span class="text-[11px] font-semibold uppercase text-indigo-200">Awaiting decision</span>
+              <% else %>
+                <% trigger_in = [display_data[:offset_seconds].to_i - elapsed_seconds, 0].max %>
+                <span class="text-[11px] font-semibold uppercase text-indigo-200">
+                  Triggers in <%= exploration_duration_label(trigger_in) %>
+                </span>
+              <% end %>
+            </div>
+          <% end %>
+          <% if user_exploration.active_encounter? %>
+            <%= render "explorations/encounters/panel",
+                       user_exploration: user_exploration %>
+          <% end %>
+
+          <% if requirement_progress.any? %>
+            <div class="space-y-1">
+              <h4 class="text-xs font-semibold text-slate-400 uppercase">Requirements</h4>
+              <% requirement_progress.each do |entry| %>
+                <div class="flex items-center justify-between text-xs text-slate-500">
+                  <span><%= entry[:label] || entry[:key].to_s.titleize %></span>
+                  <span class="font-semibold <%= entry[:fulfilled] ? 'text-emerald-600' : 'text-slate-500' %>">
+                    <%= "#{entry[:current]} / #{entry[:required]}" %>
+                  </span>
+                </div>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
+
+    <% when :checkpoint %>
+      <% segment_entries = user_exploration.segment_progress_entries.sort_by { |entry| entry[:index].to_i } %>
+      <% checkpoint_segment = user_exploration.checkpoint_segment_entry %>
+      <% ready_encounter = user_exploration.ready_encounter_entry %>
+      <% encounter_result = checkpoint_encounter_result(user_exploration) %>
+      <% continue_url = continue_segment_user_exploration_path(user_exploration) %>
+      <% activation_url = activate_encounter_user_exploration_path(user_exploration) %>
+      <% total_duration = user_exploration.duration_seconds %>
+      <% elapsed_seconds = user_exploration.elapsed_seconds %>
+      <% progress_ratio = total_duration.positive? ? (elapsed_seconds.to_f / total_duration) : 0.0 %>
+      <% progress_percent = (progress_ratio * 100).clamp(0.0, 100.0) %>
+      <% timeline_nodes = [] %>
+      <% timeline_nodes << { label: "Start", status: 'completed' } %>
+      <% segment_entries.each do |segment| %>
+        <% node_label = segment[:label].presence || "Checkpoint #{segment[:index].to_i + 1}" %>
+        <% node_status =
+             case segment[:status].to_s
+             when 'completed' then 'completed'
+             when 'checkpoint' then 'checkpoint'
+             when 'active' then 'active'
+             else 'upcoming'
+             end %>
+        <% timeline_nodes << { label: node_label, status: node_status } %>
+      <% end %>
+      <% finish_status =
+           if segment_entries.all? { |segment| segment[:status].to_s == 'completed' } && user_exploration.complete?
+             'completed'
+           elsif user_exploration.checkpoint_segment_entry.present?
+             'checkpoint'
+           else
+             'upcoming'
+           end %>
+      <% timeline_nodes << { label: "Finish", status: finish_status } %>
+      <div class="space-y-4">
+        <div class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2">
+          <p class="text-sm font-semibold text-amber-700 flex items-center gap-2">
+            <span class="inline-flex h-2 w-2 rounded-full bg-amber-500 animate-pulse"></span>
+            Checkpoint reached
+          </p>
+          <% if checkpoint_segment %>
+            <p class="text-xs text-amber-600 mt-1">
+              <strong><%= checkpoint_segment[:label] || "Checkpoint #{checkpoint_segment[:index].to_i + 1}" %></strong> completed. Decide how to proceed.
+            </p>
+          <% end %>
+        </div>
+
+        <%= render "explorations/segment_timeline",
+                   nodes: timeline_nodes,
+                   progress_percent: progress_percent %>
+
+        <% if user_exploration.active_encounter? %>
+          <div class="rounded-xl border border-indigo-300 bg-white px-3 py-3">
+            <p class="text-xs font-semibold uppercase text-indigo-500 mb-2">Encounter in progress</p>
+            <%= render "explorations/encounters/panel",
+                       user_exploration: user_exploration %>
+          </div>
+        <% elsif ready_encounter.present? %>
+          <% encounter = ready_encounter.with_indifferent_access %>
+          <% title = encounter.dig(:encounter, :title) || encounter[:title] || "Mysterious encounter" %>
+          <div class="rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3 space-y-3">
+            <div>
+              <p class="text-[11px] font-semibold uppercase text-indigo-500">Encounter discovered</p>
+              <p class="text-base font-semibold text-indigo-700"><%= title %></p>
+              <% if encounter[:segment_label].present? %>
+                <p class="text-xs text-indigo-500">Discovered at <%= encounter[:segment_label] %>.</p>
+              <% end %>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <%= button_to "Enter Encounter",
+                            activation_url,
+                            method: :post,
+                            class: "inline-flex justify-center items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-400" %>
+              <%= button_to "Continue Exploration",
+                            continue_url,
+                            method: :post,
+                            params: { skip_encounter: true },
+                            class: "inline-flex justify-center items-center gap-2 rounded-lg border border-indigo-200 bg-white px-4 py-2 text-sm font-semibold text-indigo-600 transition hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-indigo-200" %>
+            </div>
+          </div>
+        <% elsif encounter_result.present? %>
+          <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 space-y-3">
+            <div class="space-y-1">
+              <p class="text-[11px] font-semibold uppercase text-emerald-600">Encounter resolved</p>
+              <p class="text-base font-semibold text-emerald-700"><%= encounter_result[:title] %></p>
+              <% if encounter_result[:summary].present? %>
+                <p class="text-xs text-emerald-600/80"><%= encounter_result[:summary] %></p>
+              <% end %>
+              <% if encounter_result[:choice_label].present? %>
+                <p class="text-xs text-emerald-700">You chose <span class="font-semibold"><%= encounter_result[:choice_label] %></span>.</p>
+              <% end %>
+              <% if encounter_result[:choice_description].present? %>
+                <p class="text-xs text-emerald-600/80"><%= encounter_result[:choice_description] %></p>
+              <% end %>
+              <% if encounter_result[:outcome_label].present? %>
+                <p class="text-xs text-emerald-700">Outcome: <span class="font-semibold"><%= encounter_result[:outcome_label] %></span></p>
+              <% else %>
+                <p class="text-xs text-emerald-700">Nothing of note was found.</p>
+              <% end %>
+              <% if encounter_result[:reward_summary].present? %>
+                <p class="text-xs text-emerald-700">Rewards: <span class="font-semibold"><%= encounter_result[:reward_summary] %></span></p>
+              <% else %>
+                <p class="text-xs text-emerald-600/80">No special rewards were discovered this time.</p>
+              <% end %>
+            </div>
+            <%= button_to "Continue Exploration",
+                          continue_url,
+                          method: :post,
+                          class: "inline-flex justify-center items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-400" %>
+          </div>
+        <% else %>
+          <div class="rounded-xl border border-slate-200 bg-white px-4 py-3 space-y-3">
+            <p class="text-sm font-semibold text-slate-700">The path is clear.</p>
+            <p class="text-xs text-slate-500">No encounter awaits at this checkpoint. Continue when ready.</p>
+            <%= button_to "Continue Exploration",
+                          continue_url,
+                          method: :post,
+                          class: "inline-flex justify-center items-center gap-2 rounded-lg bg-slate-800 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-500" %>
+          </div>
+        <% end %>
+
+        <% if requirement_progress.any? %>
+          <div class="space-y-1">
+            <h4 class="text-xs font-semibold text-slate-400 uppercase">Requirements</h4>
+            <% requirement_progress.each do |entry| %>
+              <div class="flex items-center justify-between text-xs text-slate-500">
+                <span><%= entry[:label] || entry[:key].to_s.titleize %></span>
+                <span class="font-semibold <%= entry[:fulfilled] ? 'text-emerald-600' : 'text-slate-500' %>">
+                  <%= "#{entry[:current]} / #{entry[:required]}" %>
+                </span>
+              </div>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+
+    <% when :ready %>
+      <div class="space-y-3">
+        <p class="text-sm text-green-600 font-semibold flex items-center gap-2">
+          <span class="inline-flex h-2 w-2 rounded-full bg-green-500"></span>
+          Expedition complete! Collect your rewards.
+        </p>
+        <%= button_to "Complete Expedition",
+                      complete_user_exploration_path(user_exploration),
+                      method: :post,
+                      class: "w-full inline-flex justify-center items-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-400",
+                      form: { data: { turbo_frame: "_top" } } %>
+      </div>
+    <% end %>
+  </div>
+</div>

@@ -1,0 +1,121 @@
+<% context        = (defined?(local_assigns) && local_assigns.fetch(:context, nil)) || :page %>
+<% user_egg       = local_assigns.fetch(:user_egg) %>
+<% egg            = user_egg.egg %>
+<% status         = (defined?(local_assigns) && local_assigns.fetch(:status, nil)) || user_egg.status %>
+<% status_label   = (defined?(local_assigns) && local_assigns.fetch(:status_label, nil)) || user_egg.status_label %>
+<% status_copy    = (defined?(local_assigns) && local_assigns.fetch(:status_copy, nil)) %>
+<% status_copy  ||= case status
+                   when :ready
+                     "This egg is ready! Open it to meet your new companion."
+                   when :in_progress
+                     "Incubation is underway. Check back when the timer finishes to hatch it."
+                   when :idle
+                     "Begin incubation to start the hatching process."
+                   else
+                     "This egg has already hatched."
+                   end %>
+<% image_path     = (defined?(local_assigns) && local_assigns.fetch(:image_path, nil)) || egg_image_path(egg) %>
+<% total_seconds  = (defined?(local_assigns) && local_assigns.fetch(:total_seconds, nil)) || egg.hatch_duration.to_i %>
+<% remaining      = (defined?(local_assigns) && local_assigns.fetch(:remaining, nil)) || user_egg.hatch_time_remaining.to_i %>
+<% progress_ratio = (defined?(local_assigns) && local_assigns.fetch(:progress_ratio, nil)) || begin
+                      ratio = if total_seconds.positive?
+                                ((total_seconds - remaining) / total_seconds.to_f)
+                              else
+                                0.0
+                              end
+                      [[ratio, 0.0].max, 1.0].min
+                    end %>
+<% started_at     = (defined?(local_assigns) && local_assigns.fetch(:started_at, nil)) || user_egg.hatch_started_at %>
+
+<div class="flex items-center justify-between gap-4">
+  <div class="flex items-center gap-3">
+    <% if context == :page %>
+      <%= link_to user_pets_path(collection: "eggs"),
+                  class: "inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-800 bg-slate-900/70 text-slate-300 transition hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950",
+                  aria: { label: "Back to eggs" },
+                  data: { turbo: false } do %>
+        <span aria-hidden="true" class="text-lg">←</span>
+      <% end %>
+    <% end %>
+    <div class="space-y-1">
+      <h2 class="text-xl font-semibold text-slate-100"><%= egg.name %> Egg</h2>
+      <span class="inline-flex items-center gap-1 rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-wide <%= egg_status_badge_classes(user_egg) %>">
+        <span aria-hidden="true"><%= egg_status_icon(user_egg) %></span>
+        <%= status_label %>
+      </span>
+    </div>
+  </div>
+  <div class="text-right text-xs text-slate-400">
+    <p>Acquired <%= time_ago_in_words(user_egg.created_at) %> ago</p>
+    <% if started_at.present? %>
+      <p>Incubating since <%= started_at.strftime("%b %-d, %Y %H:%M") %></p>
+    <% end %>
+  </div>
+</div>
+
+<div class="relative overflow-hidden rounded-3xl border border-slate-800 bg-slate-900/60 shadow-inner shadow-slate-950/40">
+  <div class="aspect-[3/4] w-full bg-slate-900">
+    <% if image_path.present? %>
+      <%= image_tag image_path,
+                    alt: "",
+                    loading: "lazy",
+                    class: "h-full w-full object-cover" %>
+    <% else %>
+      <div class="flex h-full w-full items-center justify-center text-sm text-slate-400">
+        Artwork unavailable
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 text-sm text-slate-200">
+  <p class="text-sm font-semibold text-slate-100">Status</p>
+  <p class="mt-1 text-slate-300"><%= status_copy %></p>
+
+  <% if status == :idle %>
+    <div class="mt-4 flex flex-wrap items-center gap-3">
+      <%= button_to "Begin incubation",
+                    incubate_user_egg_path(user_egg),
+                    method: :post,
+                    params: { context: context },
+                    class: "inline-flex items-center gap-2 rounded-full bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950" %>
+      <span class="text-xs text-slate-400">
+        Incubation takes <%= distance_of_time_in_words(Time.current, Time.current + total_seconds.seconds) %>.
+      </span>
+    </div>
+  <% end %>
+
+  <div class="mt-4 grid gap-3 sm:grid-cols-2">
+    <div class="rounded-xl border border-slate-800 bg-slate-950/70 px-3 py-2">
+      <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Incubation Time</p>
+      <p class="mt-1 text-sm text-slate-100"><%= distance_of_time_in_words(Time.current, Time.current + total_seconds.seconds) %></p>
+    </div>
+    <div class="rounded-xl border border-slate-800 bg-slate-950/70 px-3 py-2">
+      <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Progress</p>
+      <% if status == :in_progress %>
+        <% time_remaining_text = distance_of_time_in_words(Time.current, Time.current + remaining.seconds, include_seconds: false) %>
+        <p class="mt-1 text-sm text-amber-200">
+          <%= time_remaining_text %> remaining
+        </p>
+      <% elsif status == :ready %>
+        <p class="mt-1 text-sm text-emerald-200">Ready to hatch</p>
+      <% elsif status == :hatched %>
+        <p class="mt-1 text-sm text-emerald-200">Hatched</p>
+      <% else %>
+        <p class="mt-1 text-sm text-slate-300">Not started</p>
+      <% end %>
+    </div>
+  </div>
+
+  <% if status == :in_progress %>
+    <div class="mt-4">
+      <div class="h-2 w-full overflow-hidden rounded-full bg-slate-800">
+        <div class="h-full rounded-full bg-amber-400 transition-all" style="width: <%= (progress_ratio * 100).round(1) %>%"></div>
+      </div>
+    </div>
+  <% elsif status == :ready %>
+    <div class="mt-4 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-100">
+      Your egg is ready! Hatching will retire the egg and create a new pet companion.
+    </div>
+  <% end %>
+</div>

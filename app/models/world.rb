@@ -18,6 +18,10 @@ class World < ApplicationRecord
       .where("rotation_ends_at IS NULL OR rotation_ends_at >= ?", now)
   }
 
+  def exploration_slug
+    @exploration_slug ||= name.to_s.parameterize(separator: '-')
+  end
+
   def currently_available?
     enabled? && self.class.rotation_active.where(id: id).exists?
   end

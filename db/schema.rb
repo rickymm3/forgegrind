@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_10_25_120500) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_02_190000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -188,7 +188,11 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_25_120500) do
     t.datetime "consumed_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "slot_index"
+    t.datetime "cooldown_ends_at"
+    t.jsonb "segment_definitions", default: [], null: false
     t.index ["user_id", "consumed_at"], name: "index_generated_explorations_on_user_id_and_consumed_at"
+    t.index ["user_id", "slot_index"], name: "index_generated_explorations_on_user_and_slot", unique: true, where: "(slot_index IS NOT NULL)"
     t.index ["user_id"], name: "index_generated_explorations_on_user_id"
     t.index ["world_id"], name: "index_generated_explorations_on_world_id"
   end
@@ -271,9 +275,11 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_25_120500) do
     t.integer "speed", default: 5, null: false
     t.bigint "default_ability_id"
     t.text "description"
+    t.bigint "special_ability_id"
     t.index ["default_ability_id"], name: "index_pets_on_default_ability_id"
     t.index ["egg_id"], name: "index_pets_on_egg_id"
     t.index ["rarity_id"], name: "index_pets_on_rarity_id"
+    t.index ["special_ability_id"], name: "index_pets_on_special_ability_id"
   end
 
   create_table "rarities", force: :cascade do |t|
@@ -283,6 +289,18 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_25_120500) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "glow_essence_multiplier", default: 1, null: false
+  end
+
+  create_table "special_abilities", force: :cascade do |t|
+    t.string "reference", null: false
+    t.string "name", null: false
+    t.string "tagline"
+    t.text "description"
+    t.jsonb "encounter_tags", default: [], null: false
+    t.jsonb "metadata", default: {}, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["reference"], name: "index_special_abilities_on_reference", unique: true
   end
 
   create_table "user_containers", force: :cascade do |t|
@@ -317,7 +335,18 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_25_120500) do
     t.datetime "updated_at", null: false
     t.datetime "completed_at"
     t.bigint "generated_exploration_id"
+    t.bigint "primary_user_pet_id"
+    t.jsonb "party_snapshot", default: {}, null: false
+    t.jsonb "encounter_schedule", default: [], null: false
+    t.datetime "encounters_seeded_at"
+    t.jsonb "active_encounter", default: {}, null: false
+    t.datetime "active_encounter_started_at"
+    t.datetime "active_encounter_expires_at"
+    t.jsonb "segment_progress", default: [], null: false
+    t.integer "current_segment_index", default: 0, null: false
+    t.datetime "segment_started_at"
     t.index ["generated_exploration_id"], name: "index_user_explorations_on_generated_exploration_id"
+    t.index ["primary_user_pet_id"], name: "index_user_explorations_on_primary_user_pet_id"
     t.index ["user_id"], name: "index_user_explorations_on_user_id"
     t.index ["world_id"], name: "index_user_explorations_on_world_id"
   end
@@ -511,11 +540,13 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_25_120500) do
   add_foreign_key "pets", "abilities", column: "default_ability_id"
   add_foreign_key "pets", "eggs"
   add_foreign_key "pets", "rarities"
+  add_foreign_key "pets", "special_abilities"
   add_foreign_key "user_containers", "chest_types"
   add_foreign_key "user_containers", "users"
   add_foreign_key "user_eggs", "eggs"
   add_foreign_key "user_eggs", "users"
   add_foreign_key "user_explorations", "generated_explorations"
+  add_foreign_key "user_explorations", "user_pets", column: "primary_user_pet_id"
   add_foreign_key "user_explorations", "users"
   add_foreign_key "user_explorations", "worlds"
   add_foreign_key "user_items", "items"

@@ -1,0 +1,231 @@
+<% generated = generated_exploration %>
+<% user_exploration ||= nil %>
+<% requirement_progress ||= [] %>
+<% requirement_groups ||= {} %>
+<% slot_index ||= nil %>
+<% selected = !!selected %>
+<% state = (state || (generated ? generated.slot_state_sym : :empty)).to_sym %>
+<% cooldown_seconds = (cooldown_seconds || generated&.cooldown_remaining_seconds || 0).to_i %>
+<% cooldown_ends_at ||= generated&.cooldown_ends_at %>
+<% reroll_cooldown_seconds = (reroll_cooldown_seconds || generated&.reroll_cooldown_remaining_seconds || 0).to_i %>
+<% reroll_available_at ||= generated&.reroll_available_at %>
+
+<% slot_label = slot_index ? "Slot #{slot_index}" : nil %>
+<% format_countdown = ->(value) { value = value.to_i; minutes = value / 60; seconds = value % 60; format("%02d:%02d", minutes, seconds) } %>
+
+<% if generated.nil? || state == :empty %>
+  <div class="relative flex flex-1 flex-col items-center justify-center gap-5 rounded-3xl border border-dashed border-indigo-500/50 bg-slate-900/40 p-8 text-center text-slate-200/80 shadow-inner shadow-indigo-500/10 backdrop-blur">
+    <% if slot_label %>
+      <span class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400/80"><%= slot_label %></span>
+    <% end %>
+    <span class="inline-flex h-12 w-12 items-center justify-center rounded-full bg-indigo-500/20 text-indigo-200">
+      <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path d="M12 4v16m8-8H4" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" />
+      </svg>
+    </span>
+    <div class="space-y-1">
+      <h3 class="text-xl font-semibold text-white">Discover a new expedition</h3>
+      <p class="max-w-sm text-sm text-slate-300/80">
+        Send scouts to uncover a fresh route. Each expedition can lead to unique encounters and rewards.
+      </p>
+    </div>
+    <div class="mt-2">
+      <%= button_to "Scout expeditions",
+                    scout_explorations_path,
+                    method: :post,
+                    class: "inline-flex items-center gap-2 rounded-xl bg-indigo-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-indigo-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200" %>
+    </div>
+  </div>
+<% elsif state == :cooldown %>
+  <div class="relative flex flex-1 flex-col items-center justify-center gap-4 rounded-3xl border border-slate-800/60 bg-slate-950/80 text-slate-200 shadow-xl">
+    <% if slot_label %>
+      <span class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400/80"><%= slot_label %></span>
+    <% end %>
+    <span class="inline-flex h-12 w-12 items-center justify-center rounded-full bg-slate-800/60 text-slate-300">
+      <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path d="M12 6v6l4 2" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" />
+      </svg>
+    </span>
+    <div class="space-y-1 text-center">
+      <h3 class="text-xl font-semibold text-white">Scouting party resting</h3>
+      <p class="text-sm text-slate-300/80">
+        This slot is on cooldown. New expeditions will appear soon.
+      </p>
+    </div>
+    <% if cooldown_seconds.positive? %>
+      <span class="text-xs font-semibold uppercase tracking-wide text-slate-400/80"
+            data-controller="slot-countdown"
+            data-slot-countdown-seconds-value="<%= cooldown_seconds %>"
+            data-slot-countdown-refresh-url-value="<%= explorations_path(format: :turbo_stream) %>">
+        Ready in
+        <span data-slot-countdown-target="output"><%= format_countdown.call(cooldown_seconds) %></span>
+      </span>
+    <% end %>
+  </div>
+<% else %>
+  <% world = generated.world %>
+  <% duration_seconds = generated.duration_seconds %>
+  <% duration_minutes = (duration_seconds / 60).floor %>
+  <% duration_remainder = duration_seconds % 60 %>
+  <% duration_label = [] %>
+  <% duration_label << "#{duration_minutes}m" unless duration_minutes.zero? %>
+  <% duration_label << "#{duration_remainder}s" %>
+
+  <% status_badge, status_classes =
+       if user_exploration&.complete?
+         ["Ready to complete", "bg-emerald-500/20 text-emerald-200"]
+       elsif user_exploration.present?
+         ["In progress", "bg-indigo-500/20 text-indigo-200"]
+       else
+         ["Available", "bg-slate-500/20 text-slate-200"]
+       end %>
+
+  <article class="relative flex flex-1 flex-col overflow-hidden rounded-3xl border border-slate-800/60 bg-slate-950/70 text-slate-100 shadow-xl transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl <%= 'ring-2 ring-indigo-400/80 shadow-2xl scale-[1.01]' if selected %>"
+           id="<%= dom_id(generated, :card) %>"
+           data-exploration-list-target="item"
+           data-action="click->exploration-list#handleClick"
+           data-selected="<%= selected %>"
+           data-url="<%= exploration_path(generated) %>">
+    <div class="absolute inset-0">
+      <%= image_tag world_zone_image_path(world),
+                    alt: world.name,
+                    class: "h-full w-full object-cover opacity-40" %>
+      <div class="absolute inset-0 bg-gradient-to-br from-slate-950/90 via-slate-950/75 to-slate-950/40"></div>
+    </div>
+
+    <div class="relative flex h-full flex-col justify-between p-6">
+      <header class="space-y-4">
+        <div class="flex items-center justify-between">
+          <span class="inline-flex items-center gap-2 rounded-full px-3 py-1 text-[11px] font-semibold uppercase <%= status_classes %>">
+            <span class="inline-block h-1.5 w-1.5 rounded-full bg-current <%= user_exploration.present? && !user_exploration.complete? ? 'animate-pulse' : '' %>"></span>
+            <%= status_badge %>
+          </span>
+          <% if slot_label %>
+            <span class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400/70"><%= slot_label %></span>
+          <% end %>
+        </div>
+        <div>
+          <h2 class="text-2xl font-bold text-white"><%= generated.name %></h2>
+          <p class="mt-1 flex flex-wrap items-center gap-3 text-sm text-slate-300/80">
+            <span class="inline-flex items-center gap-2">
+              <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5">
+                <path d="M12 5v7l3 2" />
+              </svg>
+              <span>Duration · <%= duration_label.join(' ') %></span>
+            </span>
+            <span class="inline-flex items-center gap-2">
+              <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5">
+                <path d="M3 12h3m12 0h3M12 3v3m0 12v3" />
+              </svg>
+              <span><%= world.name %></span>
+            </span>
+          </p>
+        </div>
+      </header>
+
+      <section class="mt-6 flex-1 space-y-4 overflow-hidden">
+        <% if requirement_progress.any? %>
+          <div class="space-y-2">
+            <h3 class="text-xs font-semibold uppercase tracking-wide text-slate-400/80">Requirements</h3>
+            <ul class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <% requirement_progress.first(4).each do |entry| %>
+                <li class="flex items-center justify-between rounded-xl bg-slate-900/60 px-3 py-2 text-xs font-semibold">
+                  <span class="text-slate-200/80"><%= entry[:label] || entry[:key].to_s.titleize %></span>
+                  <span class="<%= entry[:fulfilled] ? 'text-emerald-300' : 'text-slate-400/80' %>">
+                    <%= entry[:current] %>/<%= entry[:required] %>
+                  </span>
+                </li>
+              <% end %>
+            </ul>
+            <% if requirement_progress.size > 4 %>
+              <p class="text-[11px] text-slate-400/70">
+                +<%= requirement_progress.size - 4 %> additional requirements
+              </p>
+            <% end %>
+          </div>
+        <% else %>
+          <div class="rounded-xl border border-dashed border-slate-700/50 bg-slate-900/50 px-4 py-3 text-xs text-slate-400/80">
+            No special requirements for this expedition.
+          </div>
+        <% end %>
+
+        <% if user_exploration.present? %>
+          <div class="rounded-2xl border border-indigo-500/30 bg-indigo-500/10 px-4 py-3 text-sm text-indigo-100">
+            <% if user_exploration.complete? %>
+              Expedition complete. Collect your rewards to free this slot.
+            <% else %>
+              Expedition underway — party status synced automatically.
+            <% end %>
+          </div>
+        <% else %>
+          <% traits = Array(generated.metadata[:flavor]).compact %>
+          <% if traits.any? %>
+            <p class="text-sm leading-relaxed text-slate-300/80">
+              <%= traits.first %>
+            </p>
+          <% end %>
+        <% end %>
+      </section>
+
+      <footer class="mt-6 space-y-4">
+        <% if user_exploration.present? %>
+         <% if user_exploration.complete? %>
+           <%= button_to "Complete expedition",
+                         complete_user_exploration_path(user_exploration),
+                         method: :post,
+                         data: { turbo_frame: "_top" },
+                         class: "flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-emerald-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-200" %>
+         <% else %>
+           <%= link_to "View expedition",
+                        exploration_path(generated),
+                        data: { turbo_frame: "_top" },
+                        class: "flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-indigo-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200" %>
+         <% end %>
+       <% else %>
+         <%= link_to "View expedition",
+                      exploration_path(generated),
+                      data: { turbo_frame: "_top" },
+                      class: "flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-indigo-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200" %>
+       <% end %>
+
+        <% reroll_disabled = user_exploration.present? || state == :ready %>
+        <% if reroll_cooldown_seconds.positive? %>
+          <div class="flex items-center justify-between gap-3"
+               data-controller="slot-countdown"
+               data-slot-countdown-seconds-value="<%= reroll_cooldown_seconds %>"
+               data-slot-countdown-refresh-url-value="<%= explorations_path(format: :turbo_stream) %>">
+            <%= button_to reroll_exploration_path(generated),
+                          method: :post,
+                          form: { data: { turbo_frame: "worlds-list" } },
+                          disabled: true,
+                          class: "inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-indigo-500/40 px-4 py-3 text-sm font-semibold text-indigo-200 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 disabled:cursor-not-allowed disabled:opacity-60" do %>
+              <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5">
+                <path d="M12 5v2m0 10v2m7-7h-2M7 12H5m12.364 4.364l-1.414-1.414M8.05 8.05 6.636 6.636m10.728 0-1.414 1.414M8.05 15.95l-1.414 1.414" />
+              </svg>
+              Reroll
+            <% end %>
+            <span class="text-xs font-semibold text-slate-400/80">
+              Reroll in <span data-slot-countdown-target="output"><%= format_countdown.call(reroll_cooldown_seconds) %></span>
+            </span>
+          </div>
+        <% else %>
+          <div class="flex items-center justify-between gap-3">
+            <%= button_to reroll_exploration_path(generated),
+                          method: :post,
+                          form: { data: { turbo_frame: "worlds-list" } },
+                          disabled: reroll_disabled,
+                          class: "inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-indigo-500/40 px-4 py-3 text-sm font-semibold text-indigo-200 transition hover:border-indigo-400 hover:text-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 disabled:cursor-not-allowed disabled:opacity-60" do %>
+              <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5">
+                <path d="M12 5v2m0 10v2m7-7h-2M7 12H5m12.364 4.364l-1.414-1.414M8.05 8.05 6.636 6.636m10.728 0-1.414 1.414M8.05 15.95l-1.414 1.414" />
+              </svg>
+              Reroll
+            <% end %>
+            <% if reroll_disabled %>
+              <span class="text-xs font-semibold text-slate-400/80">Unavailable</span>
+            <% end %>
+          </div>
+        <% end %>
+      </footer>
+    </div>
+  </article>
+<% end %>

@@ -1,10 +1,23 @@
--# app/views/user_eggs/hatch.turbo_stream.haml
+- context ||= :page
+= turbo_stream.update egg_info_dom_id(@user_egg) do
+  = render "user_eggs/info_body",
+          user_egg: @user_egg,
+          context: context
 
--# 1. Update the original turbo_frame_tag on the nursery index page
-= turbo_stream.update "user_egg_hatch_#{@user_egg.id}" do
-  = render "nursery/hatched", user_egg: @user_egg
+= turbo_stream.replace egg_action_panel_dom_id(@user_egg) do
+  = render "user_eggs/action_panel",
+          user_egg: @user_egg,
+          context: context,
+          state: :hatching,
+          new_user_pet: @user_pet
 
--# 2. Update the turbo_frame_tag *inside your empty_modal* with the hatch modal content
--# The target ID here MUST match the turbo_frame_tag ID inside shared/empty_modal.html.haml
-= turbo_stream.update "hatch-modal-content-frame" do 
-  = render "nursery/hatch_modal_content", pet: @user_pet.pet, egg: @user_egg.egg, user_pet: @user_pet
+= turbo_stream.remove egg_card_dom_id(@user_egg)
+
+= turbo_stream.replace "egg-count" do
+  %span#egg-count= pluralize(@egg_count, "egg")
+
+= turbo_stream.replace "pet-count" do
+  %span#pet-count= pluralize(@pet_count, "pet")
+
+= turbo_stream.append "toast-container" do
+  = render "shared/toast", message: "You hatched #{@user_pet.pet.name}!"

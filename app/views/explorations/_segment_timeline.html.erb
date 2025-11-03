@@ -1,0 +1,36 @@
+<%#
+  locals:
+    - nodes: array of { label:, status: }
+    - progress_percent: numeric (0..100)
+%>
+<% nodes = Array(nodes) %>
+<% progress_percent = progress_percent.to_f.clamp(0.0, 100.0) %>
+
+<div class="relative mt-2 w-full">
+  <div class="absolute top-1/2 left-0 right-0 h-0.5 -translate-y-1/2 bg-slate-200"></div>
+  <div class="absolute top-1/2 left-0 h-0.5 -translate-y-1/2 bg-indigo-500 transition-all"
+       data-countdown-target="progress"
+       style="width: <%= format('%.1f', progress_percent) %>%"></div>
+  <div class="relative flex w-full items-center justify-between gap-2">
+    <% nodes.each do |node| %>
+      <% status = node[:status].to_s %>
+      <% indicator_classes =
+           case status
+           when 'completed'
+             "bg-indigo-600 border-indigo-400"
+           when 'checkpoint'
+             "bg-amber-500 border-amber-300 animate-pulse"
+           when 'active'
+             "bg-indigo-400 border-indigo-300 animate-pulse"
+           else
+             "bg-slate-300 border-slate-200"
+           end %>
+      <div class="flex flex-col items-center gap-1 text-center text-[11px] leading-tight text-slate-500">
+        <span class="flex h-3.5 w-3.5 items-center justify-center rounded-full border-2 <%= indicator_classes %>"></span>
+        <span class="max-w-[5rem] font-semibold <%= status == 'completed' ? 'text-slate-700' : '' %>">
+          <%= node[:label] %>
+        </span>
+      </div>
+    <% end %>
+  </div>
+</div>

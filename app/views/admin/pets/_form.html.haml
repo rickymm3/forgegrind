@@ -22,5 +22,16 @@
     = f.label :egg_id, "Belongs to Egg", class: "block text-sm font-medium text-gray-700"
     = f.collection_select :egg_id, Egg.all, :id, :name, { include_blank: true }, class: "mt-1 block w-full border border-gray-300 rounded px-3 py-2"
 
+  .field
+    = f.label :special_ability_id, "Special Ability", class: "block text-sm font-medium text-gray-700"
+    = f.collection_select :special_ability_id,
+                          SpecialAbility.ordered,
+                          :id,
+                          :name,
+                          { include_blank: true },
+                          class: "mt-1 block w-full border border-gray-300 rounded px-3 py-2"
+    %p.mt-1.text-xs.text-gray-500
+      Assigns the unique exploration ability this pet can unlock.
+
   .actions
     = f.submit class: "bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"

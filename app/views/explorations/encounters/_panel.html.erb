@@ -1,0 +1,148 @@
+<% encounter_data = user_exploration.active_encounter_data %>
+<% encounter = encounter_data[:encounter] ? encounter_data[:encounter].with_indifferent_access : {} %>
+<% node_key = (encounter_data[:node_key] || "intro").to_s %>
+<% nodes = encounter[:nodes] || {} %>
+<% current_node = user_exploration.active_encounter_node %>
+<% history = Array(encounter_data[:history]) %>
+<% available_options = Array(current_node&.[](:options)).map { |opt| opt.with_indifferent_access } %>
+<% detail_dom_id = dom_id(user_exploration.generated_exploration || user_exploration.world, :detail) %>
+
+<div id="<%= dom_id(user_exploration, :encounter_panel) %>"
+     class="rounded-2xl border border-indigo-200 bg-indigo-50/30 p-5 space-y-4">
+  <div class="flex items-start justify-between gap-3">
+    <div>
+      <p class="text-xs font-semibold uppercase text-indigo-500 tracking-wide">Active Encounter</p>
+      <h3 class="text-lg font-semibold text-indigo-900">
+        <%= encounter[:title].presence || "Unexpected Event" %>
+      </h3>
+      <% if encounter[:summary].present? %>
+        <p class="text-sm text-indigo-700/80 mt-1">
+          <%= encounter_text_for(user_exploration, encounter[:summary]) %>
+        </p>
+      <% end %>
+    </div>
+    <div class="flex flex-col items-end gap-1">
+      <span class="inline-flex items-center gap-1 rounded-full bg-indigo-500 text-white text-[11px] font-semibold uppercase px-2 py-0.5">
+        <span class="h-1.5 w-1.5 rounded-full bg-white animate-pulse"></span>
+        Decision Required
+      </span>
+      <% if user_exploration.active_encounter_expires_at.present? %>
+        <% remaining = [user_exploration.active_encounter_expires_at - Time.current, 0].max.to_i %>
+        <span class="text-[11px] font-semibold text-indigo-700/80 uppercase">
+          Respond within <%= distance_of_time_in_words(remaining.seconds.from_now) %>
+        </span>
+      <% end %>
+    </div>
+  </div>
+
+  <% if current_node && current_node[:text].present? %>
+    <div class="rounded-xl bg-white/70 px-4 py-3 text-sm text-slate-700 leading-relaxed shadow-sm">
+      <%= encounter_text_for(user_exploration, current_node[:text]) %>
+    </div>
+  <% elsif encounter_data[:narrative].present? %>
+    <div class="rounded-xl bg-white/70 px-4 py-3 text-sm text-slate-700 leading-relaxed shadow-sm">
+      <%= encounter_text_for(user_exploration, encounter_data[:narrative]) %>
+    </div>
+  <% end %>
+
+  <% if available_options.any? %>
+    <div class="space-y-2">
+      <h4 class="text-xs font-semibold text-indigo-600 uppercase tracking-wide">Choose an approach</h4>
+      <div class="space-y-2">
+        <% available_options.each do |option| %>
+          <% option_key = option[:key].to_s %>
+          <% option_available = user_exploration.option_available?(option) %>
+          <% option_classes = ["flex w-full flex-col gap-1 rounded-xl border px-4 py-3 text-left transition"] %>
+          <% if option_available %>
+            <% option_classes << "border-indigo-400 bg-white text-slate-700 hover:border-indigo-500 hover:shadow" %>
+          <% else %>
+            <% option_classes << "border-slate-200 bg-white/60 text-slate-400 cursor-not-allowed" %>
+          <% end %>
+
+          <% label = encounter_text_for(user_exploration, option[:label], option: option) %>
+          <% description = encounter_text_for(user_exploration, option[:description], option: option) if option[:description].present? %>
+          <% requirement_labels = encounter_requirement_labels(option) %>
+
+          <% if option_available %>
+            <%= button_to resolve_encounter_user_exploration_path(user_exploration),
+                          method: :post,
+                          params: { choice_key: option_key },
+                          form: { data: { turbo_stream: true, turbo_frame: detail_dom_id } },
+                          class: option_classes.join(" ") do %>
+              <span class="text-sm font-semibold"><%= label.presence || "Choose Option" %></span>
+              <% if description.present? %>
+                <span class="text-xs text-slate-500"><%= description %></span>
+              <% end %>
+              <% if requirement_labels.any? %>
+                <div class="flex flex-wrap gap-1 pt-1">
+                  <% requirement_labels.each do |req| %>
+                    <span class="inline-flex items-center rounded-full bg-indigo-100 text-[10px] font-semibold uppercase tracking-wide text-indigo-700 px-2 py-0.5"><%= req %></span>
+                  <% end %>
+                </div>
+              <% end %>
+              <% if option[:timer_seconds].to_i.positive? %>
+                <span class="text-[11px] font-medium text-indigo-500">
+                  Resolves in <%= distance_of_time_in_words(option[:timer_seconds].to_i.seconds.from_now) %>
+                </span>
+              <% end %>
+            <% end %>
+          <% else %>
+            <div class="<%= option_classes.join(' ') %>">
+              <span class="text-sm font-semibold"><%= label.presence || "Unavailable option" %></span>
+              <% if requirement_labels.any? %>
+                <div class="flex flex-wrap gap-1 pt-1">
+                  <% requirement_labels.each do |req| %>
+                    <span class="inline-flex items-center rounded-full bg-slate-200 text-[10px] font-semibold uppercase tracking-wide text-slate-500 px-2 py-0.5"><%= req %></span>
+                  <% end %>
+                </div>
+              <% end %>
+            </div>
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+  <% else %>
+    <div class="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500">
+      No decisions are available right now. Await further developments.
+    </div>
+  <% end %>
+
+  <% if history.any? %>
+    <div class="space-y-2">
+      <h4 class="text-xs font-semibold uppercase text-slate-400 tracking-wide">Encounter log</h4>
+      <ol class="space-y-2">
+        <% history.each do |entry| %>
+          <% choice = entry[:choice] || entry["choice"] %>
+          <% outcome = entry[:outcome] || entry["outcome"] %>
+          <% timestamp = entry[:at] || entry["at"] %>
+          <% resolved_time =
+               if timestamp.respond_to?(:in_time_zone)
+                 timestamp.in_time_zone
+               elsif timestamp.present?
+                 begin
+                   Time.zone.parse(timestamp.to_s)
+                 rescue ArgumentError, TypeError
+                   nil
+                 end
+               end %>
+          <li class="rounded-lg bg-white/70 px-3 py-2 text-xs text-slate-600">
+            <div class="flex items-center justify-between">
+              <span class="font-semibold">Step <%= entry[:node] || entry["node"] %></span>
+              <% if resolved_time.present? %>
+                <span class="text-[10px] text-slate-400"><%= l(resolved_time, format: :short) %></span>
+              <% elsif timestamp.present? %>
+                <span class="text-[10px] text-slate-400"><%= timestamp.to_s %></span>
+              <% end %>
+            </div>
+            <% if choice.present? %>
+              <p>Choice: <span class="font-medium text-slate-700"><%= choice.to_s.humanize %></span></p>
+            <% end %>
+            <% if outcome.present? %>
+              <p>Outcome: <span class="font-medium text-slate-700"><%= outcome.to_s.humanize %></span></p>
+            <% end %>
+          </li>
+        <% end %>
+      </ol>
+    </div>
+  <% end %>
+</div>

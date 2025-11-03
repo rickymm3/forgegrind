@@ -1,0 +1,37 @@
+# config/explorations/world_profiles.yml
+
+default:
+  tags: []
+  default_encounter_count: 2
+  min_interval_seconds: 120
+  max_interval_seconds: 300
+
+starter-zone:
+  tags: ["starter", "forest"]
+  default_encounter_count: 2
+  min_interval_seconds: 90
+  max_interval_seconds: 240
+
+forest:
+  tags: ["forest", "wilds"]
+  default_encounter_count: 3
+  min_interval_seconds: 120
+  max_interval_seconds: 320
+
+ember-fields:
+  tags: ["fire", "wilds"]
+  default_encounter_count: 3
+  min_interval_seconds: 150
+  max_interval_seconds: 360
+
+aurora-tundra:
+  tags: ["ice", "tundra"]
+  default_encounter_count: 3
+  min_interval_seconds: 150
+  max_interval_seconds: 360
+
+verdant-canopy:
+  tags: ["forest", "verdant"]
+  default_encounter_count: 3
+  min_interval_seconds: 120
+  max_interval_seconds: 320

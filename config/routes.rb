@@ -54,6 +54,7 @@ Rails.application.routes.draw do
       post :assign_pets, on: :member
     end
     resources :abilities
+    resources :special_abilities
     resources :pets
     resources :user_pets, only: [:index, :show, :edit, :update]
     resources :evolution_rules do
@@ -64,13 +65,14 @@ Rails.application.routes.draw do
   end
   
 
-  resources :explorations, only: [:index] do
+  resources :explorations, only: [:index, :show] do
     collection do
       post :scout
     end
     member do
       post :start
       post :preview
+      post :reroll
     end
   end
 
@@ -79,7 +81,10 @@ Rails.application.routes.draw do
   resources :user_explorations, only: [] do
     post :complete, on: :member
     get :ready   # new: GET /user_explorations/:id/ready
-
+    post :activate_encounter, on: :member
+    post :resolve_encounter, on: :member
+    post :checkpoint, on: :member
+    post :continue_segment, on: :member
   end
 
   resources :user_eggs, only: [:create, :show] do

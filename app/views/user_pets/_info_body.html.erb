@@ -122,6 +122,28 @@
           </div>
           <p class="mt-1 text-xs text-slate-500"><%= user_pet.exp %> / <%= UserPet::EXP_PER_LEVEL %> XP</p>
         </div>
+        <% energy_ratio = user_pet.energy.to_f / UserPet::MAX_ENERGY %>
+        <% energy_ratio = [[energy_ratio, 0.0].max, 1.0].min %>
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Energy</p>
+          <div class="mt-1 h-2 w-full overflow-hidden rounded-full bg-slate-800">
+            <div class="h-full rounded-full bg-emerald-500 transition-all" style="width: <%= (energy_ratio * 100).round(1) %>%"></div>
+          </div>
+          <div class="mt-1 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
+            <span><%= "#{user_pet.energy} / #{UserPet::MAX_ENERGY}" %></span>
+            <% if user_pet.energy.to_i >= UserPet::MAX_ENERGY %>
+              <span class="font-semibold text-emerald-400">Fully rested</span>
+            <% else %>
+              <span class="flex items-center gap-1 text-indigo-200"
+                    data-controller="countdown"
+                    data-countdown-seconds-value="<%= user_pet.seconds_until_next_energy %>"
+                    data-user-pet-id="<%= user_pet.id %>">
+                Next energy in
+                <span class="font-semibold text-indigo-100" data-countdown-target="output">—</span>
+              </span>
+            <% end %>
+          </div>
+        </div>
         <div class="grid grid-cols-2 gap-3 text-xs text-slate-300">
           <% [:hunger, :hygiene, :boredom, :injury_level, :mood].each do |need| %>
             <% value = user_pet.send(need).to_i rescue nil %>

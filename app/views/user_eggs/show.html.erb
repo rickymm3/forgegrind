@@ -1,0 +1,5 @@
+<% content_for :title, "Egg: #{@egg.name}" %>
+
+<div class="mx-auto flex min-h-screen w-full max-w-4xl flex-col gap-6 px-4 py-6">
+  <%= render "user_eggs/info_panel", user_egg: @user_egg, context: :page %>
+</div>

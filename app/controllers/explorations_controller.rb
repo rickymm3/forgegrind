@@ -1,96 +1,127 @@
 class ExplorationsController < ApplicationController
   RewardItem = Struct.new(:item, :quantity, keyword_init: true)
-  before_action :set_generated_exploration, only: %i[preview start]
-
-  helper_method :scout_button_options
+  before_action :set_generated_exploration, only: %i[preview start reroll]
 
   def index
     load_exploration_sets
     @selected_generated = find_selected_generated(@generated_explorations)
     assign_rescout_state
+    @slot_entries = build_slot_entries(@selected_generated)
 
-    if turbo_frame_request? && params[:generated_id].present?
-      render partial: "explorations/detail_panel",
-             locals: detail_locals(@selected_generated),
-             layout: false
-      return
+    respond_to do |format|
+      format.html
+      format.turbo_stream do
+        render turbo_stream: turbo_stream.update(
+          "worlds-list",
+          partial: "explorations/worlds_list",
+          locals: {
+            slot_entries: @slot_entries
+          }
+        )
+      end
     end
   end
 
-  def scout
-    generator = ExplorationGenerator.new(current_user)
-
-    begin
-      generator.generate!
-    rescue ExplorationGenerator::CooldownNotElapsedError => error
-      load_exploration_sets
-      assign_rescout_state
-
-      remaining = error.remaining_seconds
-      wait_human = @rescout_wait_human || helpers.distance_of_time_in_words(Time.current, Time.current + remaining)
-      message = "Your scouting party needs #{wait_human} to rest."
-      respond_to do |format|
-        format.turbo_stream do
-          flash.now[:alert] = message
-          streams = []
-          render_scout_button_streams(streams)
-          streams << turbo_stream.update(
-            "flash_messages",
-            partial: "shared/flash_messages"
-          )
-          render turbo_stream: streams
-        end
-        format.html { redirect_to explorations_path, alert: message }
-      end
-      return
-    end
-
+  def show
     load_exploration_sets
     assign_rescout_state
 
+    @generated_exploration = find_generated_for_show(params[:id])
+    if @generated_exploration.nil?
+      redirect_to explorations_path, alert: "Expedition not found." and return
+    end
+
+    context = detail_locals(@generated_exploration)
+    @user_exploration = context[:user_exploration]
+    @requirement_progress = context[:requirement_progress]
+    @requirement_groups = context[:requirement_groups]
+    @available_pets = load_available_pets({})
+    @selected_pet_ids = []
+    @filters = {}
+    @selected_generated = @generated_exploration
+    @slot_entries = build_slot_entries(@selected_generated)
+  end
+
+  def reroll
+    slot_index = @generated_exploration.slot_index
+    head :unprocessable_entity and return unless slot_index
+
+    if current_user.user_explorations.where(generated_exploration: @generated_exploration, completed_at: nil).exists?
+      respond_with_reroll_error("Expedition is currently underway.") and return
+    end
+
+    if @generated_exploration.slot_state_sym == :cooldown
+      respond_with_reroll_error("This slot is cooling down.") and return
+    end
+
+    if @generated_exploration.reroll_cooldown_active?
+      wait_text = helpers.distance_of_time_in_words(@generated_exploration.reroll_available_at)
+      respond_with_reroll_error("Reroll available in #{wait_text}.") and return
+    end
+
+    reroll_ready_at = Time.current + ExplorationGenerator::RESCOUT_COOLDOWN
+
+    @generated_exploration.destroy
+    generator = ExplorationGenerator.new(current_user)
+    generator.generate!(slot_index: slot_index, force: true)
+    new_generated = current_user.generated_explorations.find_by(slot_index: slot_index)
+    new_generated&.set_reroll_cooldown!(reroll_ready_at)
+    new_generated&.set_slot_state!(:active)
+
+    load_exploration_sets
+    assign_rescout_state
+    @selected_generated = new_generated
+    @slot_entries = build_slot_entries(new_generated)
+
     respond_to do |format|
       format.turbo_stream do
-        selected = find_selected_generated(@generated_explorations)
+        flash.now[:notice] = "Expedition rerolled."
         streams = []
         streams << turbo_stream.update(
           "worlds-list",
           partial: "explorations/worlds_list",
           locals: {
-            generated_explorations: @generated_explorations,
-            active_explorations: @active_explorations,
-            requirement_map: @requirement_map,
-            selected_generated: selected
+            slot_entries: @slot_entries
           }
         )
-        streams << turbo_stream.update(
-          "exploration_detail",
-          partial: "explorations/detail_panel",
-          locals: detail_locals(selected)
-        )
-        render_scout_button_streams(streams)
-
-        wait_text = @rescout_wait_human || helpers.distance_of_time_in_words(Time.current, Time.current + ExplorationGenerator::RESCOUT_COOLDOWN)
-        flash.now[:notice] = if @generated_explorations.any?
-                               "Your scouting party discovered new expeditions. Next scouts will be ready in #{wait_text}."
-                             else
-                               "All expeditions are currently underway. Your scouting party will be ready again in #{wait_text}."
-                             end
         streams << turbo_stream.update(
           "flash_messages",
           partial: "shared/flash_messages"
         )
-
         render turbo_stream: streams
       end
       format.html do
-        wait_text = @rescout_wait_human || helpers.distance_of_time_in_words(Time.current, Time.current + ExplorationGenerator::RESCOUT_COOLDOWN)
-        notice = if @generated_explorations.any?
-                   "Your scouting party discovered new expeditions."
-                 else
-                   "All expeditions are currently underway."
-                 end
-        notice = "#{notice} Next scouts will be ready in #{wait_text}."
-        redirect_to explorations_path, notice: notice
+        redirect_to(new_generated ? exploration_path(new_generated) : explorations_path, notice: "Expedition rerolled.")
+      end
+    end
+  end
+
+  def scout
+    generator = ExplorationGenerator.new(current_user)
+    generator.generate!(force: true)
+
+    load_exploration_sets
+    assign_rescout_state
+    selected = find_selected_generated(@generated_explorations)
+    @slot_entries = build_slot_entries(selected)
+
+    respond_to do |format|
+      format.turbo_stream do
+        flash.now[:notice] = "Your scouting party refreshed the expedition board."
+        render turbo_stream: [
+          turbo_stream.update(
+            "worlds-list",
+            partial: "explorations/worlds_list",
+            locals: { slot_entries: @slot_entries }
+          ),
+          turbo_stream.update(
+            "flash_messages",
+            partial: "shared/flash_messages"
+          )
+        ]
+      end
+      format.html do
+        redirect_to explorations_path, notice: "Your scouting party refreshed the expedition board."
       end
     end
   end
@@ -122,7 +153,7 @@ class ExplorationsController < ApplicationController
           }
         )
       end
-      format.html { redirect_to explorations_path(generated_id: @generated_exploration.id) }
+      format.html { redirect_to exploration_path(@generated_exploration) }
     end
   end
 
@@ -130,7 +161,7 @@ class ExplorationsController < ApplicationController
     selected_ids = parse_selected_ids(params[:user_pet_ids])
     if selected_ids.empty?
       flash[:alert] = "Please select at least one pet to explore."
-      redirect_to explorations_path(generated_id: @generated_exploration.id) and return
+      redirect_to exploration_path(@generated_exploration) and return
     end
 
     if selected_ids.size > 3
@@ -153,21 +184,59 @@ class ExplorationsController < ApplicationController
       head :unprocessable_entity and return
     end
 
+    ordered_ids = parse_party_order(selected_ids, params[:party_order])
+    primary_id = params[:primary_user_pet_id].presence&.to_i
+    primary_id = ordered_ids.first if primary_id.blank? || !ordered_ids.include?(primary_id)
+
+    primary_pet = @selected_pets.find { |pet| pet.id == primary_id }
+    unless primary_pet
+      head :unprocessable_entity and return
+    end
+
     @user_exploration = current_user.user_explorations.create!(
       world: @generated_exploration.world,
       generated_exploration: @generated_exploration,
-      started_at: Time.current
+      started_at: Time.current,
+      primary_user_pet: primary_pet
     )
     @user_exploration.user_pets << @selected_pets
+
+    progress = @generated_exploration.requirements_progress_for(@selected_pets)
+    fulfilled_requirement_ids = progress.select { |entry| entry[:fulfilled] }.map { |entry| entry[:id] }
+
+    snapshot = build_party_snapshot(@selected_pets, ordered_ids, primary_pet, requirements: progress)
+    ability_refs = snapshot[:members].map { |entry| entry[:special_ability_reference] }.compact
+    ability_tags = snapshot[:members].flat_map { |entry| entry[:special_ability_tags] }.compact.uniq
+
+    schedule = ExplorationEncounterCatalog.schedule_for(
+      world: @generated_exploration.world,
+      duration: @user_exploration.duration_seconds,
+      ability_refs: ability_refs,
+      ability_tags: ability_tags,
+      requirements: progress,
+      fulfilled_ids: fulfilled_requirement_ids,
+      seed: @user_exploration.id,
+      segments: @user_exploration.segment_definitions
+    )
+
+    @user_exploration.update!(
+      party_snapshot: snapshot,
+      encounter_schedule: schedule,
+      encounters_seeded_at: Time.current
+    )
+    initialize_segment_progress!(@user_exploration)
+    @user_exploration.reload
     @generated_exploration.mark_consumed!
 
     load_exploration_sets
+    assign_rescout_state
+    @slot_entries = build_slot_entries(@user_exploration.generated_exploration)
 
     respond_to do |format|
       format.turbo_stream do
         render "explorations/start"
       end
-      format.html { redirect_to explorations_path(generated_id: @generated_exploration.id) }
+      format.html { redirect_to exploration_path(@generated_exploration) }
     end
   end
 
@@ -179,12 +248,75 @@ class ExplorationsController < ApplicationController
 
   def load_exploration_sets
     @active_explorations = current_user.user_explorations.includes(generated_exploration: { world: :pet_types }).where(completed_at: nil)
-    max_slots = ExplorationGenerator::DEFAULT_COUNT
-    available_slots = [max_slots - @active_explorations.size, 0].max
+    @active_explorations.each do |exploration|
+      exploration.reload if exploration.sync_segment_timers!
+    end
+    @active_explorations.each do |exploration|
+      exploration.auto_trigger_due_encounter!
+    end
 
-    generated_scope = current_user.generated_explorations.available.includes(world: :pet_types).order(:created_at)
-    generated_scope = generated_scope.limit(available_slots) if available_slots.positive?
-    @generated_explorations = available_slots.positive? ? generated_scope.to_a : []
+    max_slots = ExplorationGenerator::DEFAULT_COUNT
+
+    available_generated = current_user.generated_explorations
+                                      .available
+                                      .includes(world: :pet_types)
+                                      .where(slot_index: 1..max_slots)
+                                      .order(:slot_index, :created_at)
+                                      .to_a
+    available_generated.each(&:clear_reroll_cooldown_if_elapsed!)
+
+    existing_by_slot = available_generated.index_by(&:slot_index)
+    active_by_slot = @active_explorations.each_with_object({}) do |exploration, memo|
+      slot_index = exploration.generated_exploration&.slot_index
+      memo[slot_index] = true if slot_index
+    end
+
+    generator = ExplorationGenerator.new(current_user)
+    slot_range = 1..max_slots
+    slots_to_refresh = []
+
+    slot_range.each do |slot|
+      generated = existing_by_slot[slot]
+      next unless generated&.slot_state_sym == :cooldown
+      next if generated.cooldown_active?
+
+      slots_to_refresh << slot
+      generated.destroy
+      existing_by_slot.delete(slot)
+    end
+
+    available_generated.reject! { |gen| gen.slot_state_sym == :cooldown && !gen.cooldown_active? }
+
+    slot_range.each do |slot|
+      next if active_by_slot[slot]
+
+      generated = existing_by_slot[slot]
+      next if generated.present?
+
+      slots_to_refresh << slot
+    end
+
+    slots_to_refresh.uniq.each do |slot|
+      generator.generate!(slot_index: slot, force: true)
+    end
+
+    if slots_to_refresh.any?
+      available_generated = current_user.generated_explorations
+                                        .available
+                                        .includes(world: :pet_types)
+                                        .where(slot_index: 1..max_slots)
+                                        .order(:slot_index, :created_at)
+                                        .to_a
+      available_generated.each(&:clear_reroll_cooldown_if_elapsed!)
+    end
+
+    @generated_explorations = available_generated.dup
+    @active_explorations.each do |exploration|
+      generated = exploration.generated_exploration
+      next unless generated
+      @generated_explorations << generated unless @generated_explorations.include?(generated)
+    end
+    @generated_explorations.uniq!
 
     @requirement_map = build_requirement_map(@generated_explorations)
     @active_explorations.each do |user_exploration|
@@ -199,14 +331,34 @@ class ExplorationsController < ApplicationController
     end
   end
 
+  def build_slot_entries(selected_generated)
+    Explorations::SlotLayoutBuilder.build(
+      max_slots: ExplorationGenerator::DEFAULT_COUNT,
+      generated_explorations: @generated_explorations,
+      active_explorations: @active_explorations,
+      requirement_map: @requirement_map,
+      selected_generated: selected_generated
+    )
+  end
+
   def assign_rescout_state
-    @rescout_cooldown_remaining = cooldown_remaining_for(current_user)
-    if @rescout_cooldown_remaining.positive?
-      @rescout_available_at = Time.current + @rescout_cooldown_remaining
-      @rescout_wait_human = helpers.distance_of_time_in_words(Time.current, @rescout_available_at)
-    else
-      @rescout_wait_human = nil
-      @rescout_available_at = nil
+    @rescout_cooldown_remaining = 0
+    @rescout_wait_human = nil
+    @rescout_available_at = nil
+  end
+
+  def respond_with_reroll_error(message)
+    respond_to do |format|
+      format.turbo_stream do
+        flash.now[:alert] = message
+        render turbo_stream: turbo_stream.update(
+          "flash_messages",
+          partial: "shared/flash_messages"
+        )
+      end
+      format.html do
+        redirect_back fallback_location: explorations_path, alert: message
+      end
     end
   end
 
@@ -245,10 +397,15 @@ class ExplorationsController < ApplicationController
     end
   end
 
+  def find_generated_for_show(id)
+    current_user.generated_explorations.includes(world: :pet_types).find_by(id: id)
+  end
+
   def detail_locals(generated)
     if generated.nil?
       active = @active_explorations&.first
       if active
+        active.reload if active.sync_segment_timers!
         progress = active.generated_exploration&.requirements_progress_for(active.user_pets) || []
         return {
           generated_exploration: active.generated_exploration || GeneratedExploration.new(world: active.world, name: active.world.name, duration_seconds: active.duration_seconds, requirements: []),
@@ -264,6 +421,7 @@ class ExplorationsController < ApplicationController
     user_exploration = current_user.user_explorations.includes(:user_pets, generated_exploration: { world: :pet_types }).find_by(generated_exploration: generated, completed_at: nil)
 
     if user_exploration
+      user_exploration.reload if user_exploration.sync_segment_timers!
       progress = generated.requirements_progress_for(user_exploration.user_pets)
       grouped = progress.group_by { |entry| entry[:source] || 'base' }
       return {
@@ -294,73 +452,69 @@ class ExplorationsController < ApplicationController
     end
   end
 
+  def parse_party_order(selected_ids, raw_order)
+    order = parse_selected_ids(raw_order)
+    return selected_ids if order.blank?
+
+    ordered = order.select { |id| selected_ids.include?(id) }
+    remaining = selected_ids - ordered
+    ordered + remaining
+  end
+
+  def build_party_snapshot(pets, ordered_ids, primary_pet, requirements: [])
+    pet_map = pets.index_by(&:id)
+    members = ordered_ids.map do |id|
+      pet = pet_map[id]
+      next unless pet
+
+      {
+        user_pet_id: pet.id,
+        pet_id: pet.pet.id,
+        display_name: pet.name.presence || pet.pet.name,
+        species: pet.pet.name,
+        rarity: pet.rarity.name,
+        power: pet.pet.power,
+        special_ability_reference: pet.special_ability_reference,
+        special_ability_name: pet.special_ability_name,
+        special_ability_tags: pet.special_ability_tags,
+        pet_types: pet.pet.pet_types.map(&:name)
+      }
+    end.compact
+
+    {
+      ordered_user_pet_ids: members.map { |member| member[:user_pet_id] },
+      primary_user_pet_id: primary_pet.id,
+      members: members,
+      requirements: requirements
+    }
+  end
+
+  def initialize_segment_progress!(user_exploration)
+    definitions = user_exploration.segment_definitions
+    return if definitions.blank?
+
+    started_at = user_exploration.started_at || Time.current
+    progress_entries = definitions.each_with_index.map do |definition, index|
+      {
+        index: index,
+        key: definition[:key],
+        label: definition[:label],
+        duration_seconds: definition[:duration_seconds],
+        checkpoint_offset_seconds: definition[:checkpoint_offset_seconds],
+        status: index.zero? ? 'active' : 'upcoming',
+        reached_at: index.zero? ? started_at : nil,
+        completed_at: nil
+      }
+    end
+
+    user_exploration.update!(
+      segment_progress: progress_entries.map(&:stringify_keys),
+      current_segment_index: 0,
+      segment_started_at: started_at
+    )
+  end
+
   def cooldown_remaining_for(user)
-    ExplorationGenerator.cooldown_remaining_for(user)
-  end
-
-  SCOUT_BUTTON_VARIANTS = {
-    primary: {
-      button_id: "scout_primary_button",
-      label: "Scout for Expeditions",
-      button_class: "inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-400 disabled:opacity-60 disabled:cursor-not-allowed",
-      show_wait_text: true,
-      info_class: "text-xs text-slate-500 mt-1"
-    }.freeze,
-    sidebar: {
-      button_id: "rescout_sidebar_button",
-      label: "Rescout",
-      button_class: "text-xs font-semibold text-indigo-600 hover:text-indigo-700 disabled:text-slate-400 disabled:cursor-not-allowed",
-      form_class: "inline",
-      show_wait_text: true,
-      info_class: "mt-1 text-[11px] text-slate-400 text-right"
-    }.freeze,
-    secondary: {
-      button_id: "scout_secondary_button",
-      label: "Scout for new expeditions",
-      button_class: "self-start inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-400 disabled:opacity-60 disabled:cursor-not-allowed",
-      show_wait_text: true,
-      info_class: "text-xs text-slate-500 mt-1"
-    }.freeze,
-    empty_state: {
-      button_id: "scout_empty_state_button",
-      label: "Scout for Expeditions",
-      button_class: "inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-400 disabled:opacity-60 disabled:cursor-not-allowed",
-      show_wait_text: true,
-      info_class: "text-xs text-slate-400 mt-2"
-    }.freeze
-  }.freeze
-
-  def scout_button_options(variant)
-    SCOUT_BUTTON_VARIANTS.fetch(variant)
-  end
-
-  def render_scout_button_streams(streams)
-    button_variants_for_render.each do |variant|
-      options = scout_button_options(variant)
-      streams << turbo_stream.update(
-        options[:button_id],
-        partial: "explorations/scout_button",
-        locals: options.merge(
-          disabled: @rescout_cooldown_remaining.to_i.positive?,
-          wait_human: @rescout_wait_human,
-          unlock_at: @rescout_available_at
-        )
-      )
-    end
-  end
-
-  def button_variants_for_render
-    variants = []
-    if @generated_explorations.any?
-      variants << :sidebar
-    else
-      variants << :primary
-      if @active_explorations.any?
-        variants << :secondary
-      else
-        variants << :empty_state
-      end
-    end
-    variants
+    0
   end
 end

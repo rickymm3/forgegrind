@@ -1,0 +1,11 @@
+<% context ||= :page %>
+<% state   ||= user_egg.status %>
+<% new_user_pet ||= nil %>
+
+<turbo-frame id="<%= egg_action_panel_dom_id(user_egg) %>">
+  <%= render "user_eggs/action_panel",
+             user_egg: user_egg,
+             context: context,
+             state: state,
+             new_user_pet: new_user_pet %>
+</turbo-frame>

@@ -1,0 +1,45 @@
+<% context        = (defined?(local_assigns) && local_assigns.fetch(:context, nil)) || :page %>
+<% user_egg       = local_assigns.fetch(:user_egg) %>
+<% egg            = user_egg.egg %>
+<% status         = user_egg.status %>
+<% status_label   = user_egg.status_label %>
+<% image_path     = egg_image_path(egg) %>
+<% total_seconds  = egg.hatch_duration.to_i %>
+<% remaining      = user_egg.hatch_time_remaining.to_i %>
+<% progress_ratio = total_seconds.positive? ? ((total_seconds - remaining) / total_seconds.to_f) : 0 %>
+<% progress_ratio = [[progress_ratio, 0.0].max, 1.0].min %>
+<% started_at     = user_egg.hatch_started_at %>
+<% status_copy    =
+     case status
+     when :ready
+       "This egg is ready! Open it to meet your new companion."
+     when :in_progress
+       "Incubation is underway. Check back when the timer finishes to hatch it."
+     when :idle
+       "Begin incubation to start the hatching process."
+     else
+       "This egg has already hatched."
+     end %>
+<% padding_class = context == :page ? "pb-32" : "pb-24" %>
+<% info_dom_id   = egg_info_dom_id(user_egg) %>
+
+<div class="relative flex flex-col gap-6 <%= padding_class %>">
+  <turbo-frame id="<%= info_dom_id %>">
+    <%= render "user_eggs/info_body",
+               user_egg: user_egg,
+               context: context,
+               status: status,
+               status_label: status_label,
+               status_copy: status_copy,
+               image_path: image_path,
+               total_seconds: total_seconds,
+               remaining: remaining,
+               progress_ratio: progress_ratio,
+               started_at: started_at %>
+  </turbo-frame>
+
+  <%= render "user_eggs/action_panel_frame",
+             user_egg: user_egg,
+             context: context,
+             state: status %>
+</div>

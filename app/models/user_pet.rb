@@ -70,6 +70,22 @@ class UserPet < ApplicationRecord
     @ability_elements
   end
 
+  def special_ability
+    pet.special_ability
+  end
+
+  def special_ability_reference
+    special_ability&.reference
+  end
+
+  def special_ability_name
+    special_ability&.name
+  end
+
+  def special_ability_tags
+    special_ability&.encounter_tags_list || []
+  end
+
   HUNGER_DECAY_PER_MIN  = 1.0 / 30   # -1 per 30 minutes
   HYGIENE_DECAY_PER_MIN = 1.0 / 120  # -1 per 2 hours
   BOREDOM_DECAY_PER_MIN = 1.0 / 45   # -1 per 45 minutes

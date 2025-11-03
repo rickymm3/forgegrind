@@ -1,0 +1,40 @@
+healing_breeze:
+  name: Healing Breeze
+  tagline: "Soothing winds restore life to wounded allies."
+  description: >
+    A gentle gust infused with restorative pollen that can calm frightened creatures
+    and mend minor wounds encountered on the trail.
+  encounter_tags:
+    - healing
+    - empathy
+    - forest
+  metadata:
+    cooldown_seconds: 120
+    narrative_prompt: "Use %{pet_name}'s Healing Breeze to assist."
+
+trailblazer_instinct:
+  name: Trailblazer Instinct
+  tagline: "Unearth hidden paths and secret clearings."
+  description: >
+    Keen senses attuned to the wilderness allow this companion to notice faint tracks,
+    hidden caches, and unusual sounds long before anyone else.
+  encounter_tags:
+    - scouting
+    - discovery
+  metadata:
+    bonus_success_chance: 0.15
+    narrative_prompt: "%{pet_name} senses something off the beaten path."
+
+ember_guardian:
+  name: Ember Guardian
+  tagline: "Conjure protective flames when danger draws near."
+  description: >
+    A ring of embers springs forth, shielding allies from harm and intimidating foes
+    encountered in the wild.
+  encounter_tags:
+    - protection
+    - intimidation
+    - fire
+  metadata:
+    bonus_defense: 10
+    narrative_prompt: "%{pet_name}'s embers flare in defense."

@@ -1,0 +1,185 @@
+# config/explorations/encounters.yml
+
+# Global encounters are evaluated for every world. They can include world_tags to
+# narrow eligibility, ability requirements, and distinct options.
+global:
+  - slug: forest_lost_pup
+    title: "A Whimper in the Brush"
+    summary: "Your party hears a faint cry from beyond the treeline."
+    world_tags: ["forest", "starter"]
+    base_weight: 1.0
+    requirement_tags:
+      - base
+      - "type:pet_type"
+      - "pet_type:grass"
+    narrative:
+      intro: "You pause along the mossy path. Somewhere past the brush a small creature is crying for help."
+    nodes:
+      intro:
+        text: "A frightened whimper drifts from the brush. The trail ahead is quiet, but the sound tugs at your party."
+        options:
+          - key: ignore
+            label: "Ignore it and keep going"
+            outcome: continue_on_path
+          - key: investigate
+            label: "Push through the brush"
+            next_node: clearing
+            timer_seconds: 90
+      clearing:
+        text: "You discover a young lupin tangled in thorny vines. Its breathing is shallow."
+        options:
+          - key: free_carefully
+            label: "Carefully cut the vines"
+            outcome: free_success
+          - key: call_for_help
+            label: "Call for local guardians"
+            outcome: guardians_alerted
+          - key: healing_winds
+            label: "Use %{pet_name}'s Healing Breeze"
+            next_node: healing_breeze
+            requires:
+              special_ability_tags: ["healing"]
+            timer_seconds: 120
+      healing_breeze:
+        text: "Gentle winds swirl as %{pet_name} releases soothing pollen. The pup calms and the vines loosen."
+        options:
+          - key: escort
+            label: "Escort the pup back to the trail"
+            outcome: healing_breeze_escort
+          - key: encourage
+            label: "Encourage the pup to run home"
+            outcome: healing_breeze_release
+
+  - slug: hidden_cache
+    title: "Glint Beneath the Leaves"
+    summary: "Something metal gleams under a fallen log."
+    world_tags: ["forest", "wilds", "starter"]
+    base_weight: 0.8
+    requirement_tags:
+      - base
+      - prefix
+      - "type:ability"
+    nodes:
+      intro:
+        text: "A faint metallic glint peeks through damp leaves. The air hums with latent energy."
+        options:
+          - key: leave
+            label: "Leave it alone"
+            outcome: leave_cache
+          - key: search_direct
+            label: "Reach in and grab it"
+            next_node: cache_result
+          - key: scout_first
+            label: "%{pet_name} scouts the area first"
+            next_node: scouted_cache
+            requires:
+              special_ability_tags: ["scouting", "discovery"]
+            timer_seconds: 75
+      cache_result:
+        text: "You plunge your hand into the leaves. A sprung snare tightens around your wrist!"
+        options:
+          - key: break_free
+            label: "Break the snare"
+            outcome: snare_broken
+          - key: burn_snare
+            label: "Use a fire ability to scorch the rope"
+            outcome: snare_burned
+            requires:
+              special_ability_tags: ["fire"]
+      scouted_cache:
+        text: "%{pet_name} circles the clearing, revealing faint runes around the cache."
+        options:
+          - key: disarm
+            label: "Disarm the rune trap"
+            outcome: cache_disarmed
+          - key: mark_for_later
+            label: "Mark the spot for return"
+            outcome: cache_marked
+
+worlds:
+  ember-fields:
+    - slug: ember_flare_ambush
+      title: "Crackle in the Distance"
+      summary: "Flames dance unexpectedly along the canyon rim."
+      base_weight: 1.2
+      requirement_tags:
+        - prefix
+        - "ability:fire"
+        - "type:ability"
+      nodes:
+        intro:
+          text: "An eruption of sparks rains down from the ridge. A shadowy ambusher circles above."
+          options:
+            - key: press_on
+              label: "Dash through the embers"
+              next_node: run_through
+            - key: ember_guard
+              label: "%{pet_name} raises a protective ember shield"
+              next_node: guarded_push
+              requires:
+                special_abilities: ["ember_guardian"]
+              timer_seconds: 60
+            - key: intimidate
+              label: "Roar back at the ambusher"
+              outcome: intimidate_success
+              requires:
+                special_ability_tags: ["intimidation"]
+        run_through:
+          text: "You sprint through the curtain of sparks. Heat sears your fur, but the path clears."
+          options:
+            - key: regroup
+              label: "Regroup once you reach cover"
+              outcome: run_through_regroup
+        guarded_push:
+          text: "%{pet_name}'s ember shield blooms outward, sheltering the party as the flames part."
+          options:
+            - key: counterstrike
+              label: "Counter the ambusher"
+              outcome: shield_counter
+
+  aurora-tundra:
+    - slug: frozen_relic
+      title: "Frozen Relic"
+      summary: "An ancient relic is frozen within sapphire ice."
+      base_weight: 1.0
+      requirement_tags:
+        - prefix
+        - "ability:ice"
+        - "type:ability"
+      nodes:
+        intro:
+          text: "An ancient relic rests within sapphire ice. Frozen runes shimmer across its surface."
+          options:
+            - key: chip_away
+              label: "Chip away at the ice"
+              next_node: manual_break
+            - key: focus_heat
+              label: "%{pet_name} focuses elemental heat"
+              next_node: focus_heat
+              requires:
+                special_ability_tags: ["fire"]
+              timer_seconds: 90
+            - key: resonate_song
+              label: "%{pet_name}'s lullaby resonates with the ice"
+              next_node: resonance
+              requires:
+                special_abilities: ["aether_song"]
+              timer_seconds: 120
+        manual_break:
+          text: "You chip away carefully, but fractures spider through the relic."
+          options:
+            - key: salvage
+              label: "Salvage the remaining shards"
+              outcome: manual_salvage
+        focus_heat:
+          text: "Focused flames melt the ice evenly, revealing the relic unharmed."
+          options:
+            - key: claim
+              label: "Claim the relic"
+              outcome: relic_recovered
+        resonance:
+          text: "%{pet_name}'s song vibrates through the ice. Hidden compartments along the cave walls unlock."
+          options:
+            - key: explore
+              label: "Explore the newly opened alcove"
+              outcome: resonance_cache

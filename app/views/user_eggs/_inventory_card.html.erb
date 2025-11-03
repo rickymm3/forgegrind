@@ -1,0 +1,25 @@
+<% egg = user_egg.egg %>
+<% status_label = user_egg.status_label %>
+<% image_path = egg_image_path(egg) %>
+
+<%= link_to user_egg_path(user_egg),
+            class: "group relative block aspect-[3/4] overflow-hidden rounded-3xl border border-slate-800 bg-slate-900/60 shadow-inner shadow-slate-950/40 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950",
+            data: { turbo_prefetch: false, turbo: false },
+            aria: { label: "#{egg.name} egg – #{status_label}" } do %>
+  <span class="sr-only"><%= egg.name %></span>
+  <% if image_path.present? %>
+    <%= image_tag image_path,
+                  alt: "",
+                  loading: "lazy",
+                  class: "absolute inset-0 h-full w-full object-cover transition duration-200 group-hover:scale-105" %>
+  <% else %>
+    <div class="absolute inset-0 flex items-center justify-center bg-slate-800 text-sm text-slate-300">
+      <%= egg.name %>
+    </div>
+  <% end %>
+  <span class="absolute top-2 right-2 inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-semibold drop-shadow-md <%= egg_status_badge_classes(user_egg) %>"
+        aria-label="Egg status <%= status_label %>">
+    <span aria-hidden="true"><%= egg_status_icon(user_egg) %></span>
+    <%= status_label %>
+  </span>
+<% end %>

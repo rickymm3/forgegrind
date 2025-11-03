@@ -64,15 +64,26 @@ class InventoriesController < ApplicationController
   end
 
   def render_detail_panel(state:, close_path: container_panel_inventory_path, **locals)
-    render turbo_stream: turbo_stream.replace(
-      "inventory-detail-panel",
-      partial: "inventories/detail_panel",
-      locals: {
-        state: state,
-        close_path: close_path,
-        **locals
-      }
-    )
+    panel_locals = {
+      state: state,
+      close_path: close_path,
+      **locals
+    }
+
+    respond_to do |format|
+      format.turbo_stream do
+        render turbo_stream: turbo_stream.update(
+          "inventory-detail-panel",
+          partial: "inventories/detail_panel",
+          formats: :html,
+          locals: panel_locals
+        )
+      end
+      format.html do
+        load_inventory unless defined?(@containers) && defined?(@items)
+        render :show
+      end
+    end
   end
 
   def item_metadata(item)

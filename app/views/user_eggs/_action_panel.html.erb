@@ -1,0 +1,152 @@
+<% context       = (defined?(local_assigns) && local_assigns.fetch(:context, nil)) || :page %>
+<% state         = (defined?(local_assigns) && local_assigns.fetch(:state, nil)) || user_egg.status %>
+<% new_user_pet  = (defined?(local_assigns) && local_assigns.fetch(:new_user_pet, nil)) %>
+<% state         = state.to_sym if state.respond_to?(:to_sym) %>
+<% remaining     = user_egg.hatch_time_remaining.to_i %>
+<% total_seconds = user_egg.egg.hatch_duration.to_i %>
+<% progress_ratio = if total_seconds.positive?
+                      ((total_seconds - remaining) / total_seconds.to_f).clamp(0.0, 1.0)
+                    else
+                      0.0
+                    end %>
+<% if context == :page %>
+  <% wrapper_classes = ["mt-6"] %>
+<% else %>
+  <% wrapper_classes = ["fixed", "left-0", "right-0", "bottom-0", "z-40", "px-4", "pb-6"] %>
+<% end %>
+
+<div class="<%= wrapper_classes.join(' ') %>">
+  <div class="pointer-events-auto mx-auto max-w-3xl rounded-3xl border border-slate-800 bg-slate-950/95 p-5 shadow-2xl shadow-slate-950/50">
+    <% case state %>
+    <% when :idle %>
+      <div class="space-y-4">
+        <div class="space-y-1">
+          <p class="text-sm font-semibold text-slate-100">Start incubation?</p>
+          <p class="text-sm text-slate-300">
+            Begin the hatching process to warm the egg. Once the timer completes you'll be able to open it.
+          </p>
+        </div>
+        <div class="flex flex-wrap items-center gap-3">
+          <%= button_to "Begin Incubation",
+                        incubate_user_egg_path(user_egg),
+                        method: :post,
+                        params: { context: context },
+                        class: "inline-flex items-center gap-2 rounded-full bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950" %>
+          <span class="text-xs text-slate-400">
+            Incubation takes <%= distance_of_time_in_words(Time.current, Time.current + total_seconds.seconds) %>.
+          </span>
+        </div>
+      </div>
+
+    <% when :in_progress %>
+      <div class="space-y-5" data-controller="countdown"
+           data-countdown-seconds-value="<%= remaining %>"
+           data-countdown-total-value="<%= total_seconds %>"
+           data-user-egg-id="<%= user_egg.id %>">
+        <div class="space-y-1">
+          <p class="text-sm font-semibold text-amber-100 flex items-center gap-2">
+            <span aria-hidden="true">⏳</span>
+            Incubating...
+          </p>
+          <p class="text-sm text-slate-300">
+            We'll notify you as soon as it's ready. You can keep tending your pets while you wait.
+          </p>
+        </div>
+        <div class="space-y-3">
+          <div class="h-2 w-full overflow-hidden rounded-full bg-slate-800">
+            <div class="h-full rounded-full bg-amber-400 transition-all" style="width: <%= (progress_ratio * 100).round(1) %>%" data-countdown-target="progress"></div>
+          </div>
+          <div class="flex items-center justify-between text-xs text-slate-300">
+            <span>Time remaining</span>
+            <span data-countdown-target="output">
+              <%= distance_of_time_in_words(Time.current, Time.current + remaining.seconds, include_seconds: true) %>
+            </span>
+          </div>
+        </div>
+      </div>
+
+    <% when :ready %>
+      <div class="space-y-5">
+        <div class="rounded-2xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100">
+          <p class="font-semibold text-emerald-200 flex items-center gap-2">
+            <span aria-hidden="true">✨</span>
+            Your egg is ready to hatch!
+          </p>
+          <p class="mt-1">Hatching will retire this egg and create a new companion. Ready for the reveal?</p>
+        </div>
+        <div class="flex flex-wrap items-center gap-3">
+          <%= button_to "Hatch Egg",
+                        hatch_user_egg_path(user_egg),
+                        method: :post,
+                        params: { context: context },
+                        class: "inline-flex items-center gap-2 rounded-full bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950" %>
+          <%= link_to "Not yet",
+                      user_pets_path(collection: "eggs"),
+                      class: "inline-flex items-center justify-center rounded-full border border-slate-700/70 bg-slate-900/60 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:text-white" %>
+        </div>
+      </div>
+
+    <% when :hatched %>
+      <div class="space-y-4">
+        <div class="rounded-2xl border border-slate-800 bg-slate-900/60 px-4 py-3 text-sm text-slate-200">
+          <p class="font-semibold text-slate-100">This egg has already hatched.</p>
+          <p class="mt-1 text-slate-300">Visit your pets list to spend time with your new companion.</p>
+        </div>
+        <div class="flex flex-wrap items-center gap-3">
+          <%= link_to "View Pets",
+                      user_pets_path,
+                      class: "inline-flex items-center gap-2 rounded-full bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950" %>
+          <%= link_to "Back to Eggs",
+                      user_pets_path(collection: "eggs"),
+                      class: "inline-flex items-center justify-center rounded-full border border-slate-700/70 bg-slate-900/60 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:text-white" %>
+        </div>
+      </div>
+
+    <% when :hatching %>
+      <% if new_user_pet.present? %>
+        <% pet         = new_user_pet.pet %>
+        <% egg_image   = egg_image_path(user_egg.egg) %>
+        <% pet_image   = pet_sprite_path(pet) %>
+        <% reveal_extra_content = capture do %>
+          <div class="mt-6 flex flex-wrap items-center justify-center gap-3">
+            <%= link_to "View #{pet.name}",
+                        user_pet_path(new_user_pet),
+                        class: "inline-flex items-center gap-2 rounded-full bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 focus-visible:ring-offset-2 focus-visible:ring-offset-indigo-900" %>
+            <%= link_to "Back to Eggs",
+                        user_pets_path(collection: "eggs"),
+                        class: "inline-flex items-center justify-center rounded-full border border-white/40 bg-white/10 px-4 py-2 text-sm font-semibold text-white/90 transition hover:bg-white/20" %>
+          </div>
+        <% end %>
+        <div class="relative overflow-hidden rounded-3xl border border-indigo-500/30 bg-gradient-to-b from-indigo-900/60 to-slate-950/90 px-6 py-8 text-center text-white">
+          <%= render "shared/pet_reveal",
+                     wrapper_class: "relative flex flex-col items-center justify-center space-y-6",
+                     initial_title: "Your egg is hatching...",
+                     final_title: "Meet #{pet.name}!",
+                     initial_subtitle: "Stand back, the shell is cracking!",
+                     final_subtitle: "A new companion joins your collection.",
+                     delay: 2600,
+                     initial_image_path: egg_image,
+                     final_image_path: pet_image,
+                     initial_alt: "#{user_egg.egg.name} egg",
+                     final_alt: pet.name,
+                     sparkles: true,
+                     redirect_url: user_pet_path(new_user_pet),
+                     redirect_delay: 1600,
+                     extra_content: reveal_extra_content %>
+        </div>
+      <% else %>
+        <div class="space-y-3 text-sm text-slate-200">
+          <p>Something went wrong while hatching. Please refresh and try again.</p>
+        </div>
+      <% end %>
+
+    <% else %>
+      <div class="space-y-4 text-sm text-slate-200">
+        <p>Unable to display egg actions right now.</p>
+        <%= link_to "Back to eggs",
+                    user_pets_path(collection: "eggs"),
+                    class: "inline-flex items-center justify-center rounded-full border border-slate-700/70 bg-slate-900/60 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:text-white" %>
+      </div>
+    <% end %>
+  </div>
+</div>

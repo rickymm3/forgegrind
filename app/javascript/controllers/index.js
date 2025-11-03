@@ -49,11 +49,9 @@ application.register("action-panel", ActionPanelController)
 import ToastController from "./toast_controller"
 application.register("toast", ToastController)
 
-import ExplorationPreviewController from "./exploration_preview_controller"
-application.register("exploration-preview", ExplorationPreviewController)
 
-import RescoutButtonController from "./rescout_button_controller"
-application.register("rescout-button", RescoutButtonController)
+import PartySelectorController from "./party_selector_controller"
+application.register("party-selector", PartySelectorController)
 
 import InventoryController from "./inventory_controller"
 application.register("inventory", InventoryController)
@@ -69,3 +67,6 @@ application.register("overflow-menu", OverflowMenuController)
 
 import PetHubController from "./pet_hub_controller"
 application.register("pet-hub", PetHubController)
+
+import SlotCountdownController from "./slot_countdown_controller"
+application.register("slot-countdown", SlotCountdownController)

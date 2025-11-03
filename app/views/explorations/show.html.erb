@@ -1,0 +1,54 @@
+<% content_for :title, @generated_exploration.name if @generated_exploration.present? %>
+
+<div class="mx-auto flex min-h-screen w-full max-w-3xl flex-col gap-6 px-4 pb-28 pt-6">
+  <div class="flex items-center justify-between">
+    <%= link_to "Back to Expeditions",
+                explorations_path,
+                data: { turbo_frame: "_top" },
+                class: "inline-flex items-center gap-2 rounded-full border border-indigo-500/40 px-4 py-2 text-sm font-semibold text-indigo-200 transition hover:border-indigo-300 hover:text-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200" %>
+    <% if @user_exploration.present? && !@user_exploration.complete? %>
+      <span class="inline-flex items-center gap-2 rounded-full bg-indigo-500/20 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-indigo-200">
+        <span class="inline-block h-1.5 w-1.5 rounded-full bg-current animate-pulse"></span>
+        Expedition in progress
+      </span>
+    <% elsif @user_exploration&.complete? %>
+      <span class="inline-flex items-center gap-2 rounded-full bg-emerald-500/20 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-emerald-200">
+        <span class="inline-block h-1.5 w-1.5 rounded-full bg-current"></span>
+        Ready to complete
+      </span>
+    <% end %>
+  </div>
+
+  <% if @generated_exploration.present? %>
+    <%= turbo_frame_tag dom_id(@generated_exploration, :detail) do %>
+      <% current_state =
+           if @user_exploration.present?
+             if @user_exploration.active_encounter? || @user_exploration.checkpoint_segment_entry.present?
+               :checkpoint
+             elsif @user_exploration.complete?
+               :ready
+             else
+               :active
+             end
+           else
+             :selection
+           end %>
+      <%= render "explorations/zone_card",
+                 generated_exploration: @generated_exploration,
+                 user_exploration: @user_exploration,
+                 state: current_state,
+                 requirement_progress: @requirement_progress,
+                 requirement_groups: @requirement_groups,
+                 available_pets: @available_pets,
+                 selected_pet_ids: @selected_pet_ids,
+                 filters: @filters %>
+    <% end %>
+  <% else %>
+    <div class="rounded-3xl border border-slate-800/60 bg-slate-900/60 p-8 text-center text-slate-300">
+      <p class="text-lg font-semibold text-slate-100">Expedition unavailable</p>
+      <p class="mt-2 text-sm text-slate-400">
+        This route is no longer active. Head back to the expedition list to pick a new destination.
+      </p>
+    </div>
+  <% end %>
+</div>

@@ -1,0 +1,23 @@
+# Maps each pet (by downcased name) to the reference key of its special ability.
+# Designers can update this file to adjust the encounter prompts unlocked by a pet.
+
+barkling: healing_breeze
+sprig: trailblazer_instinct
+verdant: healing_breeze
+cat: trailblazer_instinct
+dog: ember_guardian
+mouse: trailblazer_instinct
+fish: healing_breeze
+deer: healing_breeze
+owl: trailblazer_instinct
+fenra: healing_breeze
+blazewulf: ember_guardian
+duskhound: ember_guardian
+ironfang: ember_guardian
+galeclaw: trailblazer_instinct
+fenshadow: healing_breeze
+pyrolune: ember_guardian
+tempestral: trailblazer_instinct
+steelbane: ember_guardian
+aetherfang: trailblazer_instinct
+lupin: healing_breeze

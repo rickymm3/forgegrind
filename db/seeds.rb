@@ -75,6 +75,10 @@ spirit_stone      = items.fetch(:spirit_stone)
 storm_stone       = items.fetch(:storm_stone)
 celestial_stone   = items.fetch(:celestial_stone)
 
+# === Special Abilities ===
+special_abilities = PetSpecialAbilityCatalog.sync_definitions!
+warn "⚠️  No special abilities defined. Add entries to config/special_abilities.yml." if special_abilities.blank?
+
 # === Worlds ===
 starter_zone = World.find_or_create_by!(name: "Starter Zone") do |w|
   w.duration         = 300
@@ -199,6 +203,9 @@ lupin_evolution_egg = Egg.find_or_create_by!(name: "Lupin Evolution Forms") do |
   e.hatch_duration = 0
   e.enabled        = false
 end
+
+# Map Pets -> Special Abilities (optional if pets not yet seeded)
+PetSpecialAbilityCatalog.backfill_pets!
 lupin_evolution_egg.update!(enabled: false)
 
 sapling_egg = Egg.find_or_create_by!(name: "Sapling Egg") do |e|

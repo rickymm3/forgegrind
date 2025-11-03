@@ -1,0 +1,52 @@
+- content_for :title, @special_ability.name
+
+%section.space-y-6
+  .flex.items-center.justify-between
+    %h1.text-2xl.font-semibold.text-slate-100= @special_ability.name
+    .flex.items-center.gap-3
+      = link_to "Edit", edit_admin_special_ability_path(@special_ability),
+                class: "inline-flex items-center rounded-full border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:text-white"
+      = link_to "Delete", admin_special_ability_path(@special_ability),
+                data: { turbo_method: :delete, turbo_confirm: "Delete this special ability?" },
+                class: "inline-flex items-center rounded-full bg-rose-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-500"
+
+  .grid.gap-4.md:grid-cols-2
+    .rounded-3xl.border.border-slate-800.bg-slate-900/60.p-5.space-y-3
+      %h2.text-lg.font-semibold.text-slate-100 Summary
+      %dl.space-y-2.text-sm.text-slate-300
+        %div
+          %dt.font-semibold.text-slate-200 Reference
+          %dd.font-mono.text-xs.text-slate-400= @special_ability.reference
+        %div
+          %dt.font-semibold.text-slate-200 Tagline
+          %dd= @special_ability.tagline.presence || "—"
+        %div
+          %dt.font-semibold.text-slate-200 Encounter Tags
+          %dd
+            - if @special_ability.encounter_tags_list.any?
+              %ul.flex.flex-wrap.gap-2
+                - @special_ability.encounter_tags_list.each do |tag|
+                  %li.rounded-full.bg-slate-800.px-3.py-1.text-xs.font-semibold.text-slate-200= tag
+            - else
+              %span.text-slate-500 None
+    .rounded-3xl.border.border-slate-800.bg-slate-900/60.p-5.space-y-3
+      %h2.text-lg.font-semibold.text-slate-100 Description
+      %p.text-sm.text-slate-300= @special_ability.description.presence || "No description provided yet."
+
+  .rounded-3xl.border.border-slate-800.bg-slate-900/60.p-5.space-y-3
+    %h2.text-lg.font-semibold.text-slate-100 Metadata
+    - if @special_ability.metadata.present?
+      %pre.bg-slate-950/70.p-4.rounded.text-xs.text-slate-300= JSON.pretty_generate(@special_ability.metadata)
+    - else
+      %p.text-sm.text-slate-400 No metadata provided.
+
+  .rounded-3xl.border.border-slate-800.bg-slate-900/60.p-5.space-y-3
+    %h2.text-lg.font-semibold.text-slate-100 Linked Pets
+    - if @special_ability.pets.exists?
+      %ul.space-y-2.text-sm.text-slate-200
+        - @special_ability.pets.order(:name).each do |pet|
+          %li.flex.items-center.justify-between
+            %span= pet.name
+            = link_to "Open", admin_pet_path(pet), class: "text-indigo-300 hover:text-indigo-200"
+    - else
+      %p.text-sm.text-slate-400 No pets currently assigned.

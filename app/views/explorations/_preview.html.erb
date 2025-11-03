@@ -1,0 +1,8 @@
+<% bonus_ready = world.matches_required_abilities?(user_pets) %>
+<%= render "explorations/zone_card",
+           world: world,
+           state: :selection,
+           user_pets: user_pets,
+           active_pet_ids: active_pet_ids,
+           filters: filters,
+           bonus_ready: bonus_ready %>

@@ -19,7 +19,9 @@
       <div class="flex flex-col items-center text-center">
         <span class="text-lg font-semibold uppercase tracking-wide text-slate-100">Pets</span>
         <span class="text-xs text-slate-400">
-          <%= pluralize(@user_pets.size, "pet") %> · <%= pluralize(@user_eggs.size, "egg") %>
+          <span id="pet-count"><%= pluralize(@user_pets.size, "pet") %></span>
+          ·
+          <span id="egg-count"><%= pluralize(@user_eggs.size, "egg") %></span>
         </span>
       </div>
 
@@ -81,34 +83,8 @@
       <% if @user_eggs.any? %>
         <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
           <% @user_eggs.each do |user_egg| %>
-            <% egg = user_egg.egg %>
-            <% badge_text = if user_egg.hatched?
-                               "Hatched"
-                             elsif user_egg.hatching?
-                               remaining = user_egg.hatch_time_remaining
-                               remaining <= 0 ? "Ready" : "#{(remaining / 60.0).ceil}m"
-                             else
-                               "Idle"
-                             end %>
-            <% image_path = egg_image_path(egg) %>
-            <%= link_to user_egg_path(user_egg),
-                        class: "group relative block aspect-[3/4] overflow-hidden rounded-3xl border border-slate-800 bg-slate-900/60 shadow-inner shadow-slate-950/40 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950",
-                        data: { turbo_prefetch: false },
-                        aria: { label: "#{egg.name} egg – #{badge_text}" } do %>
-              <span class="sr-only"><%= egg.name %></span>
-              <% if image_path.present? %>
-                <%= image_tag image_path,
-                              alt: "",
-                              loading: "lazy",
-                              class: "absolute inset-0 h-full w-full object-cover transition duration-200 group-hover:scale-105" %>
-              <% else %>
-                <div class="absolute inset-0 flex items-center justify-center bg-slate-800 text-sm text-slate-300">
-                  <%= egg.name %>
-                </div>
-              <% end %>
-              <span class="absolute top-2 right-2 inline-flex items-center rounded-full bg-slate-950/85 px-2 py-1 text-[11px] font-semibold text-amber-200 drop-shadow-md" aria-label="Egg status <%= badge_text %>">
-                <%= badge_text %>
-              </span>
+            <%= turbo_frame_tag egg_card_dom_id(user_egg) do %>
+              <%= render "user_eggs/inventory_card", user_egg: user_egg %>
             <% end %>
           <% end %>
         </div>

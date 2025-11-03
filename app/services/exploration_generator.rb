@@ -15,16 +15,26 @@ class ExplorationGenerator
     @user = user
   end
 
-  def generate!(count: DEFAULT_COUNT, force: false)
+  def generate!(count: DEFAULT_COUNT, force: false, slot_index: nil)
     ActiveRecord::Base.transaction do
       user.lock!
-      ensure_cooldown!(force)
+      ensure_cooldown!(force) unless slot_index
 
-      slots = [count.to_i - active_exploration_count, 0].max
-      user.update!(last_scouted_at: Time.current)
-      user.generated_explorations.available.destroy_all
+      slot_indices = slot_index ? [slot_index] : (1..count.to_i).to_a
+      active_slots = active_slot_indices
+      existing_by_slot = user.generated_explorations.where(slot_index: slot_indices).index_by(&:slot_index)
 
-      slots.times { create_generated_exploration }
+      user.update!(last_scouted_at: Time.current) unless slot_index
+
+      slot_indices.each do |index|
+        next if active_slots.include?(index)
+
+        existing = existing_by_slot[index]
+        next if existing&.cooldown_active? && !force
+
+        user.generated_explorations.where(slot_index: index).delete_all
+        create_generated_exploration(slot_index: index)
+      end
     end
   end
 
@@ -40,11 +50,15 @@ class ExplorationGenerator
 
   attr_reader :user
 
-  def active_exploration_count
-    user.user_explorations.where(completed_at: nil).count
+  def active_slot_indices
+    user.user_explorations
+        .where(completed_at: nil)
+        .includes(:generated_exploration)
+        .map { |exploration| exploration.generated_exploration&.slot_index }
+        .compact
   end
 
-  def create_generated_exploration
+  def create_generated_exploration(slot_index:)
     base_key, base_config = ExplorationModLibrary.sample_base
     prefix_key, prefix_config = ExplorationModLibrary.sample_prefix
     suffix_key, suffix_config = ExplorationModLibrary.sample_suffix
@@ -62,7 +76,12 @@ class ExplorationGenerator
       [prefix_config, 'prefix'],
       [suffix_config, 'suffix']
     )
-    metadata = build_metadata(base_config, prefix_config, suffix_config)
+    segment_definitions = build_segment_definitions(duration, base_config, prefix_config, suffix_config)
+    duration = segment_definitions.sum { |segment| segment[:duration_seconds].to_i } if segment_definitions.present?
+    metadata = build_metadata(base_config, prefix_config, suffix_config).merge(
+      slot_state: GeneratedExploration::SLOT_STATE_ACTIVE,
+      reroll_available_at: nil
+    )
 
     user.generated_explorations.create!(
       world: world,
@@ -74,8 +93,11 @@ class ExplorationGenerator
       requirements: requirements,
       reward_config: reward_config,
       metadata: metadata,
+      segment_definitions: stringify_segments(segment_definitions),
       scouted_at: Time.current,
-      expires_at: Time.current.end_of_day
+      expires_at: Time.current.end_of_day,
+      slot_index: slot_index,
+      cooldown_ends_at: nil
     )
   end
 
@@ -86,7 +108,7 @@ class ExplorationGenerator
 
   def compute_duration(*configs)
     base_config = configs[0]
-    duration = base_config[:default_duration].to_i
+    duration = minutes_to_seconds(fetch_float(base_config, :default_duration))
     multiplier = 1.0
     additive = 0
 
@@ -94,7 +116,11 @@ class ExplorationGenerator
       next unless config
 
       multiplier *= config[:duration_multiplier].to_f if config[:duration_multiplier]
-      additive += config[:duration_bonus].to_i if config[:duration_bonus]
+      if config[:duration_bonus]
+        additive += minutes_to_seconds(config[:duration_bonus])
+      elsif config[:duration_bonus_minutes]
+        additive += minutes_to_seconds(config[:duration_bonus_minutes])
+      end
     end
 
     [(duration * multiplier).to_i + additive, 300].max
@@ -142,6 +168,229 @@ class ExplorationGenerator
     {
       flavor: configs.compact.map { |conf| conf[:flavor] }.compact
     }
+  end
+
+  def build_segment_definitions(total_duration_seconds, base_config, prefix_config, suffix_config)
+    total_duration_seconds = total_duration_seconds.to_i
+    total_duration_seconds = 1 if total_duration_seconds <= 0
+
+    templates = gather_segment_templates(
+      [base_config, 'base'],
+      [prefix_config, 'prefix'],
+      [suffix_config, 'suffix']
+    )
+
+    if templates.blank?
+      count = compute_default_segment_count(base_config, prefix_config, suffix_config)
+      durations = split_duration(total_duration_seconds, count)
+      templates = durations.each_with_index.map do |duration, index|
+        {
+          key: "segment_#{index + 1}",
+          label: default_segment_label(index),
+          duration_seconds: duration,
+          source: 'generated'
+        }
+      end
+    else
+      templates = normalize_segment_templates(templates, total_duration_seconds)
+    end
+
+    cumulative = 0
+    templates.each_with_index.map do |template, index|
+      segment = template.deep_dup.with_indifferent_access
+      segment = segment.except(
+        :duration_minutes,
+        :duration_weight,
+        :ratio,
+        :proportion,
+        :weight,
+        :_template_index
+      )
+
+      segment_key = segment[:key].presence || "segment_#{index + 1}"
+      segment_label = segment[:label].presence || default_segment_label(index)
+      duration = segment[:duration_seconds].to_i
+      duration = 1 if duration <= 0
+
+      cumulative += duration
+
+      segment.merge(
+        key: segment_key.to_s,
+        label: segment_label,
+        index: index,
+        duration_seconds: duration,
+        checkpoint_offset_seconds: cumulative
+      ).with_indifferent_access
+    end
+  end
+
+  def gather_segment_templates(*config_pairs)
+    config_pairs.compact.flat_map do |config, source|
+      next [] unless config
+
+      Array(config[:segments]).each_with_index.map do |entry, index|
+        entry_hash = entry.respond_to?(:with_indifferent_access) ? entry.with_indifferent_access : entry
+        entry_hash.merge(
+          source: entry_hash[:source].presence || source,
+          _template_index: index
+        )
+      end
+    end
+  end
+
+  def normalize_segment_templates(templates, total_duration_seconds)
+    segments = templates.map do |template|
+      entry = template.respond_to?(:with_indifferent_access) ? template.with_indifferent_access : template
+      dup = entry.deep_dup
+      dup[:_base_seconds] = extract_base_seconds(dup)
+      dup[:_weight] = extract_weight(dup)
+      dup
+    end
+
+    base_total = segments.sum { |segment| segment[:_base_seconds].to_i }
+
+    if base_total.positive?
+      scale = total_duration_seconds.to_f / base_total
+      segments.each do |segment|
+        duration = (segment[:_base_seconds].to_i * scale).round
+        segment[:duration_seconds] = [duration, 1].max
+      end
+    else
+      weight_total = segments.sum { |segment| segment[:_weight].to_f }
+      weight_total = segments.size.to_f if weight_total <= 0
+
+      segments.each do |segment|
+        weight = segment[:_weight].to_f
+        weight = 1.0 if weight <= 0
+        duration = (total_duration_seconds * (weight / weight_total)).round
+        segment[:duration_seconds] = [duration, 1].max
+      end
+    end
+
+    adjust_duration_totals!(segments, total_duration_seconds)
+
+    segments.each do |segment|
+      segment.delete(:_base_seconds)
+      segment.delete(:_weight)
+    end
+  end
+
+  def extract_base_seconds(segment)
+    seconds = segment[:duration_seconds].to_i
+    minutes = segment[:duration_minutes].to_i
+
+    if seconds.positive?
+      seconds
+    elsif minutes.positive?
+      minutes * 60
+    else
+      0
+    end
+  end
+
+  def extract_weight(segment)
+    return segment[:weight] if segment.key?(:weight)
+    return segment[:duration_weight] if segment.key?(:duration_weight)
+    return segment[:ratio] if segment.key?(:ratio)
+    return segment[:proportion] if segment.key?(:proportion)
+
+    1.0
+  end
+
+  def adjust_duration_totals!(segments, total_duration_seconds)
+    total_assigned = segments.sum { |segment| segment[:duration_seconds].to_i }
+    difference = total_duration_seconds - total_assigned
+    return if difference.zero?
+
+    if difference.positive?
+      segments.last[:duration_seconds] += difference
+    else
+      remaining = -difference
+      segments.reverse_each do |segment|
+        break if remaining <= 0
+
+        available = segment[:duration_seconds] - 1
+        next if available <= 0
+
+        reduction = [available, remaining].min
+        segment[:duration_seconds] -= reduction
+        remaining -= reduction
+      end
+
+      segments.first[:duration_seconds] += remaining if remaining.positive?
+    end
+  end
+
+  def compute_default_segment_count(base_config, prefix_config, suffix_config)
+    count = fetch_integer(base_config, :segment_count)
+    count = 2 if count <= 0
+
+    modifiers = [
+      fetch_integer(prefix_config, :segment_count_bonus, :additional_segments),
+      fetch_integer(suffix_config, :segment_count_bonus, :additional_segments)
+    ].sum
+
+    multipliers = [
+      fetch_float(prefix_config, :segment_count_multiplier),
+      fetch_float(suffix_config, :segment_count_multiplier)
+    ].reject(&:zero?)
+
+    count += modifiers
+    multipliers.each do |multiplier|
+      count = (count * multiplier).round
+    end
+
+    count = 2 if count <= 0
+    count = count.clamp(2, 6)
+    count
+  end
+
+  def split_duration(total_duration_seconds, segment_count)
+    count = segment_count.to_i
+    count = 1 if count <= 0
+
+    base = total_duration_seconds / count
+    remainder = total_duration_seconds % count
+
+    Array.new(count) do |index|
+      duration = base
+      duration += 1 if index < remainder
+      [duration, 1].max
+    end
+  end
+
+  def default_segment_label(index)
+    "Checkpoint #{index + 1}"
+  end
+
+  def stringify_segments(segments)
+    Array(segments).map do |segment|
+      segment.respond_to?(:stringify_keys) ? segment.stringify_keys : segment
+    end
+  end
+
+  def fetch_integer(config, *keys)
+    return 0 unless config
+
+    keys.each do |key|
+      value = config[key]
+      return value.to_i if value.present?
+    end
+    0
+  end
+
+  def fetch_float(config, *keys)
+    return 0.0 unless config
+
+    keys.each do |key|
+      value = config[key]
+      return value.to_f if value.present?
+    end
+    0.0
+  end
+
+  def minutes_to_seconds(value)
+    (value.to_f * 60).round
   end
 
   def ensure_cooldown!(force)

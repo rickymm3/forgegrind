@@ -42,6 +42,6 @@ class Admin::PetsController < Admin::BaseController
   end
 
   def pet_params
-    params.require(:pet).permit(:name, :rarity_id, :egg_id, :description)
+    params.require(:pet).permit(:name, :rarity_id, :egg_id, :description, :special_ability_id)
   end
 end

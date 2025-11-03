@@ -1,4 +1,6 @@
-= turbo_stream.update "exploration_detail" do
+- detail_dom_id = dom_id(@generated_snapshot || @world, :detail)
+
+= turbo_stream.update detail_dom_id do
   = render partial: "user_explorations/complete"
 
 = turbo_stream.replace "worlds-list" do
@@ -6,7 +8,8 @@
            generated_explorations: @generated_explorations,
            active_explorations: @active_explorations,
            requirement_map: @requirement_map,
-           selected_generated: @generated_explorations.first
+           selected_generated: @generated_explorations.first,
+           slot_entries: @slot_entries
 
 = turbo_stream.update "user-currency-trophies" do
   = number_with_delimiter(@user_stats.trophies)

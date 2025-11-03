@@ -16,9 +16,15 @@
 
 - if list_dom_id
   = turbo_stream.update list_dom_id do
-    = render "explorations/world_list_item",
+    = render "explorations/world_tile",
+             slot_index: generated&.slot_index,
              generated_exploration: generated,
              requirement_progress: progress,
              requirement_groups: progress.group_by { |entry| entry[:source] || 'base' },
-             active: true,
-             user_exploration: @user_exploration
+             selected: true,
+             state: :ready,
+             user_exploration: @user_exploration,
+             cooldown_seconds: generated&.cooldown_remaining_seconds || 0,
+             cooldown_ends_at: generated&.cooldown_ends_at,
+             reroll_cooldown_seconds: generated&.reroll_cooldown_remaining_seconds || 0,
+             reroll_available_at: generated&.reroll_available_at

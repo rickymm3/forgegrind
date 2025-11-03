@@ -1,63 +1,15 @@
-- rescout_disabled = @rescout_cooldown_remaining.to_i.positive?
-- rescout_wait_human = @rescout_wait_human
+.mx-auto.flex.min-h-screen.w-full.max-w-3xl.flex-col.gap-6.px-4.pb-28.pt-6
+  %header.space-y-3.text-center
+    %p{ class: "text-xs font-semibold uppercase tracking-[0.3em] text-indigo-300" } Expedition Log
+    %h1.text-3xl.font-bold.text-slate-100 Leading the way
+    %p.text-sm.text-slate-400
+      Choose a destination, assemble your party, and push deeper into the wilds.
 
-.container.mx-auto.mt-12.px-4
-  .flex.flex-col.sm:flex-row.sm:items-end.sm:justify-between.gap-4.mb-8
-    .space-y-2
-      %h1.text-3xl.font-bold.text-slate-900 Expeditions
-      %p.text-sm.text-slate-600
-        Scout the world for fresh opportunities, tailor your party, and chase rare rewards.
-    - if @generated_explorations.blank?
-      = render "explorations/scout_button",
-               **scout_button_options(:primary),
-               disabled: rescout_disabled,
-               wait_human: rescout_wait_human,
-               unlock_at: @rescout_available_at
-
-  - if @generated_explorations.any?
-    %div{ class: "grid grid-cols-1 gap-6 lg:grid-cols-[minmax(260px,320px)_1fr]" }
-      %aside.bg-white.shadow-sm.rounded-2xl.p-4{ data: { controller: "exploration-list" } }
-        .flex.items-center.justify-between.mb-3
-          %h2.text-xs.font-semibold.uppercase.text-slate-400 Active Zones
-          = render "explorations/scout_button",
-                   **scout_button_options(:sidebar),
-                   disabled: rescout_disabled,
-                   wait_human: rescout_wait_human,
-                   unlock_at: @rescout_available_at
-        = turbo_frame_tag "worlds-list" do
-          = render "explorations/worlds_list",
-                   generated_explorations: @generated_explorations,
-                   active_explorations: @active_explorations,
-                   requirement_map: @requirement_map,
-                   selected_generated: @selected_generated
-
-      - selected_entry = @selected_generated && @requirement_map[@selected_generated.id]
-      - selected_user_exploration = @selected_generated && @active_explorations.find { |ue| ue.generated_exploration_id == @selected_generated.id }
-      %section
-        = render "explorations/detail_panel",
-                 generated_exploration: @selected_generated,
-                 requirement_progress: selected_entry ? selected_entry[:progress] : [],
-                 requirement_groups: selected_entry ? selected_entry[:grouped] : {},
-                 user_exploration: selected_user_exploration
-  - elsif @active_explorations.any?
-    .flex.flex-col.gap-4
-      = render "explorations/detail_panel",
-               generated_exploration: @active_explorations.first.generated_exploration,
-               requirement_progress: (@active_explorations.first.generated_exploration&.requirements_progress_for(@active_explorations.first.user_pets)) || [],
-               requirement_groups: {},
-               user_exploration: @active_explorations.first
-      = render "explorations/scout_button",
-               **scout_button_options(:secondary),
-               disabled: rescout_disabled,
-               wait_human: rescout_wait_human,
-               unlock_at: @rescout_available_at
-  - else
-    .bg-white.shadow-sm.rounded-xl.p-6.text-center.text-slate-500.space-y-4
-      %p.font-semibold No expeditions discovered yet.
-      %p.text-sm.text-slate-400
-        Send your scouting party to uncover new zones with unique challenges and rewards.
-      = render "explorations/scout_button",
-               **scout_button_options(:empty_state),
-               disabled: rescout_disabled,
-               wait_human: rescout_wait_human,
-               unlock_at: @rescout_available_at
+  .flex-1.min-h-0.pb-6
+    = turbo_frame_tag "worlds-list", class: "block h-full" do
+      = render "explorations/worlds_list",
+               generated_explorations: @generated_explorations,
+               active_explorations: @active_explorations,
+               requirement_map: @requirement_map,
+               selected_generated: @selected_generated,
+               slot_entries: @slot_entries

@@ -1,2 +1,14 @@
-= turbo_stream.update "user_egg_hatch_#{@user_egg.id}" do
-  = render "nursery/hatch_now", user_egg: @user_egg
+- context ||= :page
+= turbo_stream.update egg_info_dom_id(@user_egg) do
+  = render "user_eggs/info_body",
+          user_egg: @user_egg,
+          context: context
+
+= turbo_stream.replace egg_action_panel_dom_id(@user_egg) do
+  = render "user_eggs/action_panel",
+          user_egg: @user_egg,
+          context: context,
+          state: :ready
+
+= turbo_stream.replace egg_card_dom_id(@user_egg) do
+  = render "user_eggs/inventory_card", user_egg: @user_egg

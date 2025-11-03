@@ -3,6 +3,7 @@
 class Pet < ApplicationRecord
   belongs_to :egg
   belongs_to :rarity
+  belongs_to :special_ability, optional: true
 
   validates :name, :power, presence: true
 
@@ -17,6 +18,8 @@ class Pet < ApplicationRecord
            through: :ability_permissions,
            source: :ability
 
+  before_validation :assign_default_special_ability, if: -> { special_ability_id.blank? }
+
   # Load the YAML mapping and return two arrays for this pet:
   #   :standard => [ "tackle", "growl" ], 
   #   :rare     => [ "whirlwind" ]
@@ -27,5 +30,14 @@ class Pet < ApplicationRecord
       standard: Array(entry["standard"]),
       rare:     Array(entry["rare"])
     }
+  end
+
+  private
+
+  def assign_default_special_ability
+    reference = PetSpecialAbilityCatalog.default_reference_for(name)
+    return if reference.blank?
+
+    self.special_ability ||= SpecialAbility.find_by(reference: reference)
   end
 end
