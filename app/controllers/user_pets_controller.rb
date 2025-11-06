@@ -107,7 +107,8 @@ class UserPetsController < ApplicationController
       requirements: requirements,
       energy_cost: energy_cost,
       needs_preview: payload[:needs_preview],
-      personality_changes: payload[:personality_changes]
+      personality_changes: payload[:personality_changes],
+      tracker_snapshot: payload[:tracker_snapshot]
     )
   end
 
@@ -133,11 +134,11 @@ class UserPetsController < ApplicationController
     end
 
     held_item = current_user.user_items.includes(:item).find_by(id: params[:held_user_item_id])
-    unless held_item&.item && UserPet.leveling_stone_types.include?(held_item.item.item_type)
-      redirect_to @user_pet, alert: "You must use a leveling stone to level up." and return
-    end
-    if held_item.quantity.to_i <= 0
-      redirect_to @user_pet, alert: "You no longer have any of that stone available." and return
+    if held_item.present?
+      valid_item = held_item.item && UserPet.leveling_stone_types.include?(held_item.item.item_type)
+      unless valid_item && held_item.quantity.to_i.positive?
+        redirect_to @user_pet, alert: "The selected item can’t be used to enhance this level up." and return
+      end
     end
 
     @user_pet.transaction do
@@ -145,11 +146,13 @@ class UserPetsController < ApplicationController
         exp:   @user_pet.exp - UserPet::EXP_PER_LEVEL,
         level: @user_pet.level + 1
       )
-      new_quantity = held_item.quantity.to_i - 1
-      if new_quantity <= 0
-        held_item.destroy!
-      else
-        held_item.update!(quantity: new_quantity)
+      if held_item.present?
+        new_quantity = held_item.quantity.to_i - 1
+        if new_quantity <= 0
+          held_item.destroy!
+        else
+          held_item.update!(quantity: new_quantity)
+        end
       end
       @user_pet.update!(held_user_item: nil)
     end
@@ -292,7 +295,8 @@ class UserPetsController < ApplicationController
               requirements: requirements,
               energy_cost: energy_cost,
               needs_preview: needs_preview,
-              personality_changes: personality_changes
+              personality_changes: personality_changes,
+              tracker_snapshot: tracker_snapshot
             }
           )
         ]
@@ -334,15 +338,85 @@ class UserPetsController < ApplicationController
     end
   end
 
-  # Stub: ensure interaction_payload can call this safely.
-  # Expand later to compute before/after deltas for needs (hunger, happiness, etc).
-  def build_needs_preview(_definition)
-    []
+  def build_needs_preview(definition)
+    adjustments = Array(definition[:needs])
+    return [] if adjustments.blank?
+
+    simulator_pet = @user_pet.dup
+    simulator_pet.state_flags = @user_pet.state_flags.deep_dup if simulator_pet.respond_to?(:state_flags) && @user_pet.state_flags.present?
+
+    before_values = {}
+    after_values  = {}
+    mood_delta    = 0.0
+
+    adjustments.each do |key, delta|
+      attr  = key.to_sym
+      value = delta.to_f
+      if attr == :mood
+        before_values[:mood] ||= @user_pet.mood.to_f
+        mood_delta += value
+        next
+      end
+
+      next unless simulator_pet.respond_to?(attr)
+
+      current = @user_pet.send(attr).to_f
+      updated = simulator_pet.send(:clamp_need, current + value)
+      simulator_pet.send("#{attr}=", updated)
+      before_values[attr] = current
+      after_values[attr]  = updated
+    end
+
+    personality_adjustments = Array(definition[:personality])
+    personality_adjustments.each do |key, delta|
+      attr = key.to_sym
+      next unless simulator_pet.respond_to?(attr)
+      simulator_pet.send("#{attr}=", simulator_pet.send(attr).to_f + delta.to_f)
+    end
+
+    simulator_pet.recalc_mood!(save: false)
+    if before_values.key?(:mood) || mood_delta.nonzero?
+      before_values[:mood] ||= @user_pet.mood.to_f
+      recalculated = simulator_pet.mood.to_f
+      adjusted     = simulator_pet.send(:clamp_need, recalculated + mood_delta)
+      after_values[:mood] = adjusted
+    end
+
+    adjustments.map do |key, _|
+      attr = key.to_sym
+      before = if before_values.key?(attr)
+                 before_values[attr]
+               elsif @user_pet.respond_to?(attr)
+                 @user_pet.send(attr).to_f
+               end
+      after = if after_values.key?(attr)
+                after_values[attr]
+              elsif simulator_pet.respond_to?(attr)
+                simulator_pet.send(attr).to_f
+              end
+      next unless before && after
+
+      {
+        key: attr,
+        before: before,
+        after: after,
+        delta: after - before,
+        before_percent: before.clamp(0.0, 100.0),
+        after_percent: after.clamp(0.0, 100.0)
+      }
+    end.compact
   end
 
   def render_action_panel(state:, context:, message: nil, requirements: nil, interaction: nil, energy_cost: nil, needs_preview: [], personality_changes: [])
     requirements ||= []
     action_dom = helpers.action_panel_dom_id(@user_pet)
+    energy_cost = energy_cost.to_i if energy_cost
+
+    energy_before = @user_pet.energy.to_f
+    energy_after = (energy_before - energy_cost.to_i).clamp(0.0, UserPet::MAX_ENERGY.to_f)
+    xp_before = @user_pet.exp.to_i
+    xp_gain = (state == :confirm && interaction.present?) ? PetCareService::CARE_EXP_REWARD : 0
+    xp_after = (xp_before + xp_gain).clamp(0, UserPet::EXP_PER_LEVEL)
 
     panel_locals = {
       user_pet: @user_pet,
@@ -353,7 +427,13 @@ class UserPetsController < ApplicationController
       interaction: interaction,
       energy_cost: energy_cost,
       needs_preview: needs_preview,
-      personality_changes: personality_changes
+      personality_changes: personality_changes,
+      preview_energy_before: energy_before,
+      preview_energy_after: energy_after,
+      preview_xp_before: xp_before,
+      preview_xp_after: xp_after,
+      preview_xp_gain: xp_gain,
+      tracker_snapshot: tracker_snapshot
     }
 
     respond_to do |format|
@@ -395,7 +475,8 @@ class UserPetsController < ApplicationController
       energy_cost: energy_cost,
       requirements: requirements,
       needs_preview: build_needs_preview(definition),
-      personality_changes: build_personality_preview(definition)
+      personality_changes: build_personality_preview(definition),
+      tracker_snapshot: tracker_snapshot
     }
   end
 
@@ -406,6 +487,16 @@ class UserPetsController < ApplicationController
     end
   end
 
+  def tracker_snapshot
+    {
+      hunger_score: @user_pet.care_tracker_value(:hunger_score),
+      hygiene_score: @user_pet.care_tracker_value(:hygiene_score),
+      boredom_score: @user_pet.care_tracker_value(:boredom_score),
+      injury_score: @user_pet.care_tracker_value(:injury_score),
+      mood_score: @user_pet.care_tracker_value(:mood_score)
+    }
+  end
+
   private
 
   # Expect these helpers to exist elsewhere in your codebase.
@@ -414,7 +505,10 @@ class UserPetsController < ApplicationController
   end
 
   def refresh_pet_state
-    @user_pet&.catch_up_energy!
+    return unless @user_pet
+
+    ticks = @user_pet.catch_up_energy!
+    @user_pet.catch_up_needs!(care_ticks: ticks)
   end
 
   def panel_context

@@ -1,0 +1,15 @@
+<% flash_messages = local_assigns.fetch(:flash_messages, flash) %>
+
+<%= turbo_frame_tag "flash_messages", class: (flash_messages.any? ? nil : "hidden") do %>
+  <% if flash_messages.any? %>
+    <div class="mx-auto mt-4 max-w-2xl">
+      <% flash_messages.each do |key, message| %>
+        <% classes = { notice: "bg-green-100 border border-green-300 text-green-800 px-4 py-2 rounded mb-4", alert: "bg-red-100 border border-red-300 text-red-800 px-4 py-2 rounded mb-4" } %>
+        <% css_class = classes[key.to_sym] || "bg-gray-100 border border-gray-300 text-gray-800 px-4 py-2 rounded mb-4" %>
+        <div class="<%= css_class %>">
+          <%= message %>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+<% end %>

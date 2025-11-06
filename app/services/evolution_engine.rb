@@ -112,6 +112,10 @@ class EvolutionEngine
       explorations_count >= value.to_i
     when "plays_at_least"
       plays_count >= value.to_i
+    when "tracker_at_least"
+      tracker_at_least?(key, value)
+    when "tracker_at_most"
+      tracker_at_most?(key, value)
     else
       Rails.logger.info("[EvolutionEngine] Unknown guard type: #{type.inspect}")
       false
@@ -157,6 +161,16 @@ class EvolutionEngine
     user_pet.send(attr).to_f
   rescue NoMethodError
     0.0
+  end
+
+  def tracker_at_least?(tracker_key, threshold)
+    return false unless tracker_key && threshold
+    user_pet.care_tracker_value(tracker_key) >= threshold.to_i
+  end
+
+  def tracker_at_most?(tracker_key, threshold)
+    return false unless tracker_key && threshold
+    user_pet.care_tracker_value(tracker_key) <= threshold.to_i
   end
 
   def item_held?(item_identifier)

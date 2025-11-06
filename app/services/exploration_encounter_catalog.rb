@@ -149,27 +149,41 @@ class ExplorationEncounterCatalog
       end
     end
 
-    def pick_weighted(pool, random)
-      total = pool.sum { |entry| entry[:weight] }
+    def pick_weighted(pool, random, indices: nil)
+      candidates =
+        if indices
+          indices.map { |idx| [pool[idx], idx] }
+        else
+          pool.each_with_index.map { |entry, idx| [entry, idx] }
+        end
+
+      total = candidates.sum { |entry, _idx| entry[:weight] }
       return [nil, pool] if total <= 0
 
       target = random.rand * total
       running = 0.0
-      index = nil
-      pool.each_with_index do |entry, idx|
+      chosen_index = nil
+
+      candidates.each do |entry, original_index|
         running += entry[:weight]
         if target <= running
-          index = idx
+          chosen_index = original_index
           break
         end
       end
-      index ||= pool.length - 1
-      entry = pool.delete_at(index)
+
+      chosen_index ||= candidates.last&.last
+      return [nil, pool] unless chosen_index
+
+      entry = pool.delete_at(chosen_index)
       [entry[:encounter], pool]
     end
 
     def encounter_probability(fulfilled_ratio)
-      (BASE_ENCOUNTER_CHANCE + fulfilled_ratio * BONUS_ENCOUNTER_CHANCE).clamp(0.0, MAX_ENCOUNTER_CHANCE)
+      base = configured_chance(:exploration_base_encounter_chance, BASE_ENCOUNTER_CHANCE)
+      bonus = configured_chance(:exploration_bonus_encounter_chance, BONUS_ENCOUNTER_CHANCE)
+      max = configured_chance(:exploration_max_encounter_chance, MAX_ENCOUNTER_CHANCE)
+      (base + fulfilled_ratio * bonus).clamp(0.0, max)
     end
 
     def build_schedule_entry(encounter, offset_seconds:, ability_refs:, ability_tags:, segment: nil)
@@ -226,9 +240,15 @@ class ExplorationEncounterCatalog
 
       segments.each do |segment|
         break if max_entries.positive? && entries.size >= max_entries
-        next unless random.rand < probability
+        next unless segment_allows_encounters?(segment)
 
-        encounter, pool = pick_weighted(pool, random)
+        segment_probability = adjust_segment_probability(probability, segment[:encounter_probability_multiplier])
+        next unless random.rand < segment_probability
+
+        indices = segment_pool_indices(pool, segment)
+        next if indices&.empty?
+
+        encounter, pool = pick_weighted(pool, random, indices: indices)
         next unless encounter
 
         offset = segment[:checkpoint_offset_seconds]
@@ -316,11 +336,55 @@ class ExplorationEncounterCatalog
       true
     end
 
+    def segment_pool_indices(pool, segment)
+      tags = normalize_array(segment[:encounter_tags])
+      slugs = normalize_array(segment[:encounter_slugs])
+      return nil if tags.blank? && slugs.blank?
+
+      pool.each_with_index.each_with_object([]) do |(entry, idx), acc|
+        encounter = entry[:encounter]
+        slug = encounter["slug"].to_s
+        next if slugs.present? && !slugs.include?(slug)
+
+        if tags.present?
+          encounter_tags = encounter_tags_for(encounter)
+          next if (encounter_tags & tags).empty?
+        end
+
+        acc << idx
+      end
+    end
+
+    def adjust_segment_probability(base_probability, multiplier)
+      return base_probability if multiplier.nil?
+
+      (base_probability.to_f * multiplier.to_f).clamp(0.0, 1.0)
+    end
+
+    def encounter_tags_for(encounter)
+      world_tags = normalize_array(encounter["world_tags"])
+      req_tags   = normalize_array(encounter["requirement_tags"])
+      misc_tags  = normalize_array(encounter["tags"])
+      (world_tags + req_tags + misc_tags).uniq
+    end
+
     def unique_by_slug(encounters)
       encounters.each_with_object({}) do |encounter, memo|
         slug = encounter["slug"]
         memo[slug] ||= encounter if slug.present?
       end.values
+    end
+
+    def configured_chance(key, fallback)
+      config = Rails.application.config
+      return fallback unless config.respond_to?(key)
+
+      value = config.public_send(key)
+      return fallback unless value.present?
+
+      value.to_f
+    rescue StandardError
+      fallback
     end
 
     def deep_dup(object)

@@ -1,0 +1,92 @@
+defaults:
+  tracker_thresholds:
+    good: 70
+    great: 85
+    legendary: 95
+
+badges:
+  well_fed:
+    label: "Well Fed"
+    description: "Maintain excellent hunger care over time."
+    color: emerald
+    conditions:
+      all:
+        - type: tracker_at_least
+          key: hunger_score
+          value: 80
+    overrides:
+      remove: ["starved"]
+
+  clean_companion:
+    label: "Clean Companion"
+    description: "Keep hygiene high across many energy ticks."
+    color: sky
+    conditions:
+      all:
+        - type: tracker_at_least
+          key: hygiene_score
+          value: 80
+
+  spirited:
+    label: "Spirited"
+    description: "Sustain great mood and engagement."
+    color: amber
+    conditions:
+      all:
+        - type: tracker_at_least
+          key: mood_score
+          value: 85
+        - type: tracker_at_least
+          key: boredom_score
+          value: 70
+
+  starved:
+    label: "Starved Survivor"
+    description: "Dropping hunger too low leaves its mark."
+    color: rose
+    conditions:
+      all:
+        - type: tracker_at_most
+          key: hunger_score
+          value: 30
+    overrides:
+      remove: ["well_fed"]
+
+  diligent_feeder:
+    label: "Diligent Feeder"
+    description: "Bounce back from starvation with sustained care."
+    color: emerald
+    conditions:
+      all:
+        - type: tracker_at_least
+          key: hunger_score
+          value: 85
+        - type: tracker_at_most
+          key: injury_score
+          value: 50
+    overrides:
+      remove: ["starved"]
+
+  couch_potato:
+    label: "Couch Potato"
+    description: "When boredom score plummets, the pet needs attention."
+    color: slate
+    conditions:
+      all:
+        - type: tracker_at_most
+          key: boredom_score
+          value: 35
+
+  fearless:
+    label: "Fearless"
+    description: "High confidence and low injury score through adversity."
+    color: violet
+    conditions:
+      all:
+        - type: trait_at_least
+          key: confidence
+          value: 80
+        - type: tracker_at_least
+          key: injury_score
+          value: 70
+    transfers_on_level_up: true

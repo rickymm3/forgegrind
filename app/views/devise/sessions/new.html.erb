@@ -1,0 +1,63 @@
+<section class="flex min-h-[calc(100vh-7rem)] items-center justify-center px-4 py-10">
+  <div class="w-full max-w-md space-y-8 rounded-2xl bg-slate-900/80 px-8 py-10 shadow-2xl ring-1 ring-slate-700/80 backdrop-blur">
+    <header class="space-y-2 text-center">
+      <h1 class="text-3xl font-semibold text-white">Sign in to Forgegrind</h1>
+      <p class="text-sm text-slate-300">Enter your details to continue your adventure.</p>
+    </header>
+
+    <%= render "devise/shared/error_messages", resource: resource %>
+
+    <%= form_with model: resource,
+                  as: resource_name,
+                  url: session_path(resource_name),
+                  class: "space-y-6",
+                  local: true do |f| %>
+      <div class="space-y-2">
+        <%= f.label :email, class: "block text-sm font-medium text-slate-200" %>
+        <%= f.email_field :email,
+                          autofocus: true,
+                          autocomplete: "email",
+                          class: "w-full rounded-lg border border-slate-700 bg-slate-950/60 px-4 py-2.5 text-slate-100 placeholder:text-slate-500 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/40" %>
+      </div>
+
+      <div class="space-y-2">
+        <%= f.label :password, class: "block text-sm font-medium text-slate-200" %>
+        <%= f.password_field :password,
+                             autocomplete: "current-password",
+                             class: "w-full rounded-lg border border-slate-700 bg-slate-950/60 px-4 py-2.5 text-slate-100 placeholder:text-slate-500 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/40" %>
+      </div>
+
+      <% if devise_mapping.rememberable? || (devise_mapping.recoverable? && controller_name != "passwords") %>
+        <div class="flex items-center justify-between text-sm text-slate-300">
+          <% if devise_mapping.rememberable? %>
+            <label class="inline-flex items-center gap-2">
+              <%= f.check_box :remember_me,
+                              class: "h-4 w-4 rounded border-slate-600 bg-slate-900/80 text-blue-500 focus:ring-blue-400" %>
+              <span>Remember me</span>
+            </label>
+          <% else %>
+            <span></span>
+          <% end %>
+
+          <% if devise_mapping.recoverable? && controller_name != "passwords" %>
+            <%= link_to "Forgot password?",
+                        new_password_path(resource_name),
+                        class: "font-medium text-blue-300 hover:text-blue-200" %>
+          <% end %>
+        </div>
+      <% end %>
+
+      <div class="pt-2">
+        <%= f.submit "Sign in",
+                     class: "w-full rounded-lg bg-blue-500 px-4 py-2.5 text-base font-semibold text-white transition hover:bg-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/70 focus:ring-offset-2 focus:ring-offset-slate-900" %>
+      </div>
+    <% end %>
+
+    <footer class="text-center text-sm text-slate-300">
+      <span class="opacity-70">Don't have an account?</span>
+      <%= link_to "Create one",
+                  new_registration_path(resource_name),
+                  class: "ml-1 font-medium text-blue-300 hover:text-blue-200" %>
+    </footer>
+  </div>
+</section>

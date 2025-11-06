@@ -1,0 +1,9 @@
+<%= turbo_stream.replace "currency_balances", partial: "shared/currency_badges", locals: { currencies: currency_balances_for(current_user) } %>
+
+<%= turbo_stream.replace "store-eggs-carousel" do %>
+  <%= render "store/eggs_carousel", eggs: @eggs, highlighted_egg_id: @highlighted_egg_id %>
+<% end %>
+
+<%= turbo_stream.append "toast-container" do %>
+  <%= render "shared/toast", message: "+1 #{@egg.name} egg" %>
+<% end %>

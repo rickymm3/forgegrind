@@ -10,9 +10,23 @@
 <% sheet_classes = ["fixed", "left-0", "right-0", "z-40", "px-4", "transition-all", "duration-200", "ease-out", (visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6 pointer-events-none")] %>
 <% overlay_classes = ["fixed", "inset-0", "z-30", "bg-slate-950/70", "backdrop-blur-sm", "transition-opacity", "duration-200", "ease-out", (visible ? "opacity-100" : "opacity-0 pointer-events-none")] %>
 <% aria_live = visible ? "polite" : "off" %>
+<% preview_json = ERB::Util.json_escape(needs_preview.to_json) %>
+<% state_value = state.to_s %>
+<% energy_before_value = preview_energy_before.to_f %>
+<% energy_after_value = preview_energy_after.to_f %>
+<% xp_before_value = preview_xp_before.to_i %>
+<% xp_after_value = preview_xp_after.to_i %>
+<% xp_gain_value = preview_xp_gain.to_i %>
 
 <% if visible %>
-  <div data-controller="action-panel">
+  <div data-controller="action-panel"
+       data-action-panel-preview-value="<%= preview_json %>"
+       data-action-panel-state-value="<%= state_value %>"
+       data-action-panel-energy-before-value="<%= energy_before_value %>"
+       data-action-panel-energy-after-value="<%= energy_after_value %>"
+       data-action-panel-xp-before-value="<%= xp_before_value %>"
+       data-action-panel-xp-after-value="<%= xp_after_value %>"
+       data-action-panel-xp-gain-value="<%= xp_gain_value %>">
     <button type="button"
             class="<%= overlay_classes.join(' ') %>"
             aria-label="Close action panel"
@@ -206,5 +220,14 @@
   </div>
   </div>
 <% else %>
-  <div class="pointer-events-none opacity-0 translate-y-6 transition-all duration-200 ease-out" aria-hidden="true"></div>
+  <div data-controller="action-panel"
+       data-action-panel-preview-value="[]"
+       data-action-panel-state-value="idle"
+       data-action-panel-energy-before-value="<%= energy_before_value %>"
+       data-action-panel-energy-after-value="<%= energy_before_value %>"
+       data-action-panel-xp-before-value="<%= xp_before_value %>"
+       data-action-panel-xp-after-value="<%= xp_before_value %>"
+       data-action-panel-xp-gain-value="0"
+       class="pointer-events-none opacity-0 translate-y-6 transition-all duration-200 ease-out"
+       aria-hidden="true"></div>
 <% end %>

@@ -44,29 +44,40 @@
       <% if @user_pets.any? %>
         <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
           <% @user_pets.each do |user_pet| %>
-            <% display_name = user_pet.name.presence || user_pet.pet.name %>
-            <% sprite_path = pet_sprite_path(user_pet.pet) %>
-            <% badge_text = "Lvl #{user_pet.level}" %>
-            <%= link_to user_pet_path(user_pet),
-                        class: "group relative block aspect-[3/4] overflow-hidden rounded-3xl border border-slate-800 bg-slate-900/60 shadow-inner shadow-slate-950/40 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950",
-                        data: { turbo_prefetch: false },
-                        aria: { label: "#{display_name} – #{badge_text}" } do %>
-              <span class="sr-only"><%= display_name %></span>
-              <% if sprite_path.present? %>
-                <%= image_tag sprite_path,
-                              alt: "",
-                              loading: "lazy",
-                              class: "absolute inset-0 h-full w-full object-cover transition duration-200 group-hover:scale-105" %>
-              <% else %>
-                <div class="absolute inset-0 flex items-center justify-center bg-slate-800 text-sm text-slate-300">
-                  <%= display_name %>
-                </div>
-              <% end %>
-              <span class="absolute top-2 right-2 inline-flex items-center rounded-full bg-slate-950/85 px-2 py-1 text-[11px] font-semibold text-indigo-200 drop-shadow-md" aria-label="Level <%= user_pet.level %>">
-                <%= badge_text %>
-              </span>
+          <% display_name = user_pet.name.presence || user_pet.pet.name %>
+          <% sprite_path = pet_sprite_path(user_pet.pet) %>
+          <% badge_text = "Lvl #{user_pet.level}" %>
+          <% state_badges = pet_state_badges(user_pet) %>
+          <%= link_to user_pet_path(user_pet),
+                      class: "group relative block aspect-[3/4] overflow-hidden rounded-3xl border border-slate-800 bg-slate-900/60 shadow-inner shadow-slate-950/40 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950",
+                      data: { turbo_prefetch: false },
+                      aria: { label: "#{display_name} – #{badge_text}" } do %>
+            <span class="sr-only"><%= display_name %></span>
+            <% if sprite_path.present? %>
+              <%= image_tag sprite_path,
+                            alt: "",
+                            loading: "lazy",
+                            class: "absolute inset-0 h-full w-full object-cover transition duration-200 group-hover:scale-105" %>
+            <% else %>
+              <div class="absolute inset-0 flex items-center justify-center bg-slate-800 text-sm text-slate-300">
+                <%= display_name %>
+              </div>
             <% end %>
+            <% if state_badges.any? %>
+              <div class="absolute top-2 left-2 flex flex-col gap-1">
+                <% state_badges.each do |badge| %>
+                  <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold shadow-lg shadow-slate-900/40 <%= badge[:class] %>"
+                        <%= "title=\"#{badge[:title]}\"" if badge[:title].present? %>>
+                    <%= badge[:label] %>
+                  </span>
+                <% end %>
+              </div>
+            <% end %>
+            <span class="absolute top-2 right-2 inline-flex items-center rounded-full bg-slate-950/85 px-2 py-1 text-[11px] font-semibold text-indigo-200 drop-shadow-md" aria-label="Level <%= user_pet.level %>">
+              <%= badge_text %>
+            </span>
           <% end %>
+        <% end %>
         </div>
       <% else %>
         <div class="rounded-3xl border border-slate-800 bg-slate-900/60 p-10 text-center text-slate-300">

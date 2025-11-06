@@ -13,6 +13,7 @@ class User < ApplicationRecord
   has_many :battle_sessions, dependent: :destroy
   has_many :user_zone_completions, dependent: :destroy
   has_many :generated_explorations, dependent: :destroy
+  has_many :user_notifications, dependent: :destroy
 
   has_and_belongs_to_many :unlocked_worlds, class_name: 'World', join_table: 'user_worlds'
 

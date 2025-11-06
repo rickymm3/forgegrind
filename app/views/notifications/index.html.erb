@@ -1,0 +1,18 @@
+<% content_for :title, "Notifications" %>
+
+<section class="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-8">
+  <header class="flex items-center justify-between">
+    <div>
+      <h1 class="text-xl font-semibold text-white">Notifications</h1>
+      <p class="text-sm text-slate-400">Stay on top of expedition checkpoints and other events.</p>
+    </div>
+    <%= button_to "Clear all",
+                  clear_all_notifications_path,
+                  method: :post,
+                  class: "inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-900/70 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-slate-300 transition hover:bg-slate-800/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950",
+                  form: { data: { turbo_confirm: "Mark all notifications as read?" } } %>
+  </header>
+
+  <%= render partial: "notifications/list",
+             locals: { notifications: @notifications, freshly_read_ids: @freshly_read_ids } %>
+</section>

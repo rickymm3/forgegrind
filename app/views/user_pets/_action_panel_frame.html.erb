@@ -6,6 +6,11 @@
 <% energy_cost ||= nil %>
 <% needs_preview ||= [] %>
 <% personality_changes ||= [] %>
+<% preview_energy_before ||= user_pet.energy.to_f %>
+<% preview_energy_after ||= user_pet.energy.to_f %>
+<% preview_xp_before ||= user_pet.exp.to_i %>
+<% preview_xp_after ||= user_pet.exp.to_i %>
+<% preview_xp_gain ||= 0 %>
 
 <turbo-frame id="<%= action_panel_dom_id(user_pet) %>">
   <%= render "user_pets/action_panel",
@@ -17,5 +22,10 @@
              interaction: interaction,
              energy_cost: energy_cost,
              needs_preview: needs_preview,
-             personality_changes: personality_changes %>
+             personality_changes: personality_changes,
+             preview_energy_before: preview_energy_before,
+             preview_energy_after: preview_energy_after,
+             preview_xp_before: preview_xp_before,
+             preview_xp_after: preview_xp_after,
+             preview_xp_gain: preview_xp_gain %>
 </turbo-frame>

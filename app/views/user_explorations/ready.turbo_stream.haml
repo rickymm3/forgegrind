@@ -12,7 +12,9 @@
            requirement_groups: progress.group_by { |entry| entry[:source] || 'base' },
            available_pets: [],
            selected_pet_ids: [],
-           filters: {}
+           filters: {},
+           show_filters: false,
+           compact_layout: true
 
 - if list_dom_id
   = turbo_stream.update list_dom_id do

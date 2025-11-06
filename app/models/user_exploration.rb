@@ -69,7 +69,8 @@ class UserExploration < ApplicationRecord
   end
 
   def segment_duration(entry)
-    entry.to_h[:duration_seconds].to_i
+    value = entry.is_a?(Hash) ? entry[:duration_seconds] || entry['duration_seconds'] : nil
+    value.to_i
   end
 
   def segment_elapsed_seconds(entry, reference_time: Time.current)
@@ -298,40 +299,56 @@ class UserExploration < ApplicationRecord
     slug = active_encounter_slug
     return unless slug
 
-    now = Time.current
-    data = active_encounter_data
-    history = Array(data[:history]).dup
-    history << {
-      node: data[:node_key] || 'intro',
-      choice: choice_key,
-      outcome: outcome,
-      at: now
-    }
+    transaction do
+      now = Time.current
+      data = active_encounter_data
+      history = Array(data[:history]).dup
+      history << {
+        node: data[:node_key] || 'intro',
+        choice: choice_key,
+        outcome: outcome,
+        at: now
+      }
 
-    segment_index = data[:segment_index] || encounter_schedule_entries.find { |scheduled| scheduled[:slug] == slug && scheduled[:status].to_s == 'active' }&.dig(:segment_index)
+      segment_index = data[:segment_index] || encounter_schedule_entries.find { |scheduled| scheduled[:slug] == slug && scheduled[:status].to_s == 'active' }&.dig(:segment_index)
 
-    updated_schedule = encounter_schedule_entries.map do |scheduled|
-      matches_slug = scheduled[:slug] == slug
-      matches_segment = segment_index.present? ? scheduled[:segment_index].to_i == segment_index.to_i : true
-
-      if matches_slug && matches_segment && scheduled[:status].to_s == 'active'
-        scheduled.merge(
-          status: status,
-          completed_at: now,
-          outcome: outcome,
-          history: history
+      reward_data = nil
+      if status.to_s == 'completed'
+        reward_data = EncounterRewarder.award!(
+          user_exploration: self,
+          encounter_slug: slug,
+          outcome_key: outcome
         )
-      else
-        scheduled
       end
-    end
 
-    update!(
-      encounter_schedule: stringify_entries(updated_schedule),
-      active_encounter: {},
-      active_encounter_started_at: nil,
-      active_encounter_expires_at: nil
-    )
+      updated_schedule = encounter_schedule_entries.map do |scheduled|
+        matches_slug = scheduled[:slug] == slug
+        matches_segment = segment_index.present? ? scheduled[:segment_index].to_i == segment_index.to_i : true
+
+        if matches_slug && matches_segment && scheduled[:status].to_s == 'active'
+          payload = {
+            status: status,
+            completed_at: now,
+            outcome: outcome,
+            history: history
+          }
+          if reward_data.present?
+            payload[:rewards] = reward_data[:rewards]
+            payload[:reward_summary] = reward_data[:summary]
+          end
+          scheduled.merge(payload)
+        else
+          scheduled
+        end
+      end
+
+      update!(
+        encounter_schedule: stringify_entries(updated_schedule),
+        active_encounter: {},
+        active_encounter_started_at: nil,
+        active_encounter_expires_at: nil
+      )
+    end
   end
 
   def mark_active_segment_checkpoint!(reached_at: Time.current)
@@ -339,6 +356,8 @@ class UserExploration < ApplicationRecord
     return nil unless segment
 
     index = segment[:index].to_i
+    checkpoint_entry = nil
+    ready_at = reached_at
     updated_segments = segment_progress_entries.map do |entry|
       if entry[:index].to_i == index
         entry.merge(status: 'checkpoint', reached_at: reached_at)
@@ -356,7 +375,10 @@ class UserExploration < ApplicationRecord
     transaction do
       update!(attrs)
       mark_encounters_ready_for_segment!(index, ready_at: reached_at)
+      checkpoint_entry = checkpoint_segment_entry
     end
+
+    notify_checkpoint_reached!(checkpoint_entry, reached_at: ready_at)
 
     checkpoint_segment_entry
   end
@@ -535,7 +557,9 @@ class UserExploration < ApplicationRecord
   end
 
   def segment_start_time(entry)
-    parse_time_value(entry[:reached_at]) || segment_started_at || started_at
+    return segment_started_at if segment_started_at.present?
+
+    parse_time_value(entry[:reached_at]) || started_at
   end
 
   def parse_time_value(value)
@@ -560,5 +584,46 @@ class UserExploration < ApplicationRecord
 
   def segment_completed_status?(status)
     %w[completed checkpoint].include?(status.to_s)
+  end
+
+  def notify_checkpoint_reached!(checkpoint_entry, reached_at:)
+    return unless checkpoint_entry && user
+
+    segment_index = checkpoint_entry[:index].to_i
+    segment_label = checkpoint_entry[:label].presence || "Checkpoint #{segment_index + 1}"
+    world_name = world&.name || "Unknown world"
+
+    existing_scope = user.user_notifications
+                         .unread
+                         .where(category: "exploration_checkpoint")
+                         .where("metadata ->> 'user_exploration_id' = ?", id.to_s)
+                         .where("metadata ->> 'segment_index' = ?", segment_index.to_s)
+    return if existing_scope.exists?
+
+    metadata = {
+      "user_exploration_id" => id,
+      "world_id" => world_id,
+      "world_name" => world_name,
+      "segment_index" => segment_index,
+      "segment_label" => segment_label,
+      "reached_at" => reached_at.iso8601
+    }
+
+    user.user_notifications.create!(
+      category: "exploration_checkpoint",
+      title: "Checkpoint reached",
+      body: "#{segment_label} in #{world_name} is ready for a decision.",
+      action_path: explorations_notification_path,
+      metadata: metadata
+    )
+  rescue StandardError => e
+    Rails.logger.debug { "[UserExploration] Failed to record checkpoint notification for exploration ##{id}: #{e.message}" }
+    nil
+  end
+
+  def explorations_notification_path
+    Rails.application.routes.url_helpers.explorations_path
+  rescue StandardError
+    "/explorations"
   end
 end

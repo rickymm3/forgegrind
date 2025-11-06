@@ -25,36 +25,85 @@
 <% duration_label << "#{duration_remainder}s" %>
 <% all_requirements_met = requirement_progress.present? && requirement_progress.all? { |entry| entry[:fulfilled] } %>
 <% detail_dom_id = dom_id(generated, :detail) %>
+<% show_filters = local_assigns.fetch(:show_filters, true) %>
+<% compact_layout = local_assigns.fetch(:compact_layout, false) %>
+<% slot_size_classes = compact_layout ? "h-14 w-14" : "h-20 w-20" %>
+<% slot_avatar_placeholder_class = compact_layout ? "text-lg" : "text-xl" %>
+<% card_avatar_classes = compact_layout ? "h-12 w-12" : "h-16 w-16" %>
+<% card_container_classes =
+     if compact_layout
+       ["rounded-3xl", "border", "border-slate-200", "bg-white", "shadow-sm", "overflow-hidden"]
+     else
+       ["card", "group", "relative", "rounded-2xl", "bg-white", "shadow-lg", "transition-shadow", "duration-200", "hover:shadow-xl", "overflow-hidden"]
+     end %>
+<% content_wrapper_classes = ["space-y-4", (compact_layout ? "p-4" : "p-5")] %>
+<% preview_params = {} %>
+<% preview_params[:compact_layout] = 1 if compact_layout %>
+<% preview_params[:show_filters] = 0 unless show_filters %>
+<% preview_url = preview_exploration_path(generated, preview_params) %>
+<% pet_list_grid_classes =
+     if compact_layout
+       "grid grid-cols-1 gap-3 max-h-64 overflow-y-auto pr-1"
+     else
+       "grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-72 overflow-y-auto pr-1"
+     end %>
 
-<div class="card group relative rounded-2xl bg-white shadow-lg transition-shadow duration-200 hover:shadow-xl overflow-hidden" id="<%= detail_dom_id %>">
-  <div class="relative h-40 bg-slate-900">
-    <%= image_tag world_zone_image_path(generated.world),
-                  alt: generated.world.name,
-                  class: "absolute inset-0 h-full w-full object-cover" %>
-    <div class="absolute inset-0 bg-gradient-to-t from-slate-900/85 via-slate-900/30 to-slate-900/60"></div>
-    <div class="absolute top-4 left-4 flex items-center gap-2 text-white text-xs uppercase tracking-wider font-semibold">
-      <span class="rounded-full px-3 py-1 bg-white/20">Expedition</span>
+<div class="<%= card_container_classes.join(' ') %>" id="<%= detail_dom_id %>">
+  <% unless compact_layout %>
+    <div class="relative h-40 bg-slate-900">
+      <%= image_tag world_zone_image_path(generated.world),
+                    alt: generated.world.name,
+                    class: "absolute inset-0 h-full w-full object-cover" %>
+      <div class="absolute inset-0 bg-gradient-to-t from-slate-900/85 via-slate-900/30 to-slate-900/60"></div>
+      <div class="absolute top-4 left-4 flex items-center gap-2 text-white text-xs uppercase tracking-wider font-semibold">
+        <span class="rounded-full px-3 py-1 bg-white/20">Expedition</span>
+      </div>
+      <div class="absolute bottom-4 left-4 text-white">
+        <h3 class="text-2xl font-semibold"><%= generated.name %></h3>
+        <p class="text-xs flex items-center gap-2 text-white/80">
+          <span class="inline-flex items-center gap-1">
+            <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path d="M12 6v6l4 2" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
+            </svg>
+            Duration · <%= duration_label.join(' ') %>
+          </span>
+          <span class="inline-flex items-center gap-1">
+            <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path d="M3 12h3m12 0h3M12 3v3m0 12v3" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
+            </svg>
+            <%= generated.world.name %>
+          </span>
+        </p>
+      </div>
     </div>
-    <div class="absolute bottom-4 left-4 text-white">
-      <h3 class="text-2xl font-semibold"><%= generated.name %></h3>
-      <p class="text-xs flex items-center gap-2 text-white/80">
-        <span class="inline-flex items-center gap-1">
-          <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path d="M12 6v6l4 2" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
-          </svg>
-          Duration · <%= duration_label.join(' ') %>
-        </span>
-        <span class="inline-flex items-center gap-1">
-          <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path d="M3 12h3m12 0h3M12 3v3m0 12v3" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
-          </svg>
-          <%= generated.world.name %>
-        </span>
-      </p>
-    </div>
-  </div>
+  <% end %>
 
-  <div class="p-5 space-y-4">
+  <div class="<%= content_wrapper_classes.join(' ') %>">
+    <% if compact_layout %>
+      <div class="flex items-center justify-between gap-3">
+        <div>
+          <p class="text-[11px] font-semibold uppercase tracking-wide text-indigo-500">Expedition</p>
+          <h3 class="text-base font-semibold text-slate-800"><%= generated.name %></h3>
+          <p class="text-[11px] text-slate-500 flex items-center gap-2 mt-1">
+            <span class="inline-flex items-center gap-1">
+              <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path d="M12 6v6l4 2" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
+              </svg>
+              <%= duration_label.join(' ') %>
+            </span>
+            <span class="inline-flex items-center gap-1 text-slate-400">
+              <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path d="M3 12h3m12 0h3M12 3v3m0 12v3" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
+              </svg>
+              <%= generated.world.name %>
+            </span>
+          </p>
+        </div>
+        <span class="inline-flex items-center gap-1 rounded-full bg-indigo-500/10 px-3 py-1 text-[10px] font-semibold uppercase text-indigo-600">
+          Route Active
+        </span>
+      </div>
+    <% end %>
     <% if requirement_groups.any? %>
       <div class="space-y-2">
         <h4 class="text-xs font-semibold text-slate-400 uppercase">Requirements</h4>
@@ -82,40 +131,44 @@
       <div class="space-y-4"
            data-controller="party-selector"
            data-party-selector-max-value="3"
-           data-party-selector-preview-url-value="<%= preview_exploration_path(generated) %>"
+           data-party-selector-preview-url-value="<%= preview_url %>"
            data-party-selector-filters-value="<%= filters_json %>">
-        <div class="bg-slate-50 rounded-xl p-4 space-y-3">
-          <p class="text-sm text-slate-600 leading-relaxed">
-            Choose up to three companions to accompany you into this expedition. Requirements grant bonus rewards when fulfilled.
-          </p>
-          <%= form_with url: preview_exploration_path(generated),
-                        method: :post,
-                        data: { turbo_frame: detail_dom_id },
-                        class: "space-y-3" do %>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <%= text_field_tag :name,
-                                 filters[:name],
-                                 placeholder: "Search by name",
-                                 class: "w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-300" %>
-              <%= select_tag :pet_type_id,
-                             options_for_select(PetType.pluck(:name, :id), filters[:pet_type_id]),
-                             include_blank: "All pet types",
-                             class: "w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-300" %>
-            </div>
-            <%= hidden_field_tag :id, generated.id %>
-            <%= hidden_field_tag :selected_pet_ids,
-                                 selected_pet_ids.join(','),
-                                 data: { "party-selector-target": "selectedField" } %>
-            <%= hidden_field_tag :party_order,
-                                 selected_pet_ids.join(','),
-                                 data: { "party-selector-target": "orderField" } %>
-            <%= hidden_field_tag :primary_user_pet_id,
-                                 selected_pet_ids.first,
-                                 data: { "party-selector-target": "primaryField" } %>
-            <%= submit_tag "Filter",
-                           class: "inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white hover:bg-slate-800" %>
-          <% end %>
-        </div>
+        <% if show_filters %>
+          <div class="bg-slate-50 rounded-xl p-4 space-y-3">
+            <p class="text-sm text-slate-600 leading-relaxed">
+              Choose up to three companions to accompany you into this expedition. Requirements grant bonus rewards when fulfilled.
+            </p>
+            <%= form_with url: preview_url,
+                          method: :post,
+                          data: { turbo_frame: detail_dom_id },
+                          class: "space-y-3" do %>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <%= text_field_tag :name,
+                                   filters[:name],
+                                   placeholder: "Search by name",
+                                   class: "w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-300" %>
+                <%= select_tag :pet_type_id,
+                               options_for_select(PetType.pluck(:name, :id), filters[:pet_type_id]),
+                               include_blank: "All pet types",
+                               class: "w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-300" %>
+              </div>
+              <%= hidden_field_tag :id, generated.id %>
+              <%= hidden_field_tag :compact_layout, 1 if compact_layout %>
+              <%= hidden_field_tag :show_filters, 0 unless show_filters %>
+              <%= hidden_field_tag :selected_pet_ids,
+                                   selected_pet_ids.join(','),
+                                   data: { "party-selector-target": "selectedField" } %>
+              <%= hidden_field_tag :party_order,
+                                   selected_pet_ids.join(','),
+                                   data: { "party-selector-target": "orderField" } %>
+              <%= hidden_field_tag :primary_user_pet_id,
+                                   selected_pet_ids.first,
+                                   data: { "party-selector-target": "primaryField" } %>
+              <%= submit_tag "Filter",
+                             class: "inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white hover:bg-slate-800" %>
+            <% end %>
+          </div>
+        <% end %>
 
         <%= form_with url: start_exploration_path(generated),
                       method: :post,
@@ -147,14 +200,14 @@
                      data-party-selector-target="slot">
                   <div class="relative">
                     <button type="button"
-                            class="h-20 w-20 rounded-full bg-slate-800/5 text-slate-400 flex items-center justify-center text-2xl font-semibold transition hover:bg-slate-800/10"
+                            class="<%= slot_size_classes %> rounded-full bg-slate-800/5 text-slate-400 flex items-center justify-center text-2xl font-semibold transition hover:bg-slate-800/10"
                             data-slot-element="main"
                             data-action="click->party-selector#setPrimaryFromSlot"
                             disabled>
-                      <img class="hidden h-20 w-20 rounded-full object-cover"
+                      <img class="hidden <%= slot_size_classes %> rounded-full object-cover"
                            alt=""
                            data-slot-element="image" />
-                      <span class="text-xl" data-slot-element="placeholder">+</span>
+                      <span class="<%= slot_avatar_placeholder_class %>" data-slot-element="placeholder">+</span>
                       <span class="hidden absolute -bottom-1 left-1/2 -translate-x-1/2 rounded-full bg-indigo-600 px-2 py-0.5 text-[10px] font-semibold text-white uppercase"
                             data-slot-element="primary">
                         Leader
@@ -182,9 +235,17 @@
               No available pets for this expedition right now.
             </div>
           <% else %>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-72 overflow-y-auto pr-1">
+            <div class="<%= pet_list_grid_classes %>">
               <% available_pets.each do |pet| %>
-                <% disabled = pet.exploring? %>
+                <% sleeping = pet.asleep_until.present? && pet.asleep_until.future? %>
+                <% energy_insufficient = pet.energy.to_i < UserPet::EXPLORATION_ENERGY_COST %>
+                <% disabled_reason =
+                    if pet.exploring?
+                      "Exploring"
+                    elsif sleeping
+                      "Resting"
+                    end %>
+                <% disabled = pet.exploring? || sleeping %>
                 <% display_name = pet.name.presence || pet.pet.name %>
                 <% ability = pet.pet.special_ability %>
                 <% ability_name = ability&.name %>
@@ -202,6 +263,7 @@
                      data-ability-tagline="<%= ability_tagline %>"
                      data-ability-tags="<%= ability_tags %>"
                      data-disabled="<%= disabled %>"
+                     data-disabled-reason="<%= disabled_reason %>"
                      data-action="click->party-selector#toggleCard">
                   <%= check_box_tag "user_pet_ids[]",
                                     pet.id,
@@ -213,13 +275,15 @@
                                        "p-3", "transition", "text-left", "duration-150"] %>
                   <% if disabled %>
                     <% button_classes << "opacity-60 cursor-not-allowed" %>
+                  <% elsif energy_insufficient %>
+                    <% button_classes << "opacity-80" %>
                   <% else %>
                     <% button_classes << "hover:shadow-md hover:border-indigo-400" %>
                   <% end %>
                   <button type="button"
                           class="<%= button_classes.join(' ') %>">
                     <div class="flex items-start gap-3">
-                      <img class="h-12 w-12 rounded-full object-cover"
+                      <img class="<%= card_avatar_classes %> rounded-full object-cover"
                            alt="<%= pet.pet.name %>"
                            src="<%= sprite %>" />
                       <div class="flex-1 space-y-1">
@@ -242,17 +306,26 @@
                         <% if ability_tagline.present? %>
                           <p class="text-[11px] text-slate-500"><%= ability_tagline %></p>
                         <% end %>
-                        <% if disabled %>
+                        <% if disabled_reason.present? %>
                           <span class="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">
                             <span class="inline-block h-1.5 w-1.5 rounded-full bg-indigo-500"></span>
-                            Exploring
+                            <%= disabled_reason %>
+                          </span>
+                        <% elsif energy_insufficient %>
+                          <span class="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
+                            <span class="inline-block h-1.5 w-1.5 rounded-full bg-amber-500"></span>
+                            Low energy
                           </span>
                         <% end %>
                       </div>
                     </div>
-                    <span class="hidden absolute top-2 right-2 rounded-full bg-indigo-600 px-2 py-0.5 text-[10px] font-semibold text-white uppercase"
+                    <span class="hidden pointer-events-none absolute top-2 right-2 rounded-full bg-indigo-600 px-2 py-0.5 text-[10px] font-semibold text-white uppercase"
                           data-card-element="primary">
                       Leader
+                    </span>
+                    <span class="hidden pointer-events-none absolute top-2 right-2 rounded-full bg-slate-700 px-2 py-0.5 text-[10px] font-semibold text-white uppercase"
+                          data-card-element="companion">
+                      Companion
                     </span>
                   </button>
                 </div>

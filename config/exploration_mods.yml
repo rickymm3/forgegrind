@@ -4,6 +4,19 @@ bases:
     world_name: "Ember Fields"
     default_duration: 9
     flavor: "Ash-swept plains with scattered pyre blooms."
+    segments:
+      - key: "scout_ridge"
+        label: "Scouting the Ridge"
+        duration_weight: 1
+        encounter_tags: ["fire", "wilds"]
+      - key: "pyre_crossing"
+        label: "Pyre Crossing"
+        duration_weight: 1
+        encounter_tags: ["fire"]
+      - key: "ember_heart"
+        label: "Ember Heart"
+        duration_weight: 1
+        encounter_tags: ["ember-core"]
     rewards:
       base_drop_key: "starter_zone"
     requirements: []
@@ -15,6 +28,18 @@ bases:
     rewards:
       base_drop_key: "forest"
     requirements: []
+    segments:
+      - key: "frozen_marches"
+        label: "Frozen Marches"
+        duration_weight: 1
+        encounter_tags: ["ice"]
+      - key: "aurora_watch"
+        label: "Aurora Watch"
+        duration_weight: 1
+      - key: "glacial_depths"
+        label: "Glacial Depths"
+        duration_weight: 1
+        encounter_tags: ["frost", "ancient"]
   verdant_canopy:
     label: "Verdant Canopy"
     world_name: "Verdant Canopy"
@@ -27,6 +52,15 @@ bases:
         key: "Grass"
         label: "Grass-aligned companions"
         required: 1
+    segments:
+      - key: "canopy_approach"
+        label: "Canopy Approach"
+        duration_weight: 1
+        encounter_tags: ["forest"]
+      - key: "heartwood_crossing"
+        label: "Heartwood Crossing"
+        duration_weight: 1
+        encounter_tags: ["forest", "fae"]
 
 prefixes:
   scorching:
@@ -41,6 +75,11 @@ prefixes:
     rewards:
       bonus_drop_key: "blazing_zone_drops"
       requires_full_match: true
+    segments:
+      - key: "heatwave"
+        label: "Heatwave Surge"
+        duration_weight: 1
+        encounter_tags: ["fire", "hazard"]
   chilling:
     weight: 10
     label: "Chilling"
@@ -53,6 +92,11 @@ prefixes:
     rewards:
       bonus_drop_key: "frozen_zone_drops"
       requires_full_match: true
+    segments:
+      - key: "ice_gale"
+        label: "Ice Gale"
+        duration_weight: 1
+        encounter_tags: ["ice", "hazard"]
   tempestuous:
     weight: 6
     label: "Tempestuous"
@@ -69,6 +113,11 @@ prefixes:
     rewards:
       bonus_drop_key: "storm_zone_drops"
       requires_full_match: true
+    segments:
+      - key: "stormfront"
+        label: "Stormfront Advance"
+        duration_weight: 1
+        encounter_tags: ["storm"]
   toxic:
     weight: 5
     label: "Toxic"
@@ -81,6 +130,11 @@ prefixes:
     rewards:
       bonus_drop_key: "toxic_zone_drops"
       requires_full_match: true
+    segments:
+      - key: "blighted_swale"
+        label: "Blighted Swale"
+        duration_weight: 1
+        encounter_tags: ["toxin", "hazard"]
 
 suffixes:
   of_embers:
@@ -94,6 +148,11 @@ suffixes:
         required: 3
     rewards:
       bonus_drop_key: "blazing_zone_drops"
+    segments:
+      - key: "cinder_core"
+        label: "Cinder Core"
+        duration_weight: 1
+        encounter_tags: ["fire", "elite"]
   of_the_hunt:
     weight: 7
     label: "of the Hunt"
@@ -105,6 +164,11 @@ suffixes:
         required: 2
     rewards:
       bonus_drop_key: "verdant_zone_drops"
+    segments:
+      - key: "tracking_run"
+        label: "Tracking Run"
+        duration_weight: 1
+        encounter_tags: ["beast", "prowl"]
   of_whispers:
     weight: 6
     label: "of Whispers"
@@ -116,6 +180,11 @@ suffixes:
         required: 1
     rewards:
       bonus_drop_key: "toxic_zone_drops"
+    segments:
+      - key: "echoing_glade"
+        label: "Echoing Glade"
+        duration_weight: 1
+        encounter_tags: ["shadow", "mystic"]
   of_legends:
     weight: 2
     label: "of Legends"

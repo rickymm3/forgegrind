@@ -1,16 +1,27 @@
 <%#
   locals:
     - nodes: array of { label:, status: }
-    - progress_percent: numeric (0..100)
+    - total_edges: optional integer count of edges (defaults to nodes.size - 1)
+    - completed_edges: optional integer count of fully completed edges
+    - active_edge_fraction: optional float (0..1) representing partial progress on the current edge
 %>
 <% nodes = Array(nodes) %>
-<% progress_percent = progress_percent.to_f.clamp(0.0, 100.0) %>
+<% total_edges = (local_assigns[:total_edges] || nodes.size - 1).to_i %>
+<% total_edges = 1 if total_edges <= 0 %>
+<% completed_edges = (local_assigns[:completed_edges] || 0).to_i.clamp(0, total_edges) %>
+<% active_edge_fraction = (local_assigns[:active_edge_fraction] || 0.0).to_f.clamp(0.0, 1.0) %>
+<% completed_percent = ((completed_edges.to_f / total_edges.to_f) * 100.0).clamp(0.0, 100.0) %>
+<% active_percent = ((active_edge_fraction.to_f / total_edges.to_f) * 100.0).clamp(0.0, 100.0) %>
+<% active_percent = [active_percent, 100.0 - completed_percent].min %>
 
 <div class="relative mt-2 w-full">
   <div class="absolute top-1/2 left-0 right-0 h-0.5 -translate-y-1/2 bg-slate-200"></div>
-  <div class="absolute top-1/2 left-0 h-0.5 -translate-y-1/2 bg-indigo-500 transition-all"
+  <div class="absolute top-1/2 left-0 h-0.5 -translate-y-1/2 bg-indigo-400 transition-all"
        data-countdown-target="progress"
-       style="width: <%= format('%.1f', progress_percent) %>%"></div>
+       style="width: <%= format('%.1f', completed_percent) %>%"></div>
+  <div class="absolute top-1/2 h-0.5 -translate-y-1/2 bg-indigo-500 transition-all"
+       data-countdown-target="activeProgress"
+       style="left: <%= format('%.1f', completed_percent) %>%; width: <%= format('%.1f', active_percent) %>%"></div>
   <div class="relative flex w-full items-center justify-between gap-2">
     <% nodes.each do |node| %>
       <% status = node[:status].to_s %>

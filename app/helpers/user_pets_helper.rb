@@ -1,4 +1,6 @@
 module UserPetsHelper
+  NEED_ATTENTION_THRESHOLD = 40
+
   def info_panel_dom_id(user_pet)
     ActionView::RecordIdentifier.dom_id(user_pet, :info_card)
   end
@@ -67,6 +69,40 @@ module UserPetsHelper
     when 40..69  then "text-yellow-600"
     else              "text-emerald-600"
     end
+  end
+
+  def pet_state_badges(user_pet)
+    badges = []
+    return badges unless user_pet
+
+    if user_pet.exploring?
+      badges << {
+        label: "Exploring",
+        class: "bg-indigo-500/90 border-indigo-300/60 text-white"
+      }
+    elsif user_pet.asleep_until.present? && Time.current < user_pet.asleep_until
+      minutes_left = ((user_pet.asleep_until - Time.current) / 60).ceil
+      badges << {
+        label: "Sleeping",
+        class: "bg-sky-500/90 border-sky-300/60 text-white",
+        title: "Wakes in #{minutes_left} minute#{'s' if minutes_left != 1}"
+      }
+    end
+
+    tracked_needs = %i[hunger hygiene boredom injury_level mood]
+    low_needs = tracked_needs.select do |attr|
+      user_pet.respond_to?(attr) && user_pet.send(attr).to_i < NEED_ATTENTION_THRESHOLD
+    end
+
+    if low_needs.any?
+      badges << {
+        label: "Needs Attention",
+        class: "bg-rose-500/90 border-rose-300/60 text-white",
+        title: low_needs.map { |attr| need_label(attr) }.join(', ')
+      }
+    end
+
+    badges
   end
 
   private

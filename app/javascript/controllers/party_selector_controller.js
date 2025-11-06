@@ -202,6 +202,7 @@ export default class extends Controller {
     this.cardTargets.forEach((card) => {
       const id = this.cardId(card)
       const isSelected = selectedSet.has(id)
+      const isPrimary = this.primaryId === id
       card.classList.toggle("party-selected", isSelected)
       const button = card.querySelector("button")
       if (button) {
@@ -211,7 +212,11 @@ export default class extends Controller {
       }
       const primaryBadge = card.querySelector("[data-card-element='primary']")
       if (primaryBadge) {
-        primaryBadge.classList.toggle("hidden", this.primaryId !== id)
+        primaryBadge.classList.toggle("hidden", !isPrimary)
+      }
+      const companionBadge = card.querySelector("[data-card-element='companion']")
+      if (companionBadge) {
+        companionBadge.classList.toggle("hidden", !(isSelected && !isPrimary))
       }
     })
   }

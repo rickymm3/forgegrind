@@ -67,11 +67,22 @@ class UserEggsController < ApplicationController
   def create
     egg = Egg.find(params[:egg_id])
     @egg = egg
+    origin = params[:origin].presence
   
     unless current_user.can_afford_egg?(egg)
       respond_to do |format|
-        format.turbo_stream { head :unprocessable_entity }
-        format.html { redirect_to adopt_path, alert: "You don't have the required items." }
+        format.turbo_stream do
+          if origin == "store"
+            @egg = egg
+            render :create_from_store_failure, status: :unprocessable_entity
+          else
+            head :unprocessable_entity
+          end
+        end
+        format.html do
+          destination = origin == "store" ? store_path(tab: "eggs") : adopt_path
+          redirect_to destination, alert: "You don't have the required items."
+        end
       end
       return
     end
@@ -83,8 +94,19 @@ class UserEggsController < ApplicationController
     end
   
     respond_to do |format|
-      format.turbo_stream
-      format.html { redirect_to adopt_path, notice: "You adopted a #{egg.name}!" }
+      format.turbo_stream do
+        if origin == "store"
+          @eggs = Egg.enabled.includes(:currency, egg_item_costs: :item)
+          @highlighted_egg_id = egg.id
+          render :create_from_store
+        else
+          render :create
+        end
+      end
+      format.html do
+        destination = origin == "store" ? store_path(tab: "eggs") : adopt_path
+        redirect_to destination, notice: "You adopted a #{egg.name}!"
+      end
     end
   end
   

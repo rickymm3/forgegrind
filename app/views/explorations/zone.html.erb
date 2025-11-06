@@ -1,0 +1,35 @@
+<% generated = @selected_generated %>
+<% world = generated.world %>
+<% metadata = generated.metadata || {} %>
+<% flavor = metadata[:flavor] || metadata["flavor"] %>
+<% world_description = Array(flavor).compact.first %>
+<% duration_seconds = generated.duration_seconds.to_i %>
+<% duration_label = exploration_duration_label(duration_seconds) %>
+
+<% content_for :header do %>
+  <div class="mx-auto flex w-full max-w-4xl flex-col gap-2 px-4 py-1">
+    <div class="flex items-center justify-between">
+      <h1 class="text-2xl font-semibold text-white"><%= generated.name %></h1>
+      <span class="rounded-full border border-indigo-400/40 bg-indigo-500/20 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-indigo-100">
+        <%= duration_label %>
+      </span>
+    </div>
+    <p class="text-sm text-slate-300"><%= world_description.presence || "Scout this zone to earn rewards and uncover encounters." %></p>
+  </div>
+<% end %>
+
+<div class="flex-1 w-full">
+  <div class="mx-auto w-full max-w-4xl px-4 pb-28">
+    <%= render "explorations/zone_card",
+               generated_exploration: generated,
+               user_exploration: @user_exploration,
+               requirement_progress: @requirement_progress,
+               requirement_groups: @requirement_groups,
+               available_pets: @available_pets,
+               selected_pet_ids: @selected_pet_ids,
+               filters: @filters,
+               state: @zone_state,
+               show_filters: false,
+               compact_layout: true %>
+  </div>
+</div>

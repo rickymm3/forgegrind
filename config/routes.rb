@@ -37,6 +37,8 @@ Rails.application.routes.draw do
     post :item_panel
   end
 
+  get "/store", to: "store#index"
+
   namespace :containers do
     post :open, to: "open#create"
   end
@@ -68,6 +70,7 @@ Rails.application.routes.draw do
   resources :explorations, only: [:index, :show] do
     collection do
       post :scout
+      get :zone
     end
     member do
       post :start
@@ -77,6 +80,10 @@ Rails.application.routes.draw do
   end
 
   resources :pets, only: [:index, :show]
+
+  resources :notifications, only: [:index] do
+    post :clear_all, on: :collection
+  end
 
   resources :user_explorations, only: [] do
     post :complete, on: :member

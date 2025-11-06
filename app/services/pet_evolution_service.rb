@@ -24,6 +24,7 @@ class PetEvolutionService
         predecessor.user_explorations.clear
         predecessor.battle_sessions.clear
 
+        successor_badges = transfer_badges(predecessor)
         successor_flags = successor.state_flags.deep_dup
         successor_flags["evolved_from_user_pet_id"] = predecessor.id
         successor_flags["evolved_from_pet_id"]      = predecessor.pet_id
@@ -32,6 +33,7 @@ class PetEvolutionService
         successor.update!(
           predecessor_user_pet: predecessor,
           state_flags: successor_flags,
+          badges: successor_badges,
           evolution_journal: successor_journal
         )
 
@@ -41,6 +43,7 @@ class PetEvolutionService
         predecessor_flags["evolved_to_user_pet_id"] = successor.id
         predecessor_flags["evolved_to_pet_id"]      = child_pet.id
 
+        predecessor_badges = prune_non_transferable_badges(predecessor)
         predecessor.update!(
           retired_at:          timestamp,
           retired_reason:      "evolved",
@@ -49,6 +52,7 @@ class PetEvolutionService
           evolution_journal:   journal,
           exp:                 0,
           equipped:            false,
+          badges:              predecessor_badges,
           state_flags:         predecessor_flags
         )
       end
@@ -114,6 +118,26 @@ class PetEvolutionService
 
       Array(misses).each { |key| journal["misses"].delete(key) }
       journal
+    end
+
+    def transfer_badges(predecessor)
+      return [] unless predecessor.badges.present?
+
+      transferable = predecessor.badges.select do |badge_key|
+        definition = BadgeRegistry.find(badge_key)
+        definition&.transfers_on_level_up
+      end
+
+      transferable
+    end
+
+    def prune_non_transferable_badges(predecessor)
+      return [] unless predecessor.badges.present?
+
+      predecessor.badges.select do |badge_key|
+        definition = BadgeRegistry.find(badge_key)
+        definition&.transfers_on_level_up
+      end
     end
   end
 end

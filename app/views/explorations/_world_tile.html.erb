@@ -65,16 +65,17 @@
 <% else %>
   <% world = generated.world %>
   <% duration_seconds = generated.duration_seconds %>
-  <% duration_minutes = (duration_seconds / 60).floor %>
-  <% duration_remainder = duration_seconds % 60 %>
-  <% duration_label = [] %>
-  <% duration_label << "#{duration_minutes}m" unless duration_minutes.zero? %>
-  <% duration_label << "#{duration_remainder}s" %>
+<% duration_minutes = (duration_seconds / 60).floor %>
+<% duration_remainder = duration_seconds % 60 %>
+<% duration_label = [] %>
+<% duration_label << "#{duration_minutes}m" unless duration_minutes.zero? %>
+<% duration_label << "#{duration_remainder}s" %>
+<% segment_status = user_exploration.present? ? expedition_segment_status(user_exploration) : nil %>
 
-  <% status_badge, status_classes =
-       if user_exploration&.complete?
-         ["Ready to complete", "bg-emerald-500/20 text-emerald-200"]
-       elsif user_exploration.present?
+<% status_badge, status_classes =
+     if user_exploration&.complete?
+       ["Ready to complete", "bg-emerald-500/20 text-emerald-200"]
+     elsif user_exploration.present?
          ["In progress", "bg-indigo-500/20 text-indigo-200"]
        else
          ["Available", "bg-slate-500/20 text-slate-200"]
@@ -85,7 +86,7 @@
            data-exploration-list-target="item"
            data-action="click->exploration-list#handleClick"
            data-selected="<%= selected %>"
-           data-url="<%= exploration_path(generated) %>">
+           data-url="<%= zone_explorations_path(id: generated.id) %>">
     <div class="absolute inset-0">
       <%= image_tag world_zone_image_path(world),
                     alt: world.name,
@@ -119,6 +120,23 @@
               </svg>
               <span><%= world.name %></span>
             </span>
+            <% if segment_status.present? %>
+              <% if segment_status[:state] == :active %>
+                <span class="inline-flex items-center gap-2">
+                  <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5">
+                    <path d="M12 5v7l3 2" />
+                  </svg>
+                  <span>Stage <%= segment_status[:index].to_i + 1 %>/<%= segment_status[:total].to_i %> · <%= segment_status[:label] %></span>
+                </span>
+              <% elsif segment_status[:state] == :checkpoint %>
+                <span class="inline-flex items-center gap-2 text-amber-200">
+                  <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5">
+                    <path d="M12 6v6l4 2" />
+                  </svg>
+                  <span>Checkpoint ready · <%= segment_status[:label] %></span>
+                </span>
+              <% end %>
+            <% end %>
           </p>
         </div>
       </header>
@@ -150,13 +168,47 @@
         <% end %>
 
         <% if user_exploration.present? %>
-          <div class="rounded-2xl border border-indigo-500/30 bg-indigo-500/10 px-4 py-3 text-sm text-indigo-100">
-            <% if user_exploration.complete? %>
+          <% if user_exploration.complete? %>
+            <div class="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm font-semibold text-emerald-100">
               Expedition complete. Collect your rewards to free this slot.
+            </div>
+          <% else %>
+            <% if segment_status&.dig(:state) == :active %>
+              <% stage_number = segment_status[:index].to_i + 1 %>
+              <% stage_total = segment_status[:total].to_i %>
+              <div class="rounded-2xl border border-indigo-500/30 bg-indigo-500/10 px-4 py-4 text-sm text-indigo-100 space-y-3"
+                   data-controller="slot-countdown"
+                   data-slot-countdown-seconds-value="<%= segment_status[:remaining_seconds] %>"
+                   data-slot-countdown-refresh-url-value="<%= explorations_path(format: :turbo_stream) %>"
+                   <%= %(data-slot-countdown-end-at-value="#{segment_status[:end_time].iso8601}") if segment_status[:end_time].respond_to?(:iso8601) %>>
+                <div class="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wide text-indigo-200/80">
+                  <span>Stage <%= stage_number %> / <%= stage_total %></span>
+                  <span><%= segment_status[:label] %></span>
+                </div>
+                <div class="flex items-end justify-between">
+                  <p class="text-xs text-indigo-200/70">Time remaining</p>
+                  <span class="text-lg font-bold text-white" data-slot-countdown-target="output">
+                    <%= exploration_duration_label(segment_status[:remaining_seconds]) %>
+                  </span>
+                </div>
+                <p class="text-[11px] text-indigo-200/70">Expedition underway — party status synced automatically.</p>
+              </div>
+            <% elsif segment_status&.dig(:state) == :checkpoint %>
+              <div class="rounded-2xl border border-amber-500/40 bg-amber-500/10 px-4 py-4 text-sm text-amber-100 space-y-2">
+                <p class="text-[11px] font-semibold uppercase tracking-wide text-amber-200">Checkpoint reached</p>
+                <p class="text-sm font-semibold text-amber-50"><%= segment_status[:label] %></p>
+                <% if user_exploration.active_encounter? %>
+                  <p class="text-[11px] text-amber-200/80">Encounter in progress — open the expedition to respond.</p>
+                <% else %>
+                  <p class="text-[11px] text-amber-200/80">Open the expedition to decide how to proceed.</p>
+                <% end %>
+              </div>
             <% else %>
-              Expedition underway — party status synced automatically.
+              <div class="rounded-2xl border border-indigo-500/30 bg-indigo-500/10 px-4 py-3 text-sm text-indigo-100">
+                Expedition underway — party status synced automatically.
+              </div>
             <% end %>
-          </div>
+          <% end %>
         <% else %>
           <% traits = Array(generated.metadata[:flavor]).compact %>
           <% if traits.any? %>
@@ -177,13 +229,13 @@
                          class: "flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-emerald-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-200" %>
          <% else %>
            <%= link_to "View expedition",
-                        exploration_path(generated),
+                        zone_explorations_path(id: generated.id),
                         data: { turbo_frame: "_top" },
                         class: "flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-indigo-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200" %>
          <% end %>
        <% else %>
          <%= link_to "View expedition",
-                      exploration_path(generated),
+                      zone_explorations_path(id: generated.id),
                       data: { turbo_frame: "_top" },
                       class: "flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-indigo-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200" %>
        <% end %>

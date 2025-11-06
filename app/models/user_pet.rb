@@ -120,6 +120,8 @@ class UserPet < ApplicationRecord
   WELL_FED_REQUIRED_TICKS     = 4
   WELL_FED_LOSS_THRESHOLD     = 65
   WELL_FED_GRACE_LIMIT        = 2
+  EXPLORATION_ENERGY_COST     = 20
+  EXPLORATION_EXP_REWARD      = 10
 
   BASE_IMPACTS = {
     "play"      => { playfulness: 2.0, affection: 1.0, temperament: 0.0, curiosity: 1.0, confidence: 0.0 },
@@ -151,17 +153,26 @@ class UserPet < ApplicationRecord
   end
 
   # Alternative energy spender (keeps regen timer running)
-  def spend_energy!(amount)
+  def spend_energy!(amount, allow_debt: false)
     if asleep_until.present? && Time.current < asleep_until
       remaining = ((asleep_until - Time.current) / 60).ceil
       raise PetSleepingError, "#{pet.name} is asleep for another #{remaining} minute#{'s' if remaining != 1}."
     end
 
-    raise NotEnoughEnergyError, "#{pet.name} doesn’t have enough energy to interact." unless energy.to_i >= amount
+    if !allow_debt && energy.to_i < amount
+      raise NotEnoughEnergyError, "#{pet.name} doesn’t have enough energy to interact."
+    end
 
     self.last_energy_update_at = Time.current if energy.to_i >= MAX_ENERGY
-    self.energy -= amount
+    self.energy = energy.to_i - amount
     self.asleep_until = Time.current + sleep_duration if energy <= 10
+  end
+
+  def add_experience_points(amount)
+    amount = amount.to_i
+    return if amount <= 0
+
+    self.exp = exp.to_i + amount
   end
 
   # Seconds until next energy tick
@@ -186,6 +197,8 @@ class UserPet < ApplicationRecord
       energy:                new_energy,
       last_energy_update_at: now - leftover_secs
     )
+
+    PetEnergyTickService.new(self).apply_ticks!(ticks)
 
     ticks
   end
@@ -271,6 +284,19 @@ class UserPet < ApplicationRecord
     [base - reduction, 30.minutes].max
   end
 
+  def ensure_sleep_state!(reference_time: Time.current)
+    original = asleep_until
+
+    if energy.to_i <= 10
+      desired = reference_time + sleep_duration
+      self.asleep_until = original.present? ? [original, desired].max : desired
+    elsif original.present? && reference_time >= original && energy.to_i > 10
+      self.asleep_until = nil
+    end
+
+    save!(validate: false) if asleep_until != original
+  end
+
   def can_interact?
     return false if retired?
     interactions_remaining.to_i.positive?
@@ -338,6 +364,14 @@ class UserPet < ApplicationRecord
 
   def state_flags
     super || {}
+  end
+
+  def care_trackers
+    super || {}
+  end
+
+  def care_tracker_value(key)
+    care_trackers[key.to_s].to_i
   end
 
   def evolution_journal

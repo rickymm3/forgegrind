@@ -18,9 +18,12 @@ export default class extends Controller {
     activeEncounter: Boolean,
     segmentTotal: Number,
     segmentElapsed: Number,
-    endAt: String
+    endAt: String,
+    totalEdges: Number,
+    completedEdges: Number,
+    activeEdgeFraction: Number
   }
-  static targets = ["output", "progress"]
+  static targets = ["output", "progress", "activeProgress"]
 
   connect() {
     const totalFromDataset = this.hasTotalValue ? Number(this.totalValue || 0) : 0
@@ -41,6 +44,8 @@ export default class extends Controller {
 
     this.totalDuration = totalFromDataset > 0 ? totalFromDataset : initialSeconds
     this.elapsedBase = elapsedFromDataset > 0 ? elapsedFromDataset : Math.max(this.totalDuration - initialSeconds, 0)
+    this.segmentTotalSeconds = segmentTotalFromDataset > 0 ? segmentTotalFromDataset : 0
+    this.segmentElapsedBase = Math.max(0, Math.min(segmentElapsedFromDataset, this.segmentTotalSeconds))
     this.initialRemaining = initialSeconds
     this.secondsValue = this.initialRemaining
 
@@ -168,19 +173,53 @@ export default class extends Controller {
   }
 
   refreshDisplay(remaining) {
+    const elapsedDelta = Math.max(0, this.initialRemaining - remaining)
+    const totalElapsed = this.elapsedBase + elapsedDelta
+
     if (this.hasOutputTarget) {
       this.outputTarget.textContent = this.formatTime(remaining)
     }
 
-    if (this.hasProgressTarget && this.totalDuration > 0) {
-      const elapsedDelta = Math.max(0, this.initialRemaining - remaining)
-      const totalElapsed = this.elapsedBase + elapsedDelta
-      const progressRatio = Math.max(0, Math.min(1, totalElapsed / this.totalDuration))
-      this.progressTarget.style.width = `${(progressRatio * 100).toFixed(1)}%`
-
-      if (this.userExplorationId) {
-        this.checkForEncounter(totalElapsed)
+    if (this.hasProgressTarget) {
+      if (this.hasTotalEdgesValue && Number(this.totalEdgesValue || 0) > 0) {
+        const totalEdges = Math.max(1, Number(this.totalEdgesValue || 0))
+        const completedEdges = Math.max(
+          0,
+          Math.min(Number(this.hasCompletedEdgesValue ? this.completedEdgesValue || 0 : 0), totalEdges)
+        )
+        const completedPercent = (completedEdges / totalEdges) * 100
+        this.progressTarget.style.width = `${completedPercent.toFixed(1)}%`
+      } else if (this.totalDuration > 0) {
+        const progressRatio = Math.max(0, Math.min(1, totalElapsed / this.totalDuration))
+        this.progressTarget.style.width = `${(progressRatio * 100).toFixed(1)}%`
       }
+    }
+
+    if (this.hasActiveProgressTarget && this.hasTotalEdgesValue && Number(this.totalEdgesValue || 0) > 0) {
+      const totalEdges = Math.max(1, Number(this.totalEdgesValue || 0))
+      const completedEdges = Math.max(
+        0,
+        Math.min(Number(this.hasCompletedEdgesValue ? this.completedEdgesValue || 0 : 0), totalEdges)
+      )
+      const completedPercent = (completedEdges / totalEdges) * 100
+
+      let segmentFraction = 0
+      if (this.segmentTotalSeconds > 0) {
+        const progressed = Math.min(this.segmentTotalSeconds, this.segmentElapsedBase + elapsedDelta)
+        segmentFraction = Math.max(0, Math.min(1, progressed / this.segmentTotalSeconds))
+      } else if (this.hasActiveEdgeFractionValue) {
+        segmentFraction = Math.max(0, Math.min(1, Number(this.activeEdgeFractionValue || 0)))
+      }
+
+      const segmentPercent = Math.min(100, (segmentFraction / totalEdges) * 100)
+      const cappedSegmentPercent = Math.min(100 - completedPercent, segmentPercent)
+
+      this.activeProgressTarget.style.left = `${completedPercent.toFixed(1)}%`
+      this.activeProgressTarget.style.width = `${cappedSegmentPercent.toFixed(1)}%`
+    }
+
+    if (this.userExplorationId) {
+      this.checkForEncounter(totalElapsed)
     }
   }
 

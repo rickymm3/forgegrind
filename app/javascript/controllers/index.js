@@ -70,3 +70,6 @@ application.register("pet-hub", PetHubController)
 
 import SlotCountdownController from "./slot_countdown_controller"
 application.register("slot-countdown", SlotCountdownController)
+
+import PetDisplayController from "./pet_display_controller"
+application.register("pet-display", PetDisplayController)

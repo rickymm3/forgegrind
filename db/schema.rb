@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_02_190000) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_06_170500) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -370,6 +370,21 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_02_190000) do
     t.index ["user_id"], name: "index_user_items_on_user_id"
   end
 
+  create_table "user_notifications", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "category", null: false
+    t.string "title", null: false
+    t.text "body"
+    t.string "action_path"
+    t.jsonb "metadata", default: {}, null: false
+    t.datetime "read_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id", "category"], name: "index_user_notifications_on_user_id_and_category"
+    t.index ["user_id", "read_at"], name: "index_user_notifications_on_user_id_and_read_at"
+    t.index ["user_id"], name: "index_user_notifications_on_user_id"
+  end
+
   create_table "user_pet_abilities", force: :cascade do |t|
     t.bigint "user_pet_id", null: false
     t.bigint "ability_id", null: false
@@ -420,6 +435,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_02_190000) do
     t.string "retired_reason"
     t.bigint "predecessor_user_pet_id"
     t.bigint "successor_user_pet_id"
+    t.jsonb "care_trackers", default: {}, null: false
     t.index ["egg_id"], name: "index_user_pets_on_egg_id"
     t.index ["held_user_item_id"], name: "index_user_pets_on_held_user_item_id"
     t.index ["pet_id"], name: "index_user_pets_on_pet_id"
@@ -551,6 +567,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_02_190000) do
   add_foreign_key "user_explorations", "worlds"
   add_foreign_key "user_items", "items"
   add_foreign_key "user_items", "users"
+  add_foreign_key "user_notifications", "users"
   add_foreign_key "user_pet_abilities", "abilities"
   add_foreign_key "user_pet_abilities", "user_pets"
   add_foreign_key "user_pets", "eggs"

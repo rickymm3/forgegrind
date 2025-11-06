@@ -1,0 +1,3 @@
+<%= turbo_stream.append "toast-container" do %>
+  <%= render "shared/toast", message: "You need more resources for a #{@egg.name}." %>
+<% end %>

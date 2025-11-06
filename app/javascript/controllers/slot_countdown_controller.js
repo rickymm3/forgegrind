@@ -5,11 +5,24 @@ export default class extends Controller {
   static targets = ["output"]
   static values = {
     seconds: Number,
-    refreshUrl: String
+    refreshUrl: String,
+    endAt: String
   }
 
   connect() {
-    this.remaining = Math.max(0, Number(this.secondsValue || 0))
+    const now = Date.now()
+    const provided = Number(this.secondsValue || 0)
+    const endAtMs = this.hasEndAtValue ? Date.parse(this.endAtValue) : NaN
+
+    if (Number.isFinite(endAtMs)) {
+      this.endTime = endAtMs
+      const derivedRemaining = Math.max(0, Math.ceil((endAtMs - now) / 1000))
+      this.remaining = provided > 0 ? provided : derivedRemaining
+    } else {
+      this.remaining = Math.max(0, provided)
+      this.endTime = now + this.remaining * 1000
+    }
+
     this.outputElement = this.hasOutputTarget ? this.outputTarget : this.element
 
     if (this.remaining <= 0) {
@@ -17,7 +30,6 @@ export default class extends Controller {
       return
     }
 
-    this.endTime = Date.now() + this.remaining * 1000
     this.updateOutput()
     this.timer = setInterval(() => this.tick(), 1000)
   }

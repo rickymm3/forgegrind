@@ -1,0 +1,39 @@
+<% freshly_read_ids ||= [] %>
+
+<div id="notifications-list" class="space-y-3">
+  <% if notifications.blank? %>
+    <div class="rounded-2xl border border-slate-800/60 bg-slate-900/40 px-4 py-6 text-center text-sm text-slate-400">
+      No notifications yet. Check back after your next expedition.
+    </div>
+  <% else %>
+    <ul class="space-y-3">
+      <% notifications.each do |notification| %>
+        <% just_read = freshly_read_ids.include?(notification.id) %>
+        <li class="rounded-2xl border border-slate-800/60 bg-slate-900/50 p-4 shadow-inner shadow-slate-900/20">
+          <div class="flex flex-col gap-2">
+            <div class="flex items-start justify-between gap-3">
+              <div class="flex flex-col">
+                <span class="text-sm font-semibold text-white"><%= notification.title %></span>
+                <% if notification.body.present? %>
+                  <p class="mt-1 text-sm text-slate-300"><%= notification.body %></p>
+                <% end %>
+              </div>
+              <% if just_read %>
+                <span class="inline-flex items-center rounded-full bg-indigo-500/20 px-2 py-1 text-[10px] font-semibold uppercase text-indigo-200">New</span>
+              <% end %>
+            </div>
+            <div class="flex items-center justify-between text-xs text-slate-500">
+              <span><%= time_ago_in_words(notification.created_at) %> ago</span>
+              <% if notification.action_path.present? %>
+                <%= link_to "View",
+                            notification.action_path,
+                            class: "inline-flex items-center gap-1 rounded-full bg-indigo-600/80 px-3 py-1 text-[11px] font-semibold text-white transition hover:bg-indigo-500",
+                            data: { turbo: "true" } %>
+              <% end %>
+            </div>
+          </div>
+        </li>
+      <% end %>
+    </ul>
+  <% end %>
+</div>

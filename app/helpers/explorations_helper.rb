@@ -26,6 +26,43 @@ module ExplorationsHelper
     end
   end
 
+  def expedition_segment_status(user_exploration, reference_time: Time.current)
+    return nil unless user_exploration&.using_segments?
+
+    total_segments = user_exploration.segment_progress_entries.size
+    clock = user_exploration.active_segment_clock(reference_time: reference_time)
+
+    if clock
+      entry = clock[:entry] || {}
+      index = entry[:index].to_i
+      label = entry[:label].presence || "Checkpoint #{index + 1}"
+
+      {
+        state: :active,
+        index: index,
+        total: total_segments,
+        label: label,
+        remaining_seconds: clock[:remaining_seconds].to_i,
+        duration_seconds: clock[:duration_seconds].to_i,
+        end_time: clock[:end_time],
+        allow_encounters: entry[:allow_encounters],
+        encounters_enabled: entry[:encounters_enabled]
+      }
+    elsif (checkpoint_entry = user_exploration.checkpoint_segment_entry).present?
+      index = checkpoint_entry[:index].to_i
+      label = checkpoint_entry[:label].presence || "Checkpoint #{index + 1}"
+
+      {
+        state: :checkpoint,
+        index: index,
+        total: total_segments,
+        label: label
+      }
+    else
+      nil
+    end
+  end
+
   def checkpoint_encounter_result(user_exploration)
     return nil unless user_exploration
 
@@ -61,14 +98,17 @@ module ExplorationsHelper
     outcome_label = outcome_key.present? ? outcome_key.to_s.tr('_', ' ').humanize : nil
 
     rewards = entry[:rewards] || chosen_option&.[](:rewards)
-    reward_summary = case rewards
-                     when Hash
-                       rewards.map { |k, v| "#{k.to_s.humanize}: #{v}" }.join(', ')
-                     when Array
-                       rewards.map(&:to_s).join(', ')
-                     else
-                       rewards.to_s if rewards.present?
-                     end
+    reward_summary = entry[:reward_summary].presence
+    if reward_summary.blank?
+      reward_summary = case rewards
+                       when Hash
+                         rewards.map { |k, v| "#{k.to_s.humanize}: #{v}" }.join(', ')
+                       when Array
+                         rewards.map(&:to_s).join(', ')
+                       else
+                         rewards.to_s if rewards.present?
+                       end
+    end
 
     {
       title: encounter&.[](:title).presence || "Encounter Resolved",

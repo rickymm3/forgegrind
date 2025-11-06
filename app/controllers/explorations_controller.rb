@@ -1,5 +1,7 @@
 class ExplorationsController < ApplicationController
   RewardItem = Struct.new(:item, :quantity, keyword_init: true)
+
+  before_action :authenticate_user!
   before_action :set_generated_exploration, only: %i[preview start reroll]
 
   def index
@@ -22,6 +24,33 @@ class ExplorationsController < ApplicationController
     end
   end
 
+  def zone
+    load_exploration_sets
+    assign_rescout_state
+
+    requested_id = params[:id] || params[:generated_id] || params[:generated_exploration_id]
+    @selected_generated = if requested_id.present?
+                            @generated_explorations.find do |generated|
+                              generated.id == requested_id.to_i
+                            end
+                          end
+    @selected_generated ||= find_selected_generated(@generated_explorations)
+
+    unless @selected_generated
+      redirect_to explorations_path, alert: "No expedition available." and return
+    end
+
+    context = detail_locals(@selected_generated)
+    @user_exploration = context[:user_exploration]
+    @requirement_progress = context[:requirement_progress]
+    @requirement_groups = context[:requirement_groups]
+    @available_pets = load_available_pets({})
+    @selected_pet_ids = []
+    @filters = {}
+    @slot_entries = build_slot_entries(@selected_generated)
+    @zone_state = inferred_zone_state(@user_exploration)
+  end
+
   def show
     load_exploration_sets
     assign_rescout_state
@@ -30,6 +59,8 @@ class ExplorationsController < ApplicationController
     if @generated_exploration.nil?
       redirect_to explorations_path, alert: "Expedition not found." and return
     end
+
+    redirect_to zone_explorations_path(id: @generated_exploration.id) and return
 
     context = detail_locals(@generated_exploration)
     @user_exploration = context[:user_exploration]
@@ -91,7 +122,7 @@ class ExplorationsController < ApplicationController
         render turbo_stream: streams
       end
       format.html do
-        redirect_to(new_generated ? exploration_path(new_generated) : explorations_path, notice: "Expedition rerolled.")
+        redirect_to(new_generated ? zone_explorations_path(id: new_generated.id) : explorations_path, notice: "Expedition rerolled.")
       end
     end
   end
@@ -132,6 +163,8 @@ class ExplorationsController < ApplicationController
     @available_pets = load_available_pets(@filters)
     @selected_pets = current_user.user_pets.active.includes(:learned_abilities, pet: :pet_types).where(id: @selected_pet_ids)
     @progress = @generated_exploration.requirements_progress_for(@selected_pets)
+    show_filters = params[:show_filters].nil? ? true : ActiveModel::Type::Boolean.new.cast(params[:show_filters])
+    compact_layout = ActiveModel::Type::Boolean.new.cast(params[:compact_layout])
 
     respond_to do |format|
       format.turbo_stream do
@@ -149,11 +182,13 @@ class ExplorationsController < ApplicationController
             selected_pet_ids: @selected_pet_ids,
             requirement_progress: @progress,
             requirement_groups: grouped,
-            filters: @filters
+            filters: @filters,
+            show_filters: show_filters,
+            compact_layout: compact_layout
           }
         )
       end
-      format.html { redirect_to exploration_path(@generated_exploration) }
+      format.html { redirect_to zone_explorations_path(id: @generated_exploration.id) }
     end
   end
 
@@ -161,7 +196,7 @@ class ExplorationsController < ApplicationController
     selected_ids = parse_selected_ids(params[:user_pet_ids])
     if selected_ids.empty?
       flash[:alert] = "Please select at least one pet to explore."
-      redirect_to exploration_path(@generated_exploration) and return
+      redirect_to zone_explorations_path(id: @generated_exploration.id) and return
     end
 
     if selected_ids.size > 3
@@ -193,40 +228,57 @@ class ExplorationsController < ApplicationController
       head :unprocessable_entity and return
     end
 
-    @user_exploration = current_user.user_explorations.create!(
-      world: @generated_exploration.world,
-      generated_exploration: @generated_exploration,
-      started_at: Time.current,
-      primary_user_pet: primary_pet
-    )
-    @user_exploration.user_pets << @selected_pets
+    begin
+      ActiveRecord::Base.transaction do
+        @selected_pets.each do |pet|
+          pet.lock!
+          pet.spend_energy!(UserPet::EXPLORATION_ENERGY_COST, allow_debt: true)
+          pet.add_experience_points(UserPet::EXPLORATION_EXP_REWARD)
+          pet.save!(validate: false)
+          while pet.can_level_up?
+            pet.level_up!
+          end
+        end
 
-    progress = @generated_exploration.requirements_progress_for(@selected_pets)
-    fulfilled_requirement_ids = progress.select { |entry| entry[:fulfilled] }.map { |entry| entry[:id] }
+        @user_exploration = current_user.user_explorations.create!(
+          world: @generated_exploration.world,
+          generated_exploration: @generated_exploration,
+          started_at: Time.current,
+          primary_user_pet: primary_pet
+        )
+        @user_exploration.user_pets << @selected_pets
 
-    snapshot = build_party_snapshot(@selected_pets, ordered_ids, primary_pet, requirements: progress)
-    ability_refs = snapshot[:members].map { |entry| entry[:special_ability_reference] }.compact
-    ability_tags = snapshot[:members].flat_map { |entry| entry[:special_ability_tags] }.compact.uniq
+        progress = @generated_exploration.requirements_progress_for(@selected_pets)
+        fulfilled_requirement_ids = progress.select { |entry| entry[:fulfilled] }.map { |entry| entry[:id] }
 
-    schedule = ExplorationEncounterCatalog.schedule_for(
-      world: @generated_exploration.world,
-      duration: @user_exploration.duration_seconds,
-      ability_refs: ability_refs,
-      ability_tags: ability_tags,
-      requirements: progress,
-      fulfilled_ids: fulfilled_requirement_ids,
-      seed: @user_exploration.id,
-      segments: @user_exploration.segment_definitions
-    )
+        snapshot = build_party_snapshot(@selected_pets, ordered_ids, primary_pet, requirements: progress)
+        ability_refs = snapshot[:members].map { |entry| entry[:special_ability_reference] }.compact
+        ability_tags = snapshot[:members].flat_map { |entry| entry[:special_ability_tags] }.compact.uniq
 
-    @user_exploration.update!(
-      party_snapshot: snapshot,
-      encounter_schedule: schedule,
-      encounters_seeded_at: Time.current
-    )
-    initialize_segment_progress!(@user_exploration)
-    @user_exploration.reload
-    @generated_exploration.mark_consumed!
+        schedule = ExplorationEncounterCatalog.schedule_for(
+          world: @generated_exploration.world,
+          duration: @user_exploration.duration_seconds,
+          ability_refs: ability_refs,
+          ability_tags: ability_tags,
+          requirements: progress,
+          fulfilled_ids: fulfilled_requirement_ids,
+          seed: @user_exploration.id,
+          segments: @user_exploration.segment_definitions
+        )
+
+        @user_exploration.update!(
+          party_snapshot: snapshot,
+          encounter_schedule: schedule,
+          encounters_seeded_at: Time.current
+        )
+        initialize_segment_progress!(@user_exploration)
+        @user_exploration.reload
+        @generated_exploration.mark_consumed!
+      end
+    rescue UserPet::PetSleepingError, UserPet::NotEnoughEnergyError => e
+      flash[:alert] = e.message
+      redirect_to zone_explorations_path(id: @generated_exploration.id) and return
+    end
 
     load_exploration_sets
     assign_rescout_state
@@ -236,7 +288,7 @@ class ExplorationsController < ApplicationController
       format.turbo_stream do
         render "explorations/start"
       end
-      format.html { redirect_to exploration_path(@generated_exploration) }
+      format.html { redirect_to zone_explorations_path(id: @generated_exploration.id) }
     end
   end
 
@@ -271,36 +323,21 @@ class ExplorationsController < ApplicationController
       memo[slot_index] = true if slot_index
     end
 
-    generator = ExplorationGenerator.new(current_user)
     slot_range = 1..max_slots
-    slots_to_refresh = []
 
     slot_range.each do |slot|
       generated = existing_by_slot[slot]
       next unless generated&.slot_state_sym == :cooldown
       next if generated.cooldown_active?
 
-      slots_to_refresh << slot
       generated.destroy
       existing_by_slot.delete(slot)
     end
 
     available_generated.reject! { |gen| gen.slot_state_sym == :cooldown && !gen.cooldown_active? }
 
-    slot_range.each do |slot|
-      next if active_by_slot[slot]
-
-      generated = existing_by_slot[slot]
-      next if generated.present?
-
-      slots_to_refresh << slot
-    end
-
-    slots_to_refresh.uniq.each do |slot|
-      generator.generate!(slot_index: slot, force: true)
-    end
-
-    if slots_to_refresh.any?
+    if current_user.last_scouted_at.nil? && available_generated.empty?
+      ExplorationGenerator.new(current_user).generate!(force: true)
       available_generated = current_user.generated_explorations
                                         .available
                                         .includes(world: :pet_types)
@@ -308,6 +345,7 @@ class ExplorationsController < ApplicationController
                                         .order(:slot_index, :created_at)
                                         .to_a
       available_generated.each(&:clear_reroll_cooldown_if_elapsed!)
+      existing_by_slot = available_generated.index_by(&:slot_index)
     end
 
     @generated_explorations = available_generated.dup
@@ -328,6 +366,18 @@ class ExplorationsController < ApplicationController
         progress: progress,
         grouped: progress.group_by { |entry| entry[:source] || 'base' }
       }
+    end
+  end
+
+  def inferred_zone_state(user_exploration)
+    return :selection unless user_exploration
+
+    if user_exploration.active_encounter? || user_exploration.checkpoint_segment_entry.present?
+      :checkpoint
+    elsif user_exploration.complete?
+      :ready
+    else
+      :active
     end
   end
 
@@ -495,7 +545,7 @@ class ExplorationsController < ApplicationController
 
     started_at = user_exploration.started_at || Time.current
     progress_entries = definitions.each_with_index.map do |definition, index|
-      {
+      entry = {
         index: index,
         key: definition[:key],
         label: definition[:label],
@@ -505,6 +555,28 @@ class ExplorationsController < ApplicationController
         reached_at: index.zero? ? started_at : nil,
         completed_at: nil
       }
+      entry[:allow_encounters] = definition.key?(:allow_encounters) ? definition[:allow_encounters] : true
+      entry[:encounters_enabled] = definition.key?(:encounters_enabled) ? definition[:encounters_enabled] : true
+      entry[:source] = definition[:source] if definition.key?(:source)
+
+      if defined?(ExplorationGenerator::SEGMENT_OPTIONAL_KEYS)
+        ExplorationGenerator::SEGMENT_OPTIONAL_KEYS.each do |key|
+          next if %i[allow_encounters encounters_enabled].include?(key)
+
+          value = definition[key]
+          next if value.nil?
+
+          entry[key] =
+            case key
+            when :encounter_tags, :encounter_slugs, :requirement_tags
+              Array(value).map(&:to_s).reject(&:blank?)
+            else
+              value
+            end
+        end
+      end
+
+      entry
     end
 
     user_exploration.update!(

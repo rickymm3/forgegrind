@@ -15,6 +15,7 @@ class UserExplorationsController < ApplicationController
 
     @user_pets = @user_exploration.user_pets.to_a
     apply_experience_and_needs!(@user_pets, @user_exploration.duration_seconds, outcome.need_penalty_multiplier)
+    @user_pets.each { |pet| pet.ensure_sleep_state! }
 
     stat = current_user.user_stat || current_user.create_user_stat!(User::STAT_DEFAULTS.merge(energy_updated_at: Time.current))
     stat.increment!(:trophies, @trophy_reward)
@@ -63,10 +64,12 @@ class UserExplorationsController < ApplicationController
     end
 
     respond_to do |format|
-      format.turbo_stream { render turbo_stream: zone_card_stream_for(@user_exploration, state: :checkpoint) }
+      format.turbo_stream do
+        render turbo_stream: [zone_card_stream_for(@user_exploration, state: :checkpoint), nav_tabbar_stream]
+      end
       format.html do
         destination = @user_exploration.generated_exploration || @user_exploration.world
-        redirect_to(destination.is_a?(GeneratedExploration) ? exploration_path(destination) : explorations_path)
+        redirect_to(destination.is_a?(GeneratedExploration) ? zone_explorations_path(id: destination.id) : explorations_path)
       end
     end
   end
@@ -84,14 +87,14 @@ class UserExplorationsController < ApplicationController
     respond_to do |format|
       format.turbo_stream do
         if has_next_segment
-          render turbo_stream: zone_card_stream_for(@user_exploration, state: :active)
+          render turbo_stream: [zone_card_stream_for(@user_exploration, state: :active), nav_tabbar_stream]
         else
           render_ready_streams(@user_exploration)
         end
       end
       format.html do
         destination = @user_exploration.generated_exploration || @user_exploration.world
-        redirect_to(destination.is_a?(GeneratedExploration) ? exploration_path(destination) : explorations_path,
+        redirect_to(destination.is_a?(GeneratedExploration) ? zone_explorations_path(id: destination.id) : explorations_path,
                     notice: has_next_segment ? "Exploration resumed." : "Expedition ready to complete.")
       end
     end
@@ -114,11 +117,11 @@ class UserExplorationsController < ApplicationController
 
     respond_to do |format|
       format.turbo_stream do
-        render turbo_stream: zone_card_stream_for(@user_exploration, state: :checkpoint)
+        render turbo_stream: [zone_card_stream_for(@user_exploration, state: :checkpoint), nav_tabbar_stream]
       end
       format.html do
         destination = @user_exploration.generated_exploration || @user_exploration.world
-        redirect_to(destination.is_a?(GeneratedExploration) ? exploration_path(destination) : explorations_path,
+        redirect_to(destination.is_a?(GeneratedExploration) ? zone_explorations_path(id: destination.id) : explorations_path,
                     notice: "Encounter triggered.")
       end
     end
@@ -152,7 +155,7 @@ class UserExplorationsController < ApplicationController
             outcome: outcome
           )
           @user_exploration.reload
-          render turbo_stream: zone_card_stream_for(@user_exploration, state: :checkpoint)
+          render turbo_stream: [zone_card_stream_for(@user_exploration, state: :checkpoint), nav_tabbar_stream]
         else
           @user_exploration.complete_active_encounter!(
             choice_key: choice_key,
@@ -160,7 +163,7 @@ class UserExplorationsController < ApplicationController
             status: completion_status
           )
           @user_exploration.reload
-          render turbo_stream: zone_card_stream_for(@user_exploration, state: :checkpoint)
+          render turbo_stream: [zone_card_stream_for(@user_exploration, state: :checkpoint), nav_tabbar_stream]
         end
       end
       format.html do
@@ -185,7 +188,7 @@ class UserExplorationsController < ApplicationController
         end
         @user_exploration.reload
         destination = @user_exploration.generated_exploration || @user_exploration.world
-        redirect_to(destination.is_a?(GeneratedExploration) ? exploration_path(destination) : explorations_path,
+        redirect_to(destination.is_a?(GeneratedExploration) ? zone_explorations_path(id: destination.id) : explorations_path,
                     notice: notice)
       end
     end
@@ -284,6 +287,7 @@ class UserExplorationsController < ApplicationController
       )
     end
 
+    streams << nav_tabbar_stream
     render turbo_stream: streams
   end
 
@@ -327,7 +331,9 @@ class UserExplorationsController < ApplicationController
         requirement_groups: grouped,
         available_pets: [],
         selected_pet_ids: [],
-        filters: {}
+        filters: {},
+        show_filters: false,
+        compact_layout: true
       }
     )
   end
@@ -350,34 +356,21 @@ class UserExplorationsController < ApplicationController
       memo[slot_index] = true if slot_index
     end
 
-    generator = ExplorationGenerator.new(current_user)
     slot_range = 1..max_slots
-    slots_to_refresh = []
 
     slot_range.each do |slot|
       generated = existing_by_slot[slot]
       next unless generated&.slot_state_sym == :cooldown
       next if generated.cooldown_active?
 
-      slots_to_refresh << slot
       generated.destroy
       existing_by_slot.delete(slot)
     end
 
     available_generated.reject! { |gen| gen.slot_state_sym == :cooldown && !gen.cooldown_active? }
 
-    slot_range.each do |slot|
-      next if active_by_slot[slot]
-      next if existing_by_slot[slot].present?
-
-      slots_to_refresh << slot
-    end
-
-    slots_to_refresh.uniq.each do |slot|
-      generator.generate!(slot_index: slot, force: true)
-    end
-
-    if slots_to_refresh.any?
+    if current_user.last_scouted_at.nil? && available_generated.empty?
+      ExplorationGenerator.new(current_user).generate!(force: true)
       available_generated = current_user.generated_explorations
                                         .available
                                         .includes(world: :pet_types)
@@ -385,6 +378,7 @@ class UserExplorationsController < ApplicationController
                                         .order(:slot_index, :created_at)
                                         .to_a
       available_generated.each(&:clear_reroll_cooldown_if_elapsed!)
+      existing_by_slot = available_generated.index_by(&:slot_index)
     end
 
     @generated_explorations = available_generated.dup

@@ -11,7 +11,9 @@
            requirement_groups: active_progress.group_by { |req| req[:source] || 'base' },
            available_pets: [],
            selected_pet_ids: [],
-           filters: {}
+           filters: {},
+           show_filters: false,
+           compact_layout: true
 
 = turbo_stream.replace "worlds-list" do
   = render "explorations/worlds_list",

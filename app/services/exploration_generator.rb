@@ -1,6 +1,18 @@
 class ExplorationGenerator
   DEFAULT_COUNT = 3
   RESCOUT_COOLDOWN = 10.minutes
+  SEGMENT_OPTIONAL_KEYS = %i[
+    allow_encounters
+    encounters_enabled
+    encounter_tags
+    encounter_slugs
+    encounter_probability_multiplier
+    encounter_weight_multiplier
+    requirement_tags
+    flavor
+    description
+    narrative
+  ].freeze
 
   class CooldownNotElapsedError < StandardError
     attr_reader :remaining_seconds
@@ -123,7 +135,8 @@ class ExplorationGenerator
       end
     end
 
-    [(duration * multiplier).to_i + additive, 300].max
+    total_duration = (duration * multiplier).to_i + additive
+    [total_duration, minimum_exploration_duration].max
   end
 
   def build_name(base_config, prefix_config, suffix_config)
@@ -214,13 +227,32 @@ class ExplorationGenerator
 
       cumulative += duration
 
-      segment.merge(
+      payload = {
         key: segment_key.to_s,
         label: segment_label,
         index: index,
         duration_seconds: duration,
         checkpoint_offset_seconds: cumulative
-      ).with_indifferent_access
+      }
+
+      SEGMENT_OPTIONAL_KEYS.each do |key|
+        value = segment[key]
+        next if value.nil?
+
+        payload[key] =
+          case key
+          when :encounter_tags, :encounter_slugs, :requirement_tags
+            Array(value).map(&:to_s).reject(&:blank?)
+          else
+            value
+          end
+      end
+
+      payload[:allow_encounters] = true unless payload.key?(:allow_encounters)
+      payload[:encounters_enabled] = true unless payload.key?(:encounters_enabled)
+      payload[:source] = segment[:source] if segment[:source]
+
+      payload.with_indifferent_access
     end
   end
 
@@ -391,6 +423,14 @@ class ExplorationGenerator
 
   def minutes_to_seconds(value)
     (value.to_f * 60).round
+  end
+
+  def minimum_exploration_duration
+    if Rails.application.config.respond_to?(:exploration_min_duration_seconds)
+      Rails.application.config.exploration_min_duration_seconds.to_i
+    else
+      300
+    end
   end
 
   def ensure_cooldown!(force)
