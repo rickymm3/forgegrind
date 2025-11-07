@@ -7,12 +7,13 @@ lupin:
       priority: 30
       guard:
         all:
-          - type: flag_true
-            key: perky
-          - type: flag_true
-            key: happy
-          - type: flag_true
+          - type: badge_unlocked
             key: well_fed
+          - type: badge_unlocked
+            key: spirited
+          - type: tracker_at_least
+            key: hunger_score
+            value: 85
       notes: "Playful, well-cared-for Lupin blossoms into Fenra once it stays upbeat and well fed."
     blazewulf:
       child: Blazewulf
@@ -20,12 +21,14 @@ lupin:
       priority: 25
       guard:
         all:
-          - type: flag_true
-            key: well_fed
-          - type: flag_true
-            key: starving_history
-          - type: flag_true
-            key: ticked_off
+          - type: badge_unlocked
+            key: starved
+          - type: tracker_at_least
+            key: hunger_score
+            value: 60
+          - type: tracker_at_most
+            key: mood_score
+            value: 45
       notes: "A Lupin that survived starvation and kept its fiery edge becomes Blazewulf."
     duskhound:
       child: Duskhound
@@ -36,10 +39,10 @@ lupin:
           - type: flag_true
             key: forest_explorer
         any:
-          - type: flag_true
-            key: happy
-          - type: flag_true
-            key: ticked_off
+          - type: badge_unlocked
+            key: spirited
+          - type: badge_unlocked
+            key: diligent_feeder
       notes: "Seasoned wanderers who temper their mood in the wilds evolve into Duskhound."
     galeclaw_default:
       child: Galeclaw

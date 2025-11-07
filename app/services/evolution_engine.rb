@@ -116,6 +116,10 @@ class EvolutionEngine
       tracker_at_least?(key, value)
     when "tracker_at_most"
       tracker_at_most?(key, value)
+    when "badge_unlocked"
+      badge_unlocked?(key || value)
+    when "badge_locked"
+      badge_locked?(key || value)
     else
       Rails.logger.info("[EvolutionEngine] Unknown guard type: #{type.inspect}")
       false
@@ -171,6 +175,16 @@ class EvolutionEngine
   def tracker_at_most?(tracker_key, threshold)
     return false unless tracker_key && threshold
     user_pet.care_tracker_value(tracker_key) <= threshold.to_i
+  end
+
+  def badge_unlocked?(badge_key)
+    return false unless badge_key
+    user_pet.badges.include?(badge_key.to_s)
+  end
+
+  def badge_locked?(badge_key)
+    return false unless badge_key
+    !user_pet.badges.include?(badge_key.to_s)
   end
 
   def item_held?(item_identifier)

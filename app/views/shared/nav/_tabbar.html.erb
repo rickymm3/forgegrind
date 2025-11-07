@@ -110,14 +110,37 @@
                 <span class="text-xs uppercase text-slate-400">View</span>
               <% end %>
             </li>
-            <li class="flex items-center justify-between rounded-2xl bg-slate-800/70 px-4 py-3">
-              <span>Hero Profile</span>
-              <span class="text-xs uppercase text-slate-400">Hidden</span>
-            </li>
-            <li class="flex items-center justify-between rounded-2xl bg-slate-800/70 px-4 py-3">
-              <span>Battle Queue</span>
-              <span class="text-xs uppercase text-slate-400">Hidden</span>
-            </li>
+            <% if user_signed_in? %>
+              <li>
+                <%= link_to user_profile_path,
+                            class: "flex items-center justify-between rounded-2xl bg-slate-800/70 px-4 py-3 text-slate-100 transition hover:bg-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950" do %>
+                  <span>Your Profile</span>
+                  <span class="text-xs uppercase text-slate-400">Open</span>
+                <% end %>
+              </li>
+              <li>
+                <%= button_to "Log Out",
+                              destroy_user_session_path,
+                              method: :delete,
+                              data: { turbo_confirm: "Sign out of ForgeGrind?" },
+                              class: "w-full rounded-2xl bg-rose-600/80 px-4 py-3 text-center text-sm font-semibold text-white transition hover:bg-rose-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950" %>
+              </li>
+            <% else %>
+              <li>
+                <%= link_to new_user_registration_path,
+                            class: "flex items-center justify-between rounded-2xl bg-slate-800/70 px-4 py-3 text-slate-100 transition hover:bg-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950" do %>
+                  <span>Create Account</span>
+                  <span class="text-xs uppercase text-slate-400">Sign up</span>
+                <% end %>
+              </li>
+              <li>
+                <%= link_to new_user_session_path,
+                            class: "flex items-center justify-between rounded-2xl bg-slate-800/70 px-4 py-3 text-slate-100 transition hover:bg-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950" do %>
+                  <span>Log In</span>
+                  <span class="text-xs uppercase text-slate-400">Return</span>
+                <% end %>
+              </li>
+            <% end %>
           </ul>
         </div>
       </div>

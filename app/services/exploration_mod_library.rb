@@ -30,6 +30,20 @@ module ExplorationModLibrary
       weighted_sample(suffixes)
     end
 
+    def rarity_palette
+      config.fetch(:rarity_palette, {}).with_indifferent_access
+    end
+
+    def combination(prefix_key, base_key, suffix_key = nil)
+      combos = config.fetch(:combinations, {}).with_indifferent_access
+      search_keys = combination_keys(prefix_key, base_key, suffix_key)
+      search_keys.each do |key|
+        next if key.blank?
+        return [key, combos[key]] if combos[key]
+      end
+      [nil, nil]
+    end
+
     def reset!
       @config = nil
     end
@@ -51,7 +65,8 @@ module ExplorationModLibrary
 
       rows = entries.map do |key, value|
         weight = value[:weight].presence || value['weight'].presence || 1
-        [key, value.with_indifferent_access, weight.to_f]
+        config_value = value.respond_to?(:with_indifferent_access) ? value.with_indifferent_access : value
+        [key, config_value, weight.to_f]
       end
 
       total = rows.sum { |(_, _, weight)| weight }
@@ -65,6 +80,30 @@ module ExplorationModLibrary
 
       last = rows.last
       [last[0].to_s, last[1]]
+    end
+
+    def combination_keys(prefix_key, base_key, suffix_key)
+      prefix = sanitize_key(prefix_key)
+      base   = sanitize_key(base_key)
+      suffix = sanitize_key(suffix_key)
+
+      combos = []
+      combos << [prefix, base, suffix]
+      combos << [prefix, base]
+      combos << [base, suffix]
+      combos << [base]
+
+      combos.map do |parts|
+        filtered = parts.compact
+        filtered.join('+')
+      end.uniq
+    end
+
+    def sanitize_key(key)
+      return nil if key.blank?
+      value = key.to_s
+      return nil if value == "none"
+      value
     end
   end
 end

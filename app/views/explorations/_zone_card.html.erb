@@ -23,6 +23,8 @@
 <% duration_label = [] %>
 <% duration_label << "#{duration_minutes}m" unless duration_minutes.zero? %>
 <% duration_label << "#{duration_remainder}s" %>
+<% rarity_label = generated.metadata&.dig("rarity_label") %>
+<% rarity_color = generated.metadata&.dig("rarity_color") %>
 <% all_requirements_met = requirement_progress.present? && requirement_progress.all? { |entry| entry[:fulfilled] } %>
 <% detail_dom_id = dom_id(generated, :detail) %>
 <% show_filters = local_assigns.fetch(:show_filters, true) %>
@@ -74,6 +76,15 @@
             <%= generated.world.name %>
           </span>
         </p>
+        <% if rarity_label %>
+          <p class="mt-2 inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-semibold uppercase"
+             style="<%= rarity_color ? "border-color: #{rarity_color}55; background-color: #{rarity_color}1a; color: #{rarity_color};" : '' %>">
+            <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8">
+              <path d="M12 3l2.5 6.5L21 10l-5 4.5L17.5 21 12 17.5 6.5 21 8 14.5 3 10l6.5-.5L12 3z" />
+            </svg>
+            <%= rarity_label %>
+          </p>
+        <% end %>
       </div>
     </div>
   <% end %>
@@ -99,9 +110,20 @@
             </span>
           </p>
         </div>
-        <span class="inline-flex items-center gap-1 rounded-full bg-indigo-500/10 px-3 py-1 text-[10px] font-semibold uppercase text-indigo-600">
-          Route Active
-        </span>
+        <div class="flex flex-col items-end gap-2">
+          <span class="inline-flex items-center gap-1 rounded-full bg-indigo-500/10 px-3 py-1 text-[10px] font-semibold uppercase text-indigo-600">
+            Route Active
+          </span>
+          <% if rarity_label %>
+            <span class="inline-flex items-center gap-1 rounded-full border px-3 py-1 text-[10px] font-semibold uppercase"
+                  style="<%= rarity_color ? "border-color: #{rarity_color}55; background-color: #{rarity_color}1a; color: #{rarity_color};" : '' %>">
+              <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6">
+                <path d="M12 3l2.5 6.5L21 10l-5 4.5L17.5 21 12 17.5 6.5 21 8 14.5 3 10l6.5-.5L12 3z" />
+              </svg>
+              <%= rarity_label %>
+            </span>
+          <% end %>
+        </div>
       </div>
     <% end %>
     <% if requirement_groups.any? %>

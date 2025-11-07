@@ -367,7 +367,7 @@ class UserPet < ApplicationRecord
   end
 
   def care_trackers
-    super || {}
+    self[:care_trackers] || {}
   end
 
   def care_tracker_value(key)

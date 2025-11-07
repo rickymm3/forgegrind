@@ -4,6 +4,12 @@
     Welcome to the idle game where energy, pets, and rebirths shape your grind.
     Summon powerful heroes. Defeat bosses. Rebirth endlessly.
   - unless user_signed_in?
+    %div.space-y-3.max-w-xl.mx-auto.text-slate-300
+      %p.text-base
+        Sign up to start your first expedition, or log in to continue your progress.
     = link_to "Get Started", new_user_registration_path, class: "inline-block bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
+    %p.mt-2.text-sm.text-gray-500
+      Already have an account?
+      = link_to "Log in here", new_user_session_path, class: "text-indigo-500 hover:text-indigo-300 underline"
   - if user_signed_in?
     = link_to "Go to Profile", user_profile_path, class: "inline-block bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700"

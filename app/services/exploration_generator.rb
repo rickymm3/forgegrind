@@ -1,18 +1,14 @@
 class ExplorationGenerator
   DEFAULT_COUNT = 3
   RESCOUT_COOLDOWN = 10.minutes
-  SEGMENT_OPTIONAL_KEYS = %i[
-    allow_encounters
-    encounters_enabled
-    encounter_tags
-    encounter_slugs
-    encounter_probability_multiplier
-    encounter_weight_multiplier
-    requirement_tags
-    flavor
-    description
-    narrative
-  ].freeze
+  RARITY_ORDER = {
+    "common" => 1,
+    "uncommon" => 2,
+    "rare" => 3,
+    "epic" => 4,
+    "legendary" => 5,
+    "mythic" => 6
+  }.freeze
 
   class CooldownNotElapsedError < StandardError
     attr_reader :remaining_seconds
@@ -72,25 +68,45 @@ class ExplorationGenerator
 
   def create_generated_exploration(slot_index:)
     base_key, base_config = ExplorationModLibrary.sample_base
-    prefix_key, prefix_config = ExplorationModLibrary.sample_prefix
-    suffix_key, suffix_config = ExplorationModLibrary.sample_suffix
+    raw_prefix_key, prefix_config = ExplorationModLibrary.sample_prefix
+    raw_suffix_key, suffix_config = ExplorationModLibrary.sample_suffix
+
+    prefix_key = normalize_component_key(raw_prefix_key)
+    suffix_key = normalize_component_key(raw_suffix_key)
+
+    combination_key, combination_config = ExplorationModLibrary.combination(prefix_key || raw_prefix_key, base_key, suffix_key || raw_suffix_key)
+    combination_config = combination_config.with_indifferent_access if combination_config.present?
 
     world = resolve_world(base_config)
-    duration = compute_duration(base_config, prefix_config, suffix_config)
-    name = build_name(base_config, prefix_config, suffix_config)
+    duration = compute_duration(base_config, prefix_config, suffix_config, combination_config)
+    name = build_name(base_config, prefix_config, suffix_config, combination_config)
     requirements = merge_requirements(
       [base_config, 'base'],
       [prefix_config, 'prefix'],
-      [suffix_config, 'suffix']
+      [suffix_config, 'suffix'],
+      [combination_config, 'combination']
     )
     reward_config = merge_rewards(
       [base_config, 'base'],
       [prefix_config, 'prefix'],
-      [suffix_config, 'suffix']
+      [suffix_config, 'suffix'],
+      [combination_config, 'combination']
     )
-    segment_definitions = build_segment_definitions(duration, base_config, prefix_config, suffix_config)
+    segment_definitions = build_segment_definitions(duration, base_config, prefix_config, suffix_config, combination_config)
     duration = segment_definitions.sum { |segment| segment[:duration_seconds].to_i } if segment_definitions.present?
-    metadata = build_metadata(base_config, prefix_config, suffix_config).merge(
+
+    rarity_info = determine_rarity(base_config, prefix_config, suffix_config, combination_config, combination_key)
+    metadata = build_metadata(
+      base_key,
+      normalize_storage_key(raw_prefix_key),
+      normalize_storage_key(raw_suffix_key),
+      base_config,
+      prefix_config,
+      suffix_config,
+      combination_config,
+      rarity_info,
+      combination_key
+    ).merge(
       slot_state: GeneratedExploration::SLOT_STATE_ACTIVE,
       reroll_available_at: nil
     )
@@ -98,8 +114,8 @@ class ExplorationGenerator
     user.generated_explorations.create!(
       world: world,
       base_key: base_key,
-      prefix_key: prefix_key,
-      suffix_key: suffix_key,
+      prefix_key: normalize_storage_key(raw_prefix_key),
+      suffix_key: normalize_storage_key(raw_suffix_key),
       name: name,
       duration_seconds: duration,
       requirements: requirements,
@@ -135,15 +151,18 @@ class ExplorationGenerator
       end
     end
 
-    total_duration = (duration * multiplier).to_i + additive
-    [total_duration, minimum_exploration_duration].max
+    [(duration * multiplier).to_i + additive, 300].max
   end
 
-  def build_name(base_config, prefix_config, suffix_config)
+  def build_name(base_config, prefix_config, suffix_config, combination_config)
+    if combination_config && combination_config[:label_override].present?
+      return combination_config[:label_override]
+    end
+
     parts = []
-    parts << prefix_config[:label] if prefix_config && prefix_config[:label]
+    parts << prefix_config&.[](:label) if prefix_config && prefix_config[:label].present?
     parts << base_config[:label]
-    parts << suffix_config[:label] if suffix_config && suffix_config[:label]
+    parts << suffix_config&.[](:label) if suffix_config && suffix_config[:label].present?
     parts.compact.join(' ')
   end
 
@@ -177,20 +196,46 @@ class ExplorationGenerator
     reward_entries
   end
 
-  def build_metadata(*configs)
+  def build_metadata(base_key, prefix_key, suffix_key, base_config, prefix_config, suffix_config, combination_config, rarity_info, combination_key)
+    flavor_fragments = [
+      base_config&.dig(:flavor),
+      prefix_config&.dig(:flavor),
+      suffix_config&.dig(:flavor)
+    ].compact
+    flavor_fragments << combination_config[:flavor_append] if combination_config&.dig(:flavor_append).present?
+
+    encounter_tags = []
+    encounter_tags.concat(Array(base_config[:encounter_tags])) if base_config
+    encounter_tags.concat(Array(prefix_config[:encounter_tags])) if prefix_config
+    encounter_tags.concat(Array(suffix_config[:encounter_tags])) if suffix_config
+    encounter_tags.concat(Array(combination_config[:encounter_tags])) if combination_config
+    encounter_tags = encounter_tags.flatten.compact.uniq
+
     {
-      flavor: configs.compact.map { |conf| conf[:flavor] }.compact
-    }
+      flavor: flavor_fragments,
+      rarity: rarity_info[:key],
+      rarity_label: rarity_info[:label],
+      rarity_color: rarity_info[:color],
+      rarity_score: rarity_info[:score],
+      components: {
+        base: base_key,
+        prefix: prefix_key,
+        suffix: suffix_key
+      },
+      combination_key: combination_key,
+      encounter_tags: encounter_tags
+    }.compact
   end
 
-  def build_segment_definitions(total_duration_seconds, base_config, prefix_config, suffix_config)
+  def build_segment_definitions(total_duration_seconds, base_config, prefix_config, suffix_config, combination_config = nil)
     total_duration_seconds = total_duration_seconds.to_i
     total_duration_seconds = 1 if total_duration_seconds <= 0
 
     templates = gather_segment_templates(
       [base_config, 'base'],
       [prefix_config, 'prefix'],
-      [suffix_config, 'suffix']
+      [suffix_config, 'suffix'],
+      [combination_config, 'combination']
     )
 
     if templates.blank?
@@ -227,32 +272,13 @@ class ExplorationGenerator
 
       cumulative += duration
 
-      payload = {
+      segment.merge(
         key: segment_key.to_s,
         label: segment_label,
         index: index,
         duration_seconds: duration,
         checkpoint_offset_seconds: cumulative
-      }
-
-      SEGMENT_OPTIONAL_KEYS.each do |key|
-        value = segment[key]
-        next if value.nil?
-
-        payload[key] =
-          case key
-          when :encounter_tags, :encounter_slugs, :requirement_tags
-            Array(value).map(&:to_s).reject(&:blank?)
-          else
-            value
-          end
-      end
-
-      payload[:allow_encounters] = true unless payload.key?(:allow_encounters)
-      payload[:encounters_enabled] = true unless payload.key?(:encounters_enabled)
-      payload[:source] = segment[:source] if segment[:source]
-
-      payload.with_indifferent_access
+      ).with_indifferent_access
     end
   end
 
@@ -425,18 +451,46 @@ class ExplorationGenerator
     (value.to_f * 60).round
   end
 
-  def minimum_exploration_duration
-    if Rails.application.config.respond_to?(:exploration_min_duration_seconds)
-      Rails.application.config.exploration_min_duration_seconds.to_i
-    else
-      300
-    end
-  end
-
   def ensure_cooldown!(force)
     return if force
 
     remaining = self.class.cooldown_remaining_for(user)
     raise CooldownNotElapsedError.new(remaining) if remaining.positive?
+  end
+
+  def normalize_component_key(key)
+    return nil if key.blank? || key == "none"
+    key
+  end
+
+  def normalize_storage_key(key)
+    normalize_component_key(key)
+  end
+
+  def determine_rarity(base_config, prefix_config, suffix_config, combination_config, combination_key)
+    palette = ExplorationModLibrary.rarity_palette
+    combination_key = nil
+
+    component_rarities = [
+      base_config&.dig(:rarity),
+      prefix_config&.dig(:rarity),
+      suffix_config&.dig(:rarity)
+    ].compact
+
+    rarity_key = component_rarities.max_by { |key| RARITY_ORDER.fetch(key.to_s, 0) } || "common"
+
+    if combination_config&.dig(:rarity).present?
+      rarity_key = combination_config[:rarity].to_s
+    end
+
+    rarity_info = palette[rarity_key] || {}
+
+    {
+      key: rarity_key,
+      label: rarity_info[:label] || rarity_key.titleize,
+      color: rarity_info[:color],
+      score: RARITY_ORDER.fetch(rarity_key, 0),
+      combination_key: combination_key
+    }
   end
 end

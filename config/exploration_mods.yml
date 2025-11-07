@@ -1,6 +1,27 @@
+rarity_palette:
+  common:
+    label: "Common"
+    color: "#94a3b8"
+  uncommon:
+    label: "Uncommon"
+    color: "#34d399"
+  rare:
+    label: "Rare"
+    color: "#60a5fa"
+  epic:
+    label: "Epic"
+    color: "#a855f7"
+  legendary:
+    label: "Legendary"
+    color: "#f59e0b"
+  mythic:
+    label: "Mythic"
+    color: "#f97316"
+
 bases:
   ember_fields:
     label: "Ember Fields"
+    rarity: common
     world_name: "Ember Fields"
     default_duration: 9
     flavor: "Ash-swept plains with scattered pyre blooms."
@@ -22,6 +43,7 @@ bases:
     requirements: []
   aurora_tundra:
     label: "Aurora Tundra"
+    rarity: uncommon
     world_name: "Aurora Tundra"
     default_duration: 12
     flavor: "Iridescent ice fields under a crackling sky."
@@ -42,6 +64,7 @@ bases:
         encounter_tags: ["frost", "ancient"]
   verdant_canopy:
     label: "Verdant Canopy"
+    rarity: common
     world_name: "Verdant Canopy"
     default_duration: 6
     flavor: "Layered jungles pulsing with life."
@@ -63,9 +86,14 @@ bases:
         encounter_tags: ["forest", "fae"]
 
 prefixes:
+  none:
+    weight: 20
+    label:
+    rarity: common
   scorching:
     weight: 8
     label: "Scorching"
+    rarity: rare
     duration_multiplier: 1.25
     requirements:
       - type: "ability"
@@ -83,6 +111,7 @@ prefixes:
   chilling:
     weight: 10
     label: "Chilling"
+    rarity: uncommon
     duration_multiplier: 1.15
     requirements:
       - type: "ability"
@@ -100,6 +129,7 @@ prefixes:
   tempestuous:
     weight: 6
     label: "Tempestuous"
+    rarity: epic
     duration_multiplier: 1.35
     requirements:
       - type: "ability"
@@ -121,6 +151,7 @@ prefixes:
   toxic:
     weight: 5
     label: "Toxic"
+    rarity: rare
     duration_multiplier: 1.2
     requirements:
       - type: "ability"
@@ -135,11 +166,38 @@ prefixes:
         label: "Blighted Swale"
         duration_weight: 1
         encounter_tags: ["toxin", "hazard"]
+  celestial:
+    weight: 3
+    label: "Celestial"
+    rarity: legendary
+    duration_multiplier: 1.5
+    requirements:
+      - type: "ability"
+        key: "light"
+        label: "Radiant abilities"
+        required: 1
+      - type: "level_min"
+        value: 8
+        label: "Radiant veterans"
+        required: 1
+    rewards:
+      bonus_drop_key: "celestial_zone_drops"
+      requires_full_match: true
+    segments:
+      - key: "stellar_gate"
+        label: "Stellar Gate"
+        duration_weight: 1
+        encounter_tags: ["radiant", "elite"]
 
 suffixes:
+  none:
+    weight: 18
+    label:
+    rarity: common
   of_embers:
     weight: 9
     label: "of Embers"
+    rarity: uncommon
     duration_bonus: 8
     requirements:
       - type: "level_min"
@@ -156,6 +214,7 @@ suffixes:
   of_the_hunt:
     weight: 7
     label: "of the Hunt"
+    rarity: uncommon
     duration_bonus: 6
     requirements:
       - type: "pet_type"
@@ -172,6 +231,7 @@ suffixes:
   of_whispers:
     weight: 6
     label: "of Whispers"
+    rarity: rare
     duration_bonus: 9
     requirements:
       - type: "ability"
@@ -188,6 +248,7 @@ suffixes:
   of_legends:
     weight: 2
     label: "of Legends"
+    rarity: legendary
     duration_bonus: 5
     requirements:
       - type: "species"
@@ -199,5 +260,26 @@ suffixes:
         label: "Elite levels"
         required: 2
     rewards:
-      bonus_drop_key: "celestial_zone_drops"
-      requires_full_match: true
+      bonus_drop_key: "legendary_zone_drops"
+    segments:
+      - key: "legendary_trial"
+        label: "Legendary Trial"
+        duration_weight: 1
+        encounter_tags: ["legendary", "trial"]
+
+combinations:
+  "scorching+ember_fields+of_legends":
+    rarity: mythic
+    label_override: "Scorching Ember Heart of Legends"
+    flavor_append: "Only those who master flame and legend may survive this gauntlet."
+    encounter_tags: ["legendary", "ember-core", "mythic"]
+    segments:
+      - key: "legendary_trial"
+        label: "Trial of Ascendant Flame"
+        duration_weight: 1
+        encounter_tags: ["legendary", "trial", "flame"]
+  "celestial+aurora_tundra":
+    rarity: legendary
+    flavor_append: "Celestial auroras ripple with ancient guardians."
+    encounter_tags: ["radiant", "ancient"]
+    duration_multiplier: 1.2

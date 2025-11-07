@@ -5,14 +5,27 @@
 <% world_description = Array(flavor).compact.first %>
 <% duration_seconds = generated.duration_seconds.to_i %>
 <% duration_label = exploration_duration_label(duration_seconds) %>
+<% rarity_label = metadata[:rarity_label] || metadata["rarity_label"] %>
+<% rarity_color = metadata[:rarity_color] || metadata["rarity_color"] %>
 
 <% content_for :header do %>
   <div class="mx-auto flex w-full max-w-4xl flex-col gap-2 px-4 py-1">
     <div class="flex items-center justify-between">
       <h1 class="text-2xl font-semibold text-white"><%= generated.name %></h1>
-      <span class="rounded-full border border-indigo-400/40 bg-indigo-500/20 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-indigo-100">
-        <%= duration_label %>
-      </span>
+      <div class="flex flex-col items-end gap-2">
+        <span class="rounded-full border border-indigo-400/40 bg-indigo-500/20 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-indigo-100">
+          <%= duration_label %>
+        </span>
+        <% if rarity_label %>
+          <span class="inline-flex items-center gap-1 rounded-full border px-3 py-1 text-[11px] font-semibold uppercase"
+                style="<%= rarity_color ? "border-color: #{rarity_color}55; background-color: #{rarity_color}1a; color: #{rarity_color};" : '' %>">
+            <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+              <path d="M12 3l2.5 6.5L21 10l-5 4.5L17.5 21 12 17.5 6.5 21 8 14.5 3 10l6.5-.5L12 3z" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            <%= rarity_label %>
+          </span>
+        <% end %>
+      </div>
     </div>
     <p class="text-sm text-slate-300"><%= world_description.presence || "Scout this zone to earn rewards and uncover encounters." %></p>
   </div>
