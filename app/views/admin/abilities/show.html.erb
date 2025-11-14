@@ -1,0 +1,36 @@
+<h1 class="text-2xl font-semibold mb-4">Ability Details</h1>
+<%
+  related_links = []
+  if @ability.permitted_pets.exists?
+    related_links.concat(@ability.permitted_pets.order(:name).map { |pet| { label: "Pet: #{pet.name}", path: admin_pet_path(pet) } })
+  end
+  related_links << { label: "Edit ability", path: edit_admin_ability_path(@ability), icon: "✎" }
+%>
+<%= admin_related_links(related_links) %>
+
+<dl>
+  <dt class="font-semibold">Name</dt>
+  <dd class="mb-2"><%= @ability.name %></dd>
+  <dt class="font-semibold">Reference</dt>
+  <dd class="mb-2 font-mono text-xs text-slate-500"><%= @ability.reference %></dd>
+  <dt class="font-semibold">Element Type</dt>
+  <dd class="mb-2"><%= @ability.element_type %></dd>
+  <dt class="font-semibold">Description</dt>
+  <dd class="mb-2"><%= @ability.description %></dd>
+</dl>
+
+<h2 class="text-xl font-semibold mt-6">Permissions</h2>
+<ul class="list-disc list-inside">
+  <% @ability.ability_permissions.each do |perm| %>
+    <li>Granted to <%= perm.permitted_type %> ID=<%= perm.permitted_id %></li>
+  <% end %>
+</ul>
+
+<h2 class="text-xl font-semibold mt-6">Effects</h2>
+<ul class="list-disc list-inside">
+  <% @ability.ability_effects.each do |ae| %>
+    <li><%= ae.effect.name %>: magnitude <%= ae.magnitude %>, duration <%= ae.duration %></li>
+  <% end %>
+</ul>
+
+<%= link_to "Back", admin_abilities_path, class: "mt-6 inline-block text-sm text-gray-600 underline" %>

@@ -1,0 +1,86 @@
+%h1.text-3xl.font-bold.text-slate-900.mb-2= @world.name
+%p.text-sm.text-slate-500.mb-4 Exploration zone overview.
+
+- related_links = [
+  { label: "Edit zone", path: edit_admin_world_path(@world), icon: "✎" },
+  { label: "View mods", path: admin_mods_path }
+]
+= admin_related_links(related_links)
+
+.grid.grid-cols-1.lg:grid-cols-2.gap-6.mt-6
+  .rounded-3xl.border.border-slate-200.bg-white.p-5.space-y-3
+    %h2.text-lg.font-semibold.text-slate-900 Core Stats
+    %dl.text-sm.text-slate-700.space-y-2
+      %div
+        %dt.font-semibold Duration
+        %dd= "#{@world.duration}s"
+      %div
+        %dt.font-semibold Reward Item
+        %dd= @world.reward_item_type
+      %div
+        %dt.font-semibold Diamond Reward
+        %dd= @world.diamond_reward
+      %div
+        %dt.font-semibold Enabled
+        %dd= @world.enabled? ? "Yes" : "No"
+      %div
+        %dt.font-semibold Upgraded On Clear
+        %dd= @world.upgraded_on_clear? ? "Yes" : "No"
+      %div
+        %dt.font-semibold Drop Table Override
+        %dd= @world.drop_table_override_key.presence || "—"
+      %div
+        %dt.font-semibold Upgrade Drop Override
+        %dd= @world.upgrade_drop_table_override_key.presence || "—"
+  .rounded-3xl.border.border-slate-200.bg-white.p-5.space-y-3
+    %h2.text-lg.font-semibold.text-slate-900 Rotation
+    %dl.text-sm.text-slate-700.space-y-2
+      %div
+        %dt.font-semibold Active
+        %dd= @world.rotation_active? ? "Yes" : "No"
+      %div
+        %dt.font-semibold Weight
+        %dd= @world.rotation_weight
+      %div
+        %dt.font-semibold Starts
+        %dd= @world.rotation_starts_at&.to_s || "—"
+      %div
+        %dt.font-semibold Ends
+        %dd= @world.rotation_ends_at&.to_s || "—"
+
+.grid.grid-cols-1.lg:grid-cols-2.gap-6.mt-6
+  .rounded-3xl.border.border-slate-200.bg-white.p-5.space-y-3
+    %h2.text-lg.font-semibold.text-slate-900 Traits
+    - if Array(@world.special_traits).any?
+      %ul.text-sm.text-slate-700.flex.flex-wrap.gap-2
+        - @world.special_traits.each do |trait|
+          %li.inline-flex.items-center.rounded-full.bg-slate-100.px-3.py-1.text-xs.font-semibold= trait
+    - else
+      %p.text-sm.text-slate-500 None
+    %h3.text-sm.font-semibold.text-slate-600.mt-4 Required Abilities
+    - if Array(@world.required_pet_abilities).any?
+      %ul.text-sm.text-slate-700.flex.flex-wrap.gap-2
+        - @world.required_pet_abilities.each do |ability|
+          %li.inline-flex.items-center.rounded-full.bg-amber-50.px-3.py-1.text-xs.font-semibold.text-amber-700= ability
+    - else
+      %p.text-sm.text-slate-500 None
+  .rounded-3xl.border.border-slate-200.bg-white.p-5.space-y-3
+    %h2.text-lg.font-semibold.text-slate-900 Upgrade Path
+    %h3.text-sm.font-semibold.text-slate-600 Trait Keys
+    - if Array(@world.upgrade_trait_keys).any?
+      %ul.text-sm.text-slate-700.flex.flex-wrap.gap-2
+        - @world.upgrade_trait_keys.each do |trait|
+          %li.inline-flex.items-center.rounded-full.bg-emerald-50.px-3.py-1.text-xs.font-semibold.text-emerald-700= trait
+    - else
+      %p.text-sm.text-slate-500 None
+    %h3.text-sm.font-semibold.text-slate-600.mt-4 Required Abilities
+    - if Array(@world.upgrade_required_pet_abilities).any?
+      %ul.text-sm.text-slate-700.flex.flex-wrap.gap-2
+        - @world.upgrade_required_pet_abilities.each do |ability|
+          %li.inline-flex.items-center.rounded-full.bg-indigo-50.px-3.py-1.text-xs.font-semibold.text-indigo-700= ability
+    - else
+      %p.text-sm.text-slate-500 None
+
+.flex.items-center.justify-end.gap-3.mt-6
+  = link_to "Back", admin_worlds_path, class: "text-sm font-semibold text-slate-600 hover:text-slate-800"
+  = link_to "Edit Zone", edit_admin_world_path(@world), class: "inline-flex items-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500"

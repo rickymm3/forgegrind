@@ -1,11 +1,14 @@
 # app/models/pet.rb
 
 class Pet < ApplicationRecord
-  belongs_to :egg
+  has_one_attached :image
+  belongs_to :egg, optional: true
   belongs_to :rarity
   belongs_to :special_ability, optional: true
+  belongs_to :default_ability, class_name: "Ability", optional: true
 
   validates :name, :power, presence: true
+  validates :hatch_weight, numericality: { only_integer: true, greater_than: 0 }
 
   has_and_belongs_to_many :pet_types
 
@@ -17,6 +20,20 @@ class Pet < ApplicationRecord
   has_many :default_abilities,
            through: :ability_permissions,
            source: :ability
+
+  has_many :evolution_rules_as_parent,
+           class_name: "EvolutionRule",
+           foreign_key: :parent_pet_id,
+           dependent: :destroy,
+           inverse_of: :parent_pet
+  has_many :evolution_rules_as_child,
+           class_name: "EvolutionRule",
+           foreign_key: :child_pet_id,
+           dependent: :destroy,
+           inverse_of: :child_pet
+  has_many :evolves_into, through: :evolution_rules_as_parent, source: :child_pet
+  has_many :evolves_from, through: :evolution_rules_as_child, source: :parent_pet
+  has_many :user_pets, dependent: :restrict_with_error
 
   before_validation :assign_default_special_ability, if: -> { special_ability_id.blank? }
 

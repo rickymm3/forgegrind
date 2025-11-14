@@ -1,0 +1,8 @@
+<nav class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+  <div class="text-sm font-semibold text-slate-400 uppercase tracking-[0.2em]">Admin</div>
+  <div class="flex flex-wrap gap-2">
+    <% nav_items.each do |item| %>
+      <%= link_to item[:label], item[:path], class: admin_nav_link_classes(item[:path]) %>
+    <% end %>
+  </div>
+</nav>

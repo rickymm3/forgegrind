@@ -1,4 +1,5 @@
 .container.mx-auto.mt-16.text-center
   %h1.text-3xl.font-bold.mb-4 Profile
+  %p.text-sm.text-slate-400.mb-6 Registered Email: #{@user.email}
 
   = render "shared/energy/energy", user: @user

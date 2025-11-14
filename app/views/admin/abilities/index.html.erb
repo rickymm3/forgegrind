@@ -1,0 +1,29 @@
+<h1 class="text-2xl font-semibold mb-4">Abilities</h1>
+<%= link_to "New Ability", new_admin_ability_path, class: "px-3 py-1 bg-green-600 text-white rounded mb-4 inline-block" %>
+
+<table class="table-auto w-full border-collapse border">
+  <thead>
+    <tr class="bg-gray-100">
+      <th class="px-2 py-1 text-left">Name</th>
+      <th class="px-2 py-1 text-left">Element</th>
+      <th class="px-2 py-1 text-left">Reference</th>
+      <th class="px-2 py-1 text-left">Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @abilities.each do |ability| %>
+      <tr class="border-t">
+        <td class="px-2 py-1"><%= ability.name %></td>
+        <td class="px-2 py-1"><%= ability.element_type %></td>
+        <td class="px-2 py-1 font-mono text-xs"><%= ability.reference %></td>
+        <td class="px-2 py-1 space-x-1">
+          <%= link_to "Show", admin_ability_path(ability), class: "text-blue-600 underline" %>
+          <span>|</span>
+          <%= link_to "Edit", edit_admin_ability_path(ability), class: "text-yellow-600 underline" %>
+          <span>|</span>
+          <%= link_to "Delete", admin_ability_path(ability), method: :delete, data: { confirm: "Are you sure?" }, class: "text-red-600 underline" %>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

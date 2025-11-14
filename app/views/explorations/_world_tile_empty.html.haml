@@ -1,0 +1,23 @@
+- empty_classes = (card_classes + ["exploration-card--empty", "exploration-card--interactive"]).join(" ")
+
+= link_to scout_explorations_path,
+          class: empty_classes,
+          data: { turbo_frame: "_top", turbo_method: :post },
+          role: "button",
+          aria: { label: "Scout expeditions" } do
+  .exploration-card__status-row
+    .exploration-card__eyebrow
+      %span.exploration-card__slot-label= slot_label || "Slot"
+      %span.exploration-card__state-label Inactive
+    %span.exploration-card__icon-chip{ aria: { hidden: true } }
+      %svg.exploration-icon{ viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", 'stroke-width': "1.8" }
+        %path{ d: "M12 4v16m8-8H4", 'stroke-linecap': "round", 'stroke-linejoin': "round" }
+
+  .exploration-card__body
+    %p.exploration-card__message No expedition assigned. Scout a new route to fill this slot.
+
+  .exploration-card__footer
+    %span.exploration-card__status-muted Scouts available
+    %span.exploration-card__action-icon{ aria: { hidden: true } }
+      %svg.exploration-icon{ viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", 'stroke-width': "1.8" }
+        %path{ d: "M12 4v16m8-8H4", 'stroke-linecap': "round", 'stroke-linejoin': "round" }

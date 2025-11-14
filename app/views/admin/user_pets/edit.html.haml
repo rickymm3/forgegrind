@@ -1,5 +1,0 @@
--# app/views/admin/user_pets/edit.html.haml
-%h1.text-3xl.font-bold.text-slate-900.mb-1 Edit Pet
-%p.text-sm.text-slate-600.mb-6= "#{@user_pet.name.presence || @user_pet.pet.name} owned by #{@user_pet.user.email}"
-
-= render "form", user_pet: @user_pet

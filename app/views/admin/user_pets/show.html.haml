@@ -2,6 +2,12 @@
 %h1.text-3xl.font-bold.text-slate-900.mb-1= @user_pet.name.presence || @user_pet.pet.name
 %p.text-sm.text-slate-600.mb-6= "Owned by #{@user_pet.user.email}"
 
+- related_links = []
+- related_links << { label: "Base Pet: #{@user_pet.pet.name}", path: admin_pet_path(@user_pet.pet) } if @user_pet.pet
+- related_links << { label: "Egg: #{@user_pet.pet.egg.name}", path: admin_egg_path(@user_pet.pet.egg) } if @user_pet.pet&.egg
+- related_links << { label: "Special Ability", path: admin_special_ability_path(@user_pet.pet.special_ability) } if @user_pet.pet&.special_ability
+= admin_related_links(related_links)
+
 .card.bg-white.shadow-sm.rounded-2xl.p-6.space-y-6
   .flex.items-center.gap-4
     %img.h-20.w-20.rounded-full.object-cover{ src: pet_sprite_path(@user_pet.pet), alt: @user_pet.pet.name }

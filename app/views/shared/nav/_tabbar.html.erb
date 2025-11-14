@@ -4,11 +4,11 @@
 <% dom_id = local_assigns[:dom_id] || "primary-tabbar" %>
 
 <nav id="<%= dom_id %>"
-     class="fixed bottom-0 left-0 right-0 z-50 border-t border-slate-800 bg-slate-950/95 backdrop-blur flex justify-center"
+     class="tabbar border-t border-slate-800 bg-slate-950/95 backdrop-blur flex justify-center"
      aria-label="Primary navigation"
      role="navigation"
-     style="padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 0.75rem);">
-  <div class="w-full max-w-3xl flex items-stretch gap-2 px-3 pt-3">
+     data-tabbar-target="panel">
+  <div class="tabbar__inner w-full max-w-3xl flex items-stretch gap-2 px-3 pt-3">
     <% tabs.each do |tab| %>
       <% active = current == tab[:id] %>
       <% base_classes = "flex-1 inline-flex flex-col items-center justify-center gap-1 rounded-2xl px-3 py-2 text-xs font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950" %>
@@ -103,6 +103,15 @@
                 <% end %>
               <% end %>
             </li>
+            <% if current_user&.admin? %>
+              <li>
+                <%= link_to admin_content_path,
+                            class: "flex items-center justify-between rounded-2xl bg-indigo-600/80 px-4 py-3 text-white transition hover:bg-indigo-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950" do %>
+                  <span>Admin Console</span>
+                  <span class="text-xs uppercase text-white/70">Open</span>
+                <% end %>
+              </li>
+            <% end %>
             <li>
               <%= link_to inventory_path,
                           class: "flex items-center justify-between rounded-2xl bg-slate-800/70 px-4 py-3 text-slate-100 transition hover:bg-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950" do %>

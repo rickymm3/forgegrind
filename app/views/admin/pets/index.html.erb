@@ -1,0 +1,43 @@
+<h1 class="text-2xl font-bold mb-4">Pets</h1>
+
+<%= link_to "New Pet",
+            new_admin_pet_path,
+            class: "bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 mb-4 inline-block" %>
+
+<table class="w-full text-left border-collapse">
+  <thead>
+    <tr class="bg-slate-100 border-b">
+      <% header_classes = "px-4 py-2 text-xs font-semibold uppercase tracking-wide text-slate-600" %>
+      <th class="<%= header_classes %>">ID</th>
+      <th class="<%= header_classes %>">Name</th>
+      <th class="<%= header_classes %>">Rarity</th>
+      <th class="<%= header_classes %>">Egg</th>
+      <th class="<%= header_classes %>">Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @pets.each do |pet| %>
+      <tr class="border-b">
+        <td class="px-4 py-2"><%= pet.id %></td>
+        <td class="px-4 py-2"><%= pet.name %></td>
+        <td class="px-4 py-2"><%= pet.rarity&.name %></td>
+        <td class="px-4 py-2">
+          <% if pet.egg %>
+            <%= link_to pet.egg.name, admin_egg_path(pet.egg), class: "text-blue-600 hover:underline" %>
+          <% else %>
+            <span class="text-gray-500">—</span>
+          <% end %>
+        </td>
+        <td class="px-4 py-2 space-x-2">
+          <%= link_to "Show", admin_pet_path(pet), class: "text-blue-600 hover:underline" %>
+          <%= link_to "Edit", edit_admin_pet_path(pet), class: "text-yellow-600 hover:underline" %>
+          <%= link_to "Delete",
+                      admin_pet_path(pet),
+                      method: :delete,
+                      data: { confirm: "Are you sure?" },
+                      class: "text-red-600 hover:underline" %>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

@@ -1,0 +1,44 @@
+- generated          = generated_exploration
+- user_exploration  ||= nil
+- slot_index        ||= nil
+- selected          = !!selected
+- state             = (state || (generated ? generated.slot_state_sym : :empty)).to_sym
+- cooldown_seconds  = (cooldown_seconds || generated&.cooldown_remaining_seconds || 0).to_i
+- slot_label        = slot_index ? "Slot #{slot_index}" : nil
+- format_countdown  = ->(value) { value = value.to_i; minutes = value / 60; seconds = value % 60; format("%02d:%02d", minutes, seconds) }
+
+- metadata     = generated&.metadata || {}
+- rarity_label = metadata["rarity_label"] || metadata[:rarity_label]
+- rarity_color = metadata["rarity_color"] || metadata[:rarity_color]
+- rarity_style = rarity_color ? "border-color: #{rarity_color}55; background-color: #{rarity_color}1a; color: #{rarity_color};" : ""
+
+- card_classes = ["exploration-card"]
+- card_classes << (selected ? "exploration-card--selected" : "exploration-card--default")
+- segment_status = user_exploration.present? ? expedition_segment_status(user_exploration) : nil
+
+- case state
+- when :empty
+  = render "explorations/world_tile_empty",
+           card_classes: card_classes,
+           slot_label: slot_label,
+           format_countdown: format_countdown
+- when :cooldown
+  = render "explorations/world_tile_cooldown",
+           card_classes: card_classes,
+           slot_label: slot_label,
+           cooldown_seconds: cooldown_seconds,
+           format_countdown: format_countdown
+- else
+  - duration_label = generated.present? ? exploration_duration_label(generated.duration_seconds) : nil
+  - world          = generated&.world
+  = render "explorations/world_tile_active",
+           card_classes: card_classes,
+           slot_label: slot_label,
+           user_exploration: user_exploration,
+           generated: generated,
+           metadata: metadata,
+           rarity_label: rarity_label,
+           rarity_style: rarity_style,
+           duration_label: duration_label,
+           world: world,
+           segment_status: segment_status

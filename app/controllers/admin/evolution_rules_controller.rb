@@ -62,7 +62,7 @@ class Admin::EvolutionRulesController < Admin::BaseController
   end
 
   def rule_params
-    params.require(:evolution_rule).permit(
+    whitelisted = params.require(:evolution_rule).permit(
       :parent_pet_id,
       :child_pet_id,
       :required_item_id,
@@ -74,17 +74,55 @@ class Admin::EvolutionRulesController < Admin::BaseController
       :one_shot,
       :seasonal_tag,
       :notes,
-      :guard_json
-    ).tap do |whitelisted|
-      # guard_json may come from a textarea; ensure it's parsed JSON if given as a string
-      if whitelisted[:guard_json].is_a?(String)
+      :guard_json,
+      :success_chance_percent,
+      :fallback_child_pet_id,
+      guard_badge_keys: [],
+      required_badges: []
+    ).to_h
+
+    whitelisted["required_badges"] ||= []
+
+    badge_keys = Array(whitelisted.delete("guard_badge_keys")).reject(&:blank?)
+
+    chance = whitelisted["success_chance_percent"].presence || 100
+    whitelisted["success_chance_percent"] = chance.to_i
+
+    guard_value = whitelisted["guard_json"]
+    guard_hash =
+      if guard_value.is_a?(Hash)
+        guard_value
+      elsif guard_value.is_a?(String) && guard_value.present?
         begin
-          parsed = JSON.parse(whitelisted[:guard_json])
-          whitelisted[:guard_json] = parsed
+          JSON.parse(guard_value)
         rescue JSON::ParserError
-          # keep as string and let model save fail validation if needed
+          guard_value
         end
+      else
+        {}
       end
+
+    if guard_hash.is_a?(Hash)
+      clean_guard = lambda do |hash|
+        hash["all"] = Array(hash["all"]).reject { |cond| cond.is_a?(Hash) && cond["type"].to_s == "badge_unlocked" }
+        hash["any"] = Array(hash["any"]).reject { |cond| cond.is_a?(Hash) && cond["type"].to_s == "badge_unlocked" }
+        hash.delete("all") if hash["all"].blank?
+        hash.delete("any") if hash["any"].blank?
+        hash
+      end
+
+      guard_hash = clean_guard.call(guard_hash)
+
+      if badge_keys.any?
+        guard_hash["all"] ||= []
+        guard_hash["all"].concat(badge_keys.map { |key| { "type" => "badge_unlocked", "key" => key } })
+      end
+
+      whitelisted["guard_json"] = guard_hash
+    else
+      whitelisted["guard_json"] = guard_hash
     end
+
+    whitelisted
   end
 end

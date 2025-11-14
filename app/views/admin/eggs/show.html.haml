@@ -1,26 +1,71 @@
 %h1.text-2xl.font-bold.mb-4= @egg.name
 
-%p.text-gray-700.mb-2
-  %strong Description:
-  = @egg.description.presence || "—"
+- if @egg.image.attached?
+  %div.mb-4
+    = image_tag @egg.image, class: "w-48 h-48 rounded-2xl border border-slate-200 object-cover"
 
-%p.text-gray-700.mb-4
-  %strong Enabled:
-  = @egg.enabled ? "✅" : "❌"
+- hatch_label = @egg.hatch_duration.present? ? distance_of_time_in_words(Time.current, @egg.hatch_duration.seconds.from_now) : "—"
+%dl.grid.gap-4.mb-6.md:grid-cols-2
+  %div
+    %dt.text-sm.font-semibold.text-slate-500 Cost
+    %dd.text-lg.font-semibold.text-slate-800
+      = number_with_delimiter(@egg.cost_amount || 0)
+      = @egg.currency&.name
+  %div
+    %dt.text-sm.font-semibold.text-slate-500 Hatch Duration
+    %dd.text-lg.font-semibold.text-slate-800= hatch_label
+  %div
+    %dt.text-sm.font-semibold.text-slate-500 Currency
+    %dd.text-lg.font-semibold.text-slate-800= @egg.currency&.name || "—"
+  %div
+    %dt.text-sm.font-semibold.text-slate-500 Enabled
+    %dd.text-lg.font-semibold.text-slate-800= @egg.enabled ? "✅" : "❌"
 
 = link_to "Edit", edit_admin_egg_path(@egg), class: "bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 mr-2"
 = link_to "Back", admin_eggs_path, class: "bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
+
+- if @egg.pets.any?
+  %hr.my-6
+  %h3.text-lg.font-semibold.mb-2 Linked Pets
+  = admin_related_links(@egg.pets.map { |pet| { label: pet.name, path: admin_pet_path(pet) } } + [{ label: "Create new pet", path: new_admin_pet_path(egg_id: @egg.id), icon: "+" }])
 
 %hr.my-6
 
 %h2.text-xl.font-semibold.mb-2 Assign Pets to this Egg
 
-= form_with url: assign_pets_admin_egg_path(@egg), method: :post, local: true do
-  .grid.grid-cols-1.md:grid-cols-2.gap-4
-    - Pet.order(:id).each do |pet|
-      .flex.items-center.space-x-2
-        = check_box_tag "pet_ids[]", pet.id, pet.egg_id == @egg.id, id: "pet_#{pet.id}"
-        = label_tag "pet_#{pet.id}", "#{pet.name} (#{pet.rarity&.name || 'No Rarity'})"
+= form_with url: update_hatch_pets_admin_egg_path(@egg), method: :patch, local: true, class: "space-y-4" do
+  %table.w-full.text-sm.text-slate-800.border-collapse
+    %thead
+      %tr.bg-slate-100.text-xs.font-semibold.uppercase.text-slate-500
+        %th.px-4.py-2 Pet
+        %th.px-4.py-2 Rarity
+        %th.px-4.py-2 Weight
+        %th.px-4.py-2 Remove
+    %tbody
+      - total = 0
+      - @egg.pets.order(:name).each do |pet|
+        - total += pet.hatch_weight
+        %tr.border-t
+          %td.px-4.py-2.font-semibold= pet.name
+          %td.px-4.py-2= pet.rarity&.name || "—"
+          %td.px-4.py-2
+            = number_field_tag "pet_weights[#{pet.id}][weight]",
+                               pet.hatch_weight,
+                               min: 1,
+                               class: "w-24 rounded border border-slate-300 px-2 py-1"
+          %td.px-4.py-2.text-center
+            = check_box_tag "pet_weights[#{pet.id}][remove]", "1", false, class: "rounded border-slate-300"
+  %p.text-xs.text-slate-500.font-semibold.mt-1 Total Weight: #{total}
 
-  .mt-4
-    = submit_tag "Update Assigned Pets", class: "bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+  .rounded-2xl.border.border-slate-200.bg-slate-50.p-4.space-y-2
+    %h3.text-sm.font-semibold.text-slate-700 Add Pet To Egg
+    .flex.flex-wrap.items-center.gap-3
+      = select_tag :new_pet_id,
+                   options_from_collection_for_select(Pet.where(egg_id: nil).order(:name), :id, :name),
+                   include_blank: "Choose pet",
+                   class: "rounded border border-slate-300 px-3 py-2 text-sm"
+      = number_field_tag :new_pet_weight, 100, min: 1, class: "w-24 rounded border border-slate-300 px-2 py-1 text-sm"
+      %span.text-xs.text-slate-500.font-semibold Default weight 100 if left blank.
+
+  .mt-4.flex.items-center.justify-end.gap-3
+    = submit_tag "Save Hatch Table", class: "bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"

@@ -1,12 +1,19 @@
-.mx-auto.flex.min-h-screen.w-full.max-w-3xl.flex-col.gap-6.px-4.pb-28.pt-6
-  %header.space-y-3.text-center
-    %p{ class: "text-xs font-semibold uppercase tracking-[0.3em] text-indigo-300" } Expedition Log
-    %h1.text-3xl.font-bold.text-slate-100 Leading the way
-    %p.text-sm.text-slate-400
+- content_for :head do
+  = stylesheet_link_tag "explorations", "data-turbo-track": "reload"
+
+- content_for :main_classes_override, "explorations-main"
+- content_for :main_inner_classes_override, "explorations-main__inner"
+- content_for :main_style, "display: flex; flex-direction: column; min-height: 0;"
+
+.explorations-page
+  %header.explorations-page__intro
+    %p.explorations-page__eyebrow Expedition Log
+    %h1.explorations-page__title Leading the way
+    %p.explorations-page__subtitle
       Choose a destination, assemble your party, and push deeper into the wilds.
 
-  .flex-1.min-h-0.pb-6
-    = turbo_frame_tag "worlds-list", class: "block h-full" do
+  .explorations-page__content
+    = turbo_frame_tag "worlds-list", class: "explorations-page__frame" do
       = render "explorations/worlds_list",
                generated_explorations: @generated_explorations,
                active_explorations: @active_explorations,

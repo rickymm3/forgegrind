@@ -63,31 +63,41 @@ class PetEvolutionService
     private
 
     def build_successor_user_pet(predecessor:, child_pet:, timestamp:)
-      thought = PetThought.order("RANDOM()").first || predecessor.pet_thought
+      thought = predecessor.pet_thought || PetThought.order("RANDOM()").first
+
+      predecessor_default_name = predecessor.pet.name
+      successor_name = if predecessor.name.present? && predecessor.name != predecessor_default_name
+                         predecessor.name
+                       else
+                         child_pet.name
+                       end
 
       successor = predecessor.user.user_pets.build(
-        pet:                   child_pet,
-        egg:                   child_pet.egg,
-        name:                  predecessor.name.presence || child_pet.name,
-        rarity:                child_pet.rarity,
-        power:                 child_pet.power,
-        pet_thought:           thought,
-        playfulness:           rand(1..10),
-        affection:             rand(1..10),
-        temperament:           rand(1..10),
-        curiosity:             rand(1..10),
-        confidence:            rand(1..10),
-        level:                 1,
-        exp:                   0,
-        interactions_remaining: 5,
-        energy:                UserPet::MAX_ENERGY,
-        hunger:                70,
-        hygiene:               70,
-        boredom:               70,
-        injury_level:          70,
-        mood:                  70,
-        needs_updated_at:      timestamp,
-        last_energy_update_at: timestamp
+        pet:                    child_pet,
+        egg:                    child_pet.egg || predecessor.egg,
+        name:                   successor_name,
+        rarity:                 child_pet.rarity || predecessor.rarity,
+        power:                  child_pet.power,
+        pet_thought:            thought,
+        playfulness:            predecessor.playfulness,
+        affection:              predecessor.affection,
+        temperament:            predecessor.temperament,
+        curiosity:              predecessor.curiosity,
+        confidence:             predecessor.confidence,
+        level:                  predecessor.level,
+        exp:                    predecessor.exp,
+        interactions_remaining: predecessor.interactions_remaining,
+        energy:                 predecessor.energy,
+        asleep_until:           predecessor.asleep_until,
+        last_interacted_at:     predecessor.last_interacted_at,
+        last_energy_update_at:  predecessor.last_energy_update_at || timestamp,
+        hunger:                 predecessor.hunger,
+        hygiene:                predecessor.hygiene,
+        boredom:                predecessor.boredom,
+        injury_level:           predecessor.injury_level,
+        mood:                   predecessor.mood,
+        needs_updated_at:       predecessor.needs_updated_at || timestamp,
+        care_trackers:          predecessor.care_trackers
       )
 
       successor.skip_default_ability = true

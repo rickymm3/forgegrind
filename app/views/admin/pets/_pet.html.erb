@@ -1,2 +1,146 @@
-<div id="<%= dom_id pet %>" class="w-full sm:w-auto my-5 space-y-5">
+<div id="<%= dom_id pet %>" class="w-full my-5 space-y-6">
+  <% if pet.image.attached? %>
+    <div class="w-full max-w-xs">
+      <%= image_tag pet.image, class: "rounded-2xl border border-slate-200 object-cover w-full h-auto" %>
+    </div>
+  <% end %>
+
+  <dl class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div class="space-y-2">
+      <div>
+        <dt class="text-sm font-semibold text-slate-600">Description</dt>
+        <dd class="text-sm text-slate-700"><%= pet.description.presence || "—" %></dd>
+      </div>
+      <div class="grid grid-cols-2 gap-3 text-sm text-slate-700">
+        <span><strong>Power:</strong> <%= pet.power %></span>
+        <span><strong>HP:</strong> <%= pet.hp %></span>
+        <span><strong>ATK:</strong> <%= pet.atk %></span>
+        <span><strong>DEF:</strong> <%= pet.def %></span>
+        <span><strong>SP ATK:</strong> <%= pet.sp_atk %></span>
+        <span><strong>SP DEF:</strong> <%= pet.sp_def %></span>
+        <span><strong>Speed:</strong> <%= pet.speed %></span>
+      </div>
+    </div>
+
+    <div class="space-y-3 text-sm text-slate-700">
+      <p><strong>Rarity:</strong> <%= pet.rarity&.name || "—" %></p>
+      <p><strong>Egg:</strong> <%= pet.egg&.name || "—" %></p>
+      <p><strong>Default Ability:</strong> <%= pet.default_ability&.name || "—" %></p>
+      <p><strong>Special Ability:</strong> <%= pet.special_ability&.name || "—" %></p>
+    </div>
+  </dl>
+
+  <% abilities = pet.abilities.order(:name) %>
+  <div class="rounded-3xl border border-slate-200 bg-white p-5 space-y-3">
+    <div class="flex items-center justify-between">
+      <h2 class="text-lg font-semibold text-slate-900">Abilities</h2>
+      <%= admin_related_links([{ label: "Manage abilities", path: admin_abilities_path }]) %>
+    </div>
+    <% if abilities.any? %>
+      <ul class="space-y-2 text-sm text-slate-700">
+        <% abilities.each do |ability| %>
+          <li class="flex items-center justify-between border rounded-2xl px-3 py-2">
+            <span class="font-semibold"><%= ability.name %></span>
+            <%= link_to "Open", admin_ability_path(ability), class: "text-indigo-600 text-xs font-semibold" %>
+          </li>
+        <% end %>
+      </ul>
+    <% else %>
+      <p class="text-sm text-slate-500">No abilities granted yet.</p>
+    <% end %>
+  </div>
+
+  <% outbound = pet.evolution_rules_as_parent.includes(:child_pet, :required_item).order(:priority, :id).uniq { |rule| rule.child_pet_id } %>
+  <% inbound = pet.evolution_rules_as_child.includes(:parent_pet, :required_item).order(:priority, :id).uniq { |rule| rule.parent_pet_id } %>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div class="rounded-3xl border border-slate-200 bg-white p-5 space-y-3">
+      <div class="flex items-center justify-between">
+        <h2 class="text-lg font-semibold text-slate-900">Evolves Into</h2>
+        <%= admin_related_links([{ label: "New Rule", path: new_admin_evolution_rule_path(parent_pet_id: pet.id), icon: "+" }]) %>
+      </div>
+      <% if outbound.any? %>
+        <ul class="space-y-3 text-sm text-slate-700">
+          <% outbound.each do |rule| %>
+            <li class="rounded-2xl border border-slate-200 px-3 py-2">
+              <div class="flex items-center justify-between">
+                <span class="font-semibold"><%= rule.child_pet&.name || "Unknown" %></span>
+                <%= link_to "Rule", admin_evolution_rule_path(rule), class: "text-xs text-indigo-600 font-semibold" %>
+              </div>
+              <p class="text-xs text-slate-500">
+                Level <%= rule.trigger_level || "?" %>
+                <% if rule.required_item %>
+                  • Item: <%= rule.required_item.name %>
+                <% end %>
+                <% if rule.required_trait.present? %>
+                  • Trait: <%= rule.required_trait %>
+                <% end %>
+                • Chance: <%= rule.success_chance_percent || 100 %>%
+                <% if rule.fallback_child_pet %>
+                  • Fallback: <%= rule.fallback_child_pet.name %>
+                <% end %>
+              </p>
+              <% if rule.required_badges.present? %>
+                <div class="mt-1 flex flex-wrap gap-2">
+                  <% rule.required_badges.each do |badge_key| %>
+                    <span class="inline-flex items-center rounded-full bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-700" title="<%= badge_key %>">
+                      <%= badge_label_for(badge_key) %>
+                    </span>
+                  <% end %>
+                </div>
+              <% end %>
+            </li>
+          <% end %>
+        </ul>
+      <% else %>
+        <p class="text-sm text-slate-500">No evolution rules defined.</p>
+      <% end %>
+    </div>
+
+    <div class="rounded-3xl border border-slate-200 bg-white p-5 space-y-3">
+      <h2 class="text-lg font-semibold text-slate-900">Evolves From</h2>
+      <% if inbound.any? %>
+        <ul class="space-y-3 text-sm text-slate-700">
+          <% inbound.each do |rule| %>
+            <li class="rounded-2xl border border-slate-200 px-3 py-2">
+              <div class="flex items-center justify-between">
+                <span class="font-semibold"><%= rule.parent_pet&.name || "Unknown" %></span>
+                <%= link_to "Rule", admin_evolution_rule_path(rule), class: "text-xs text-indigo-600 font-semibold" %>
+              </div>
+              <p class="text-xs text-slate-500">
+                Level <%= rule.trigger_level || "?" %>
+                <% if rule.required_item %>
+                  • Item: <%= rule.required_item.name %>
+                <% end %>
+                <% if rule.required_trait.present? %>
+                  • Trait: <%= rule.required_trait %>
+                <% end %>
+                • Chance: <%= rule.success_chance_percent || 100 %>%
+                <% if rule.fallback_child_pet %>
+                  • Fallback: <%= rule.fallback_child_pet.name %>
+                <% end %>
+              </p>
+              <% if rule.required_badges.present? %>
+                <div class="mt-1 flex flex-wrap gap-2">
+                  <% rule.required_badges.each do |badge_key| %>
+                    <span class="inline-flex items-center rounded-full bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-700" title="<%= badge_key %>">
+                      <%= badge_label_for(badge_key) %>
+                    </span>
+                  <% end %>
+                </div>
+              <% end %>
+            </li>
+          <% end %>
+        </ul>
+      <% else %>
+        <p class="text-sm text-slate-500">No inbound evolution rules.</p>
+      <% end %>
+    </div>
+  </div>
+
+  <% related_links = [] %>
+  <% related_links << { label: "Egg: #{pet.egg.name}", path: admin_egg_path(pet.egg) } if pet.egg %>
+  <% related_links << { label: "Special Ability", path: admin_special_ability_path(pet.special_ability) } if pet.special_ability %>
+
+  <%= admin_related_links(related_links) %>
 </div>

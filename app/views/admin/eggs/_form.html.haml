@@ -1,4 +1,4 @@
-= form_with model: [:admin, @egg], local: true, class: "space-y-6 max-w-md" do |f|
+= form_with model: [:admin, @egg], local: true, html: { multipart: true }, class: "space-y-6 max-w-md" do |f|
   - if @egg.errors.any?
     #error_explanation.bg-red-100.text-red-800.p-4.rounded
       %h2.font-bold= "#{pluralize(@egg.errors.count, "error")} prohibited this egg from being saved:"
@@ -11,12 +11,64 @@
     = f.text_field :name, class: "mt-1 block w-full border border-gray-300 rounded px-3 py-2"
 
   .field
-    = f.label :description, class: "block text-sm font-medium text-gray-700"
-    = f.text_area :description, rows: 4, class: "mt-1 block w-full border border-gray-300 rounded px-3 py-2"
+    = f.label :currency_id, "Currency", class: "block text-sm font-medium text-gray-700"
+    = f.collection_select :currency_id,
+                          Currency.order(:name),
+                          :id,
+                          :name,
+                          { prompt: "Choose currency" },
+                          class: "mt-1 block w-full border border-gray-300 rounded px-3 py-2"
+
+  .field
+    = f.label :cost_amount, "Cost Amount", class: "block text-sm font-medium text-gray-700"
+    = f.number_field :cost_amount,
+                     min: 0,
+                     class: "mt-1 block w-full border border-gray-300 rounded px-3 py-2"
+
+  .field
+    = f.label :hatch_duration, "Hatch Duration (seconds)", class: "block text-sm font-medium text-gray-700"
+    = f.number_field :hatch_duration,
+                     min: 0,
+                     class: "mt-1 block w-full border border-gray-300 rounded px-3 py-2"
+
+  .field.space-y-2
+    = f.label :image, class: "block text-sm font-medium text-gray-700"
+    - if @egg.image.attached?
+      = image_tag @egg.image, class: "h-32 w-32 rounded-xl border border-gray-200 object-cover"
+      .flex.items-center.space-x-2.text-xs.text-gray-600.mt-2
+        = check_box_tag "egg[remove_image]", "1", false, id: "egg_remove_image", class: "rounded border-gray-300"
+        = label_tag "egg_remove_image", "Remove current image"
+    = f.file_field :image, accept: "image/*", class: "mt-1 block w-full text-sm"
 
   .field.flex.items-center.space-x-2
     = f.check_box :enabled, class: "rounded border-gray-300"
     = f.label :enabled, class: "text-sm text-gray-700"
+
+  %hr
+  %h3.text-lg.font-semibold Required Items
+  %p.text-sm.text-gray-500.mb-2 Add or remove the items required to hatch this egg.
+  - item_options = defined?(@item_options) ? @item_options : Item.order(:name)
+  .space-y-3
+    = f.fields_for :egg_item_costs do |cost_fields|
+      .rounded-xl.border.border-gray-200.p-4.flex.flex-col.gap-3
+        .field
+          = cost_fields.label :item_id, "Item", class: "block text-sm font-medium text-gray-700"
+          = cost_fields.collection_select :item_id,
+                                         item_options,
+                                         :id,
+                                         :name,
+                                         { include_blank: "Select item" },
+                                         class: "mt-1 block w-full border border-gray-300 rounded px-3 py-2 text-sm"
+        .field
+          = cost_fields.label :quantity, class: "block text-sm font-medium text-gray-700"
+          = cost_fields.number_field :quantity,
+                                     min: 1,
+                                     class: "mt-1 block w-32 border border-gray-300 rounded px-3 py-2 text-sm"
+        - if cost_fields.object.persisted?
+          .field.flex.items-center.space-x-2
+            = cost_fields.check_box :_destroy, class: "rounded border-gray-300"
+            = cost_fields.label :_destroy, "Remove this item", class: "text-sm text-red-600"
+  %p.text-xs.text-gray-500.mt-1 Changes are saved when you update the egg.
 
   .actions
     = f.submit class: "bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"

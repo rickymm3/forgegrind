@@ -1,7 +1,7 @@
 class UserPetsController < ApplicationController
   before_action :authenticate_user!
-  before_action :set_user_pet, only: [:show, :level_up, :destroy, :interact_preview, :interact, :energy_tick]
-  before_action :refresh_pet_state, only: [:show, :interact_preview, :interact, :level_up, :energy_tick]
+  before_action :set_user_pet, only: [:show, :level_up, :destroy, :interact_preview, :interact, :energy_tick, :details_panel, :overview_panel, :level_up_panel, :reset_panel]
+  before_action :refresh_pet_state, only: [:show, :interact_preview, :interact, :level_up, :energy_tick, :details_panel, :overview_panel, :level_up_panel]
 
   def index
     @user_pets = current_user.user_pets.active.includes({ pet: :pet_types }, :rarity)
@@ -11,6 +11,47 @@ class UserPetsController < ApplicationController
 
   def show
     @pet = @user_pet.pet
+  end
+
+  def details_panel
+    render_panel(:details)
+  end
+
+  def overview_panel
+    render_panel(:overview)
+  end
+
+  def level_up_panel
+    if @user_pet.level >= UserPet::LEVEL_CAP
+      render_action_panel(state: :error, context: panel_context, message: "Max level reached.") and return
+    end
+
+    unless @user_pet.exp >= UserPet::EXP_PER_LEVEL
+      remaining = UserPet::EXP_PER_LEVEL - @user_pet.exp.to_i
+      render_action_panel(state: :error,
+                          context: panel_context,
+                          message: "Earn #{remaining} more XP to level up.") and return
+    end
+
+    @leveling_items = current_user.user_items
+                                  .includes(:item)
+                                  .joins(:item)
+                                  .where(items: { item_type: UserPet.leveling_stone_types })
+
+    respond_to do |format|
+      format.turbo_stream do
+        render turbo_stream: turbo_stream.replace(
+          helpers.dom_id(@user_pet, :panel),
+          partial: "user_pets/level_up_panel",
+          locals: { user_pet: @user_pet, leveling_items: @leveling_items }
+        )
+      end
+      format.html { redirect_to user_pet_path(@user_pet) }
+    end
+  end
+
+  def reset_panel
+    render_panel(:details)
   end
 
   def equip
@@ -407,7 +448,7 @@ class UserPetsController < ApplicationController
     end.compact
   end
 
-  def render_action_panel(state:, context:, message: nil, requirements: nil, interaction: nil, energy_cost: nil, needs_preview: [], personality_changes: [])
+  def render_action_panel(state:, context:, message: nil, requirements: nil, interaction: nil, energy_cost: nil, needs_preview: [], personality_changes: [], tracker_snapshot: nil)
     requirements ||= []
     action_dom = helpers.action_panel_dom_id(@user_pet)
     energy_cost = energy_cost.to_i if energy_cost
@@ -522,5 +563,58 @@ class UserPetsController < ApplicationController
     else
       base
     end
+  end
+
+  def render_panel(type)
+    partial = type == :details ? "user_pets/panel_details" : "user_pets/panel_overview"
+    respond_to do |format|
+      format.turbo_stream do
+        render turbo_stream: turbo_stream.replace(
+          helpers.dom_id(@user_pet, :panel),
+          partial: partial,
+          locals: panel_locals
+        )
+      end
+      format.html { redirect_to user_pet_path(@user_pet) }
+    end
+  end
+
+  def panel_locals
+    { user_pet: @user_pet }
+  end
+
+  def apply_evolution!(result)
+    successor = PetEvolutionService.evolve!(
+      @user_pet,
+      rule: result.rule,
+      child_pet: result.child_pet,
+      timestamp: Time.current,
+      misses: result.misses
+    )
+
+    @user_pet = successor
+    @pet = successor.pet
+
+    "#{successor.name} evolved!"
+  rescue StandardError => e
+    Rails.logger.error("[UserPetsController] evolution failed: #{e.class} - #{e.message}")
+    "Leveled up to #{@user_pet.level}!"
+  end
+
+  def record_evolution_misses(misses)
+    return if misses.blank?
+
+    journal = @user_pet.evolution_journal.deep_dup
+    journal["misses"] ||= {}
+
+    Array(misses).each do |miss_key|
+      next if miss_key.blank?
+      key = miss_key.to_s
+      journal["misses"][key] = journal["misses"].fetch(key, 0) + 1
+    end
+
+    @user_pet.update!(evolution_journal: journal)
+  rescue StandardError => e
+    Rails.logger.warn("[UserPetsController] record_evolution_misses failed: #{e.class} - #{e.message}")
   end
 end

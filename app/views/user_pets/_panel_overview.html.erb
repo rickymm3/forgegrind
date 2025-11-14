@@ -1,0 +1,61 @@
+<% pet = user_pet.pet %>
+<% pet_name = user_pet.name.presence || pet.name %>
+<% rarity_name = user_pet.rarity&.name || "Unknown" %>
+<% sprite_path = pet_sprite_path(pet) %>
+<% state_badges = pet_state_badges(user_pet) %>
+<% default_ability = pet.respond_to?(:default_ability) ? pet.default_ability&.name : nil %>
+<% ability_names = user_pet.learned_abilities.limit(3).map(&:name).presence || [default_ability || "Basic Ability"] %>
+
+<section class="pet-panel pet-panel--overview">
+  <div class="pet-panel__card">
+    <div class="pet-panel__media">
+      <% if sprite_path.present? %>
+        <%= image_tag sprite_path, alt: pet_name, class: "pet-panel__image" %>
+      <% else %>
+        <div class="pet-panel__image-placeholder">Artwork unavailable</div>
+      <% end %>
+    </div>
+
+    <div class="pet-panel__body">
+      <p class="pet-panel__eyebrow">Companion</p>
+      <h2 class="pet-panel__title"><%= pet_name %></h2>
+      <p class="pet-panel__subtitle"><%= rarity_name %> • Level <%= user_pet.level %></p>
+
+      <% if state_badges.any? %>
+        <ul class="pet-panel__status-list">
+          <% state_badges.each do |badge| %>
+            <% modifier = "pet-panel__status-chip--#{badge[:label].parameterize(separator: '-')}" %>
+            <%= content_tag :li,
+                            badge[:label],
+                            class: ["pet-panel__status-chip", modifier],
+                            title: badge[:title] %>
+          <% end %>
+        </ul>
+      <% end %>
+
+      <div class="pet-panel__section">
+        <span class="pet-panel__label">Abilities</span>
+        <ul class="pet-panel__value-list">
+          <% ability_names.each do |ability_name| %>
+            <li><%= ability_name %></li>
+          <% end %>
+        </ul>
+      </div>
+
+      <% if pet.description.present? %>
+        <div class="pet-panel__section">
+          <span class="pet-panel__label">Description</span>
+          <p class="pet-panel__description"><%= pet.description %></p>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="pet-panel__footer">
+    <%= button_to "Details",
+                  details_panel_user_pet_path(user_pet, format: :turbo_stream),
+                  method: :get,
+                  class: "pet-panel__primary-button pet-panel__primary-button--full",
+                  form: { data: { turbo_stream: true }, class: "pet-panel__footer-form" } %>
+  </div>
+</section>

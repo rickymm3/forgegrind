@@ -14,6 +14,10 @@ Rails.application.routes.draw do
       post :level_up
       post :interact_preview
       post :energy_tick
+      get  :level_up_panel
+      post :reset_panel
+      get  :details_panel
+      get  :overview_panel
     end
     collection do
       post :unequip
@@ -53,17 +57,22 @@ Rails.application.routes.draw do
     end
   
     resources :eggs do
-      post :assign_pets, on: :member
+      patch :update_hatch_pets, on: :member
     end
+    resources :badges
     resources :abilities
     resources :special_abilities
     resources :pets
     resources :user_pets, only: [:index, :show, :edit, :update]
+    get "content", to: "content#index", as: :content
+    resources :mods, only: [:index]
+
     resources :evolution_rules do
       collection do
         get :dry_run
       end
     end
+    resources :worlds
   end
   
 

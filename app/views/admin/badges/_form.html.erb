@@ -1,0 +1,120 @@
+<% tracker_settings = tracker_settings() %>
+<% available = available_badges %>
+
+<%= form_with url: form_url, method: form_method, local: true, class: "space-y-8", data: { controller: "badge-builder" } do |f| %>
+  <% if flash[:alert].present? %>
+    <div class="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800"><%= flash[:alert] %></div>
+  <% end %>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div class="space-y-4">
+      <h2 class="text-lg font-semibold text-slate-900">Badge Details</h2>
+      <div class="field">
+        <%= f.label :key, "Key", class: "block text-sm font-semibold text-slate-600" %>
+        <%= f.text_field :key, value: @badge_key, class: "mt-1 w-full rounded-lg border border-slate-200 px-3 py-2", placeholder: "well_fed" %>
+      </div>
+      <div class="field">
+        <%= f.label :label, "Name", class: "block text-sm font-semibold text-slate-600" %>
+        <%= f.text_field :label, value: @badge["label"], class: "mt-1 w-full rounded-lg border border-slate-200 px-3 py-2" %>
+      </div>
+      <div class="field">
+        <%= f.label :description, class: "block text-sm font-semibold text-slate-600" %>
+        <%= f.text_area :description, value: @badge["description"], rows: 3, class: "mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm" %>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div class="field">
+          <%= f.label :color, class: "block text-sm font-semibold text-slate-600" %>
+          <%= f.text_field :color, value: @badge["color"], class: "mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm", placeholder: "emerald" %>
+        </div>
+        <div class="field flex items-center gap-2">
+          <%= f.check_box :transfers_on_level_up, checked: @badge["transfers_on_level_up"], class: "rounded border-slate-300" %>
+          <%= f.label :transfers_on_level_up, class: "text-sm font-semibold text-slate-600" %>
+        </div>
+        <div class="field col-span-2">
+          <%= f.label :category, "Category", class: "block text-sm font-semibold text-slate-600" %>
+          <%= select_tag "badge[category]",
+                         options_for_select([["Pet Care", "care"], ["Exploration / Meta", "meta"], ["Other", "other"]],
+                                            @badge["category"] || "care"),
+                         class: "mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm",
+                         data: { action: "badge-builder#changeCategory", badge_builder_target: "category" } %>
+        </div>
+      </div>
+    </div>
+    <div class="space-y-4">
+      <h2 class="text-lg font-semibold text-slate-900">Badge Overrides</h2>
+      <p class="text-xs text-slate-500">Choose badges removed when this badge activates.</p>
+      <%= select_tag "badge[remove_badges][]",
+                     options_for_select(available.keys, Array(@badge.dig("overrides", "remove"))),
+                     multiple: true,
+                     class: "mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm h-32" %>
+    </div>
+  </div>
+
+  <hr>
+
+  <div data-badge-builder-target="careSection" class="<%= (@badge["category"] || "care") == "care" ? "" : "hidden" %>">
+    <h2 class="text-lg font-semibold text-slate-900">Tracker Requirements</h2>
+    <p class="text-sm text-slate-500 mb-4">Select which care sliders must reach a value during an energy tick.</p>
+
+    <div class="space-y-3" data-controller="badge-tracker">
+      <% tracker_settings.each do |name, settings| %>
+        <% tracker_label = name.to_s.titleize %>
+        <div class="rounded-2xl border border-slate-200 bg-white p-4 space-y-2 <%= settings[:enabled] ? '' : 'opacity-60' %>"
+             data-badge-tracker-target="row">
+          <div class="flex items-center gap-3">
+            <%= check_box_tag "badge[trackers][#{name}][enabled]", "1", settings[:enabled], class: "rounded border-slate-300", data: { action: "badge-tracker#toggle" } %>
+            <span class="text-sm font-semibold text-slate-800"><%= tracker_label %></span>
+          </div>
+          <div class="grid gap-3 md:grid-cols-3">
+            <%= select_tag "badge[trackers][#{name}][comparison]",
+                           options_for_select([["≥ at least", "at_least"], ["≤ at most", "at_most"]], settings[:comparison]),
+                           class: "rounded-lg border border-slate-200 px-3 py-2 text-sm",
+                           disabled: !settings[:enabled] %>
+            <input type="range"
+                   min="0"
+                   max="100"
+                   value="<%= settings[:value] %>"
+                   class="w-full rounded-lg border border-transparent bg-slate-100"
+                   <%= "disabled" unless settings[:enabled] %>
+                   data-action="input->badge-tracker#syncFromSlider">
+            <%= number_field_tag "badge[trackers][#{name}][value]",
+                                 settings[:value],
+                                 min: 0,
+                                 max: 100,
+                                 class: "rounded-lg border border-slate-200 px-3 py-2",
+                                 disabled: !settings[:enabled],
+                                 data: { action: "input->badge-tracker#syncFromInput" } %>
+          </div>
+          <p class="text-xs text-slate-500">Set the care tracker slider threshold that must be <%= settings[:comparison] == "at_most" ? "≤" : "≥" %> this value during an energy tick.</p>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <div data-badge-builder-target="metaSection" class="<%= (@badge["category"] || "care") == "care" ? "hidden" : "" %>">
+    <h2 class="text-lg font-semibold text-slate-900">Meta Requirements</h2>
+    <p class="text-sm text-slate-500 mb-4">Trigger badges from exploration milestones, flags, or seasons.</p>
+    <div class="space-y-3" data-badge-builder-target="metaList">
+      <% if meta_condition_rows.any? %>
+        <% meta_condition_rows.each_with_index do |condition, index| %>
+          <%= render "meta_condition_row", condition: condition, index: index, meta_condition_types: meta_condition_types %>
+        <% end %>
+      <% else %>
+        <%= render "meta_condition_row", condition: {}, index: 0, meta_condition_types: meta_condition_types %>
+      <% end %>
+    </div>
+    <button type="button"
+            class="inline-flex items-center rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-600 hover:border-indigo-400 hover:text-indigo-500"
+            data-action="badge-builder#addCondition">
+      + Add meta condition
+    </button>
+    <template data-badge-builder-target="template">
+      <%= render("meta_condition_row", condition: {}, index: "__INDEX__", meta_condition_types: meta_condition_types) %>
+    </template>
+  </div>
+
+  <div class="flex items-center justify-end gap-3">
+    <%= link_to "Cancel", admin_badges_path, class: "text-sm font-semibold text-slate-600 hover:text-slate-800" %>
+    <%= f.submit "Save Badge", class: "inline-flex items-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500" %>
+  </div>
+<% end %>

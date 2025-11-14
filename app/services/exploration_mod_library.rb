@@ -34,6 +34,18 @@ module ExplorationModLibrary
       config.fetch(:rarity_palette, {}).with_indifferent_access
     end
 
+    def base_mods
+      bases
+    end
+
+    def prefix_mods
+      prefixes
+    end
+
+    def suffix_mods
+      suffixes
+    end
+
     def combination(prefix_key, base_key, suffix_key = nil)
       combos = config.fetch(:combinations, {}).with_indifferent_access
       search_keys = combination_keys(prefix_key, base_key, suffix_key)

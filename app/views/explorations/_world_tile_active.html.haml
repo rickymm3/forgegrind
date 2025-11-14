@@ -1,0 +1,69 @@
+- interactive_classes = (card_classes + ["exploration-card--interactive"]).join(" ")
+- flavor = metadata["flavor"] || metadata[:flavor]
+- overlay_label = "View exploration #{generated&.name || slot_label}"
+
+%article{ class: interactive_classes }
+  = link_to zone_explorations_path(id: generated.id),
+            class: "exploration-card__overlay",
+            data: { turbo_frame: "_top" } do
+    %span.exploration-card__overlay-label= overlay_label
+  .exploration-card__status-row
+    .exploration-card__eyebrow
+      %span.exploration-card__slot-label= slot_label || "Slot"
+      %span.exploration-card__state-label= user_exploration.present? ? "Exploring" : "Ready to start"
+    .exploration-card__badge-row
+      %span.exploration-tag
+        %span.exploration-tag__icon{ aria: { hidden: true } }
+          %svg.exploration-icon{ viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", 'stroke-width': "1.6" }
+            %path{ d: "M12 5v7l3 2", 'stroke-linecap': "round", 'stroke-linejoin': "round" }
+        = duration_label
+      - if rarity_label
+        %span.exploration-tag.exploration-tag--rarity{ style: rarity_style.presence }
+          %span.exploration-tag__icon{ aria: { hidden: true } }
+            %svg.exploration-icon{ viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", 'stroke-width': "1.6" }
+              %path{ d: "M12 3l2.5 6.5L21 10l-5 4.5L17.5 21 12 17.5 6.5 21 8 14.5 3 10l6.5-.5L12 3z", 'stroke-linecap': "round", 'stroke-linejoin': "round" }
+          = rarity_label
+
+  .exploration-card__body
+    %h3.exploration-card__title= generated.name
+    %p.exploration-card__world
+      %span.exploration-card__world-label
+        %svg.exploration-icon{ viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", 'stroke-width': "1.5" }
+          %path{ d: "M3 12h3m12 0h3M12 3v3m0 12v3", 'stroke-linecap': "round", 'stroke-linejoin': "round" }
+        %span= world&.name
+    - unless user_exploration.present?
+      - if flavor.present?
+        %p.exploration-card__message= Array(flavor).compact.first
+
+  .exploration-card__footer
+    - if user_exploration.present?
+      - pets = user_exploration.user_pets.includes(:pet)
+      .exploration-card__party{ aria: { label: "Active party" } }
+        - pets.each do |pet|
+          - sprite = defined?(pet_sprite_path) ? pet_sprite_path(pet.pet) : asset_path("pets/#{pet.pet.name.parameterize}.png") rescue nil
+          = link_to user_pet_path(pet),
+                    class: "exploration-card__party-link",
+                    data: { turbo_frame: "_top" } do
+            - if sprite.present?
+              %img.exploration-card__party-image{ src: sprite, alt: pet.name.presence || pet.pet.name }
+            - else
+              %span.exploration-card__party-fallback= pet.pet.name.first(3)
+
+      - if segment_status&.dig(:state) == :checkpoint
+        %span.exploration-card__status-pill Checkpoint reached — open to continue
+      - elsif user_exploration.active_encounter?
+        %span.exploration-card__status-pill Encounter active
+      - elsif segment_status&.dig(:state) == :active
+        - countdown_data = {controller: "slot-countdown",
+                            slot_countdown_seconds_value: segment_status[:remaining_seconds],
+                            slot_countdown_refresh_url_value: explorations_path(format: :turbo_stream)}
+        - if segment_status[:end_time].respond_to?(:iso8601)
+          - countdown_data[:slot_countdown_end_at_value] = segment_status[:end_time].iso8601
+        %span.exploration-card__countdown-message{ data: countdown_data }
+          Next checkpoint in
+          %span.exploration-card__countdown{ data: { slot_countdown_target: "output" } }
+            = exploration_duration_label(segment_status[:remaining_seconds])
+      - else
+        %span.exploration-card__status-muted Exploration underway
+    - else
+      %span.exploration-card__status-muted Party required to begin

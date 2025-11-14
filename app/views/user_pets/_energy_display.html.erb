@@ -1,0 +1,30 @@
+<% energy_ratio = (user_pet.energy.to_f / UserPet::MAX_ENERGY).clamp(0.0, 1.0) %>
+<% energy_percent = (energy_ratio * 100).round(1) %>
+
+<div class="pet-energy">
+  <p class="pet-panel__label">Energy</p>
+  <p class="pet-bar__value"
+     data-pet-display-target="energyValue"
+     data-base-value="<%= user_pet.energy %>"
+     data-max-value="<%= UserPet::MAX_ENERGY %>">
+    <span class="pet-energy__total"><%= user_pet.energy %> / <%= UserPet::MAX_ENERGY %></span>
+  </p>
+  <div class="pet-bar__track">
+    <div class="pet-bar__fill"
+         data-pet-display-target="energyBar"
+         data-base-percent="<%= energy_percent %>"
+         data-max-value="<%= UserPet::MAX_ENERGY %>"
+         style="width: <%= energy_percent %>%"></div>
+  </div>
+  <% if user_pet.energy >= UserPet::MAX_ENERGY %>
+    <p class="pet-energy__status">Energy is at max.</p>
+  <% else %>
+    <p class="pet-energy__status"
+       data-controller="countdown"
+       data-countdown-seconds-value="<%= user_pet.seconds_until_next_energy %>"
+       data-user-pet-id="<%= user_pet.id %>">
+      Next energy in
+      <span data-countdown-target="output">Loading…</span>
+    </p>
+  <% end %>
+</div>

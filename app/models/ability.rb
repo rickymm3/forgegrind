@@ -24,4 +24,7 @@ class Ability < ApplicationRecord
   # Core metadata stored in the DB
   validates :name, :reference, :description, :element_type, presence: true
   validates :reference, uniqueness: true
+
+  accepts_nested_attributes_for :ability_permissions, allow_destroy: true
+  accepts_nested_attributes_for :ability_effects, allow_destroy: true
 end

@@ -47,6 +47,35 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_06_170500) do
     t.index ["permitted_type", "permitted_id"], name: "index_permissions_on_permitted"
   end
 
+  create_table "active_storage_attachments", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "record_type", null: false
+    t.bigint "record_id", null: false
+    t.bigint "blob_id", null: false
+    t.datetime "created_at", null: false
+    t.index ["blob_id"], name: "index_active_storage_attachments_on_blob_id"
+    t.index ["record_type", "record_id", "name", "blob_id"], name: "index_active_storage_attachments_uniqueness", unique: true
+  end
+
+  create_table "active_storage_blobs", force: :cascade do |t|
+    t.string "key", null: false
+    t.string "filename", null: false
+    t.string "content_type"
+    t.text "metadata"
+    t.string "service_name", null: false
+    t.bigint "byte_size", null: false
+    t.string "checksum"
+    t.datetime "created_at", null: false
+    t.datetime "identified_at"
+    t.index ["key"], name: "index_active_storage_blobs_on_key", unique: true
+  end
+
+  create_table "active_storage_variant_records", force: :cascade do |t|
+    t.bigint "blob_id", null: false
+    t.string "variation_digest", null: false
+    t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
+  end
+
   create_table "battle_sessions", force: :cascade do |t|
     t.bigint "user_id", null: false
     t.bigint "world_id", null: false
@@ -167,7 +196,11 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_06_170500) do
     t.boolean "one_shot", default: true, null: false
     t.string "seasonal_tag"
     t.text "notes"
+    t.integer "success_chance_percent", default: 100, null: false
+    t.bigint "fallback_child_pet_id"
+    t.text "required_badges", default: [], null: false, array: true
     t.index ["child_pet_id"], name: "index_evolution_rules_on_child_pet_id"
+    t.index ["fallback_child_pet_id"], name: "index_evolution_rules_on_fallback_child_pet_id"
     t.index ["parent_pet_id"], name: "index_evolution_rules_on_parent_pet_id"
     t.index ["required_item_id"], name: "index_evolution_rules_on_required_item_id"
   end
@@ -263,7 +296,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_06_170500) do
   create_table "pets", force: :cascade do |t|
     t.string "name"
     t.integer "power"
-    t.bigint "egg_id", null: false
+    t.bigint "egg_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.bigint "rarity_id"
@@ -276,6 +309,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_06_170500) do
     t.bigint "default_ability_id"
     t.text "description"
     t.bigint "special_ability_id"
+    t.integer "hatch_weight", default: 100, null: false
     t.index ["default_ability_id"], name: "index_pets_on_default_ability_id"
     t.index ["egg_id"], name: "index_pets_on_egg_id"
     t.index ["rarity_id"], name: "index_pets_on_rarity_id"
@@ -548,6 +582,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_06_170500) do
   add_foreign_key "enemies", "worlds"
   add_foreign_key "evolution_rules", "items", column: "required_item_id"
   add_foreign_key "evolution_rules", "pets", column: "child_pet_id"
+  add_foreign_key "evolution_rules", "pets", column: "fallback_child_pet_id"
   add_foreign_key "evolution_rules", "pets", column: "parent_pet_id"
   add_foreign_key "generated_explorations", "users"
   add_foreign_key "generated_explorations", "worlds"

@@ -1,0 +1,53 @@
+<h1 class="text-2xl font-bold mb-4">Evolution Rules</h1>
+
+<div class="mb-4">
+  <%= link_to "New Rule", new_admin_evolution_rule_path, class: "px-3 py-2 bg-blue-600 text-white rounded" %>
+  <%= link_to "Dry Run", dry_run_admin_evolution_rules_path, class: "ml-2 px-3 py-2 bg-slate-600 text-white rounded" %>
+</div>
+
+<table class="w-full mt-4">
+  <thead>
+    <tr class="text-left">
+      <th>ID</th>
+      <th>Parent</th>
+      <th>Child</th>
+      <th>Window</th>
+      <th>Priority</th>
+      <th>One-shot</th>
+      <th>Seasonal</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @rules.each do |rule| %>
+      <tr class="border-t">
+        <td><%= rule.id %></td>
+        <td><%= rule.parent_pet&.name %></td>
+        <td><%= rule.child_pet&.name %></td>
+        <td>
+          <% if rule.trigger_level.present? %>
+            L<%= rule.trigger_level %>
+          <% elsif rule.window_event.present? %>
+            event:<%= rule.window_event %>
+          <% else %>
+            L<%= rule.window_min_level || "?" %>-<%= rule.window_max_level || "?" %>
+          <% end %>
+        </td>
+        <td><%= rule.priority %></td>
+        <td><%= rule.one_shot? ? "Yes" : "No" %></td>
+        <td><%= rule.seasonal_tag.presence || "-" %></td>
+        <td>
+          <%= link_to "Show", admin_evolution_rule_path(rule), class: "text-blue-600" %>
+          |
+          <%= link_to "Edit", edit_admin_evolution_rule_path(rule), class: "text-amber-600" %>
+          |
+          <%= link_to "Delete",
+                      admin_evolution_rule_path(rule),
+                      data: { turbo_confirm: "Delete this rule?" },
+                      method: :delete,
+                      class: "text-red-600" %>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

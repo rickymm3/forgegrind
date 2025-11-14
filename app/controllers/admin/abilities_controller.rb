@@ -51,7 +51,7 @@ class Admin::AbilitiesController < Admin::BaseController
 
   def ability_params
     params.require(:ability).permit(
-      :name, :description, :power, :cost, :cooldown, :damage, :element_type,
+      :name, :reference, :description, :element_type,
       ability_permissions_attributes: %i[id permitted_type permitted_id _destroy],
       ability_effects_attributes:     %i[id effect_id magnitude duration _destroy]
     )

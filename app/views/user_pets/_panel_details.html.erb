@@ -1,0 +1,175 @@
+<% pet = user_pet.pet %>
+<% pet_name = user_pet.name.presence || pet.name %>
+<% care_metrics = [:hunger, :hygiene, :boredom, :injury_level, :mood].filter_map do |metric|
+  next unless user_pet.respond_to?(metric)
+  value = user_pet.send(metric).to_f rescue nil
+  next unless value
+  {
+    key: metric,
+    label: need_label(metric),
+    value: value.round(1),
+    percent: value.clamp(0.0, 100.0).round(1)
+  }
+end %>
+<% xp_ratio   = (user_pet.exp.to_f / UserPet::EXP_PER_LEVEL).clamp(0.0, 1.0) %>
+<% xp_percent = (xp_ratio * 100).round(1) %>
+<% exploring    = user_pet.exploring? %>
+<% asleep_until = user_pet.asleep_until %>
+<% sleeping     = asleep_until.present? && Time.current < asleep_until %>
+<% can_level    = user_pet.exp.to_i >= UserPet::EXP_PER_LEVEL %>
+<% maxed_level  = user_pet.level >= UserPet::LEVEL_CAP %>
+<% level_up_disabled = maxed_level || exploring || sleeping || !can_level %>
+<% actions_catalog = [
+  { key: "play",   label: "Play",   emoji: "🎾" },
+  { key: "wash",   label: "Groom",  emoji: "🧼" },
+  { key: "feed",   label: "Feed",   emoji: "🍖" },
+  { key: "treat",  label: "Treat",  emoji: "💊" },
+  { key: "cuddle", label: "Cuddle", emoji: "🤗" },
+  { key: "walk",   label: "Walk",   emoji: "🧭" }
+].select { |action| PetCareService::ACTIONS.key?(action[:key]) } %>
+<% disabled_actions = exploring || sleeping %>
+
+<section class="pet-panel pet-panel--details"
+         data-controller="pet-display"
+         data-action="action-panel:preview->pet-display#handlePreview">
+  <div class="pet-panel__grid">
+    <div class="pet-panel__column">
+      <div class="pet-panel__header-row">
+        <div>
+          <p class="pet-panel__eyebrow">Care Status</p>
+          <h2 class="pet-panel__title"><%= pet_name %></h2>
+        </div>
+        <div class="pet-panel__stat">
+          <span class="pet-panel__label">Level</span>
+          <span class="pet-panel__value"><%= user_pet.level %></span>
+        </div>
+      </div>
+
+      <div class="pet-panel__bars">
+        <div class="pet-bar pet-bar--xp">
+          <div class="pet-bar__header">
+            <span class="pet-panel__label">Experience</span>
+            <span class="pet-bar__value"
+                  data-pet-display-target="xpText"
+                  data-base-before="<%= user_pet.exp %>"
+                  data-base-after="<%= user_pet.exp %>"
+                  data-base-text="<%= "#{user_pet.exp} / #{UserPet::EXP_PER_LEVEL} XP" %>"
+                  data-max-value="<%= UserPet::EXP_PER_LEVEL %>">
+              <%= user_pet.exp %> / <%= UserPet::EXP_PER_LEVEL %> XP
+            </span>
+          </div>
+          <div class="pet-bar__track">
+            <div class="pet-bar__fill pet-bar__fill--xp"
+                 data-pet-display-target="xpBar"
+                 data-base-percent="<%= xp_percent %>"
+                 data-max-value="<%= UserPet::EXP_PER_LEVEL %>"
+                 style="width: <%= xp_percent %>%"></div>
+          </div>
+          <span class="pet-bar__percent"
+                data-pet-display-target="xpValue"
+                data-base-text="<%= number_to_percentage(xp_percent, precision: 1) %>"
+                data-base-percent="<%= xp_percent %>">
+            <%= number_to_percentage(xp_percent, precision: 1) %>
+          </span>
+        </div>
+
+        <div id="pet_energy_<%= user_pet.id %>" class="pet-bar pet-bar--energy">
+          <%= render "user_pets/energy_display", user_pet: user_pet %>
+        </div>
+      </div>
+
+      <div class="pet-panel__level">
+        <div class="pet-panel__level-info">
+          <span class="pet-panel__label">Next Level</span>
+          <% if level_up_disabled %>
+            <p class="pet-panel__helper">
+              <% if maxed_level %>
+                Max level reached
+              <% elsif exploring %>
+                Unavailable while exploring
+              <% elsif sleeping %>
+                Resting — check back soon
+              <% else %>
+                Earn <%= UserPet::EXP_PER_LEVEL - user_pet.exp.to_i %> more XP
+              <% end %>
+            </p>
+          <% else %>
+            <p class="pet-panel__helper">Ready to level up now.</p>
+          <% end %>
+        </div>
+    <% unless level_up_disabled %>
+      <%= button_to "Level Up",
+                    level_up_panel_user_pet_path(user_pet, format: :turbo_stream),
+                    method: :get,
+                    form: {
+                      data: { turbo_stream: true, turbo_frame: dom_id(user_pet, :panel) },
+                      class: "pet-panel__level-form"
+                    },
+                    class: "pet-panel__primary-button" %>
+    <% end %>
+  </div>
+    </div>
+
+    <div class="pet-panel__column">
+      <div class="pet-stats-grid">
+        <% care_metrics.each do |metric| %>
+          <div class="pet-stat"
+               data-pet-display-target="need"
+               data-key="<%= metric[:key] %>"
+               data-base-value="<%= metric[:value] %>"
+               data-base-percent="<%= metric[:percent] %>">
+            <div class="pet-stat__header">
+              <span class="pet-stat__label"><%= metric[:label] %></span>
+              <span class="pet-stat__value"
+                    data-pet-display-target="needValue"
+                    data-key="<%= metric[:key] %>"><%= metric[:value] %></span>
+            </div>
+            <div class="pet-stat__track">
+              <div class="pet-stat__fill"
+                   data-pet-display-target="needBar"
+                   data-key="<%= metric[:key] %>"
+                   style="width: <%= metric[:percent] %>%"></div>
+            </div>
+            <p class="pet-stat__delta"
+               data-pet-display-target="needDelta"
+               data-key="<%= metric[:key] %>"></p>
+          </div>
+        <% end %>
+      </div>
+
+      <div class="pet-care-actions">
+        <% actions_catalog.each do |action| %>
+          <% definition = PetCareService::ACTIONS[action[:key]] %>
+          <%= button_to interact_preview_user_pet_path(user_pet),
+                        method: :post,
+                        params: { interaction_type: action[:key], context: :page },
+                        form: {
+                          class: "pet-care-actions__form",
+                          data: {
+                            turbo_frame: action_panel_dom_id(user_pet),
+                            "pet-display-target": "careForm"
+                          }
+                        },
+                        disabled: disabled_actions,
+                        class: "pet-care-actions__button",
+                        title: action[:label],
+                        aria: { label: "#{action[:label]} action" } do %>
+            <span class="pet-care-actions__emoji"><%= action[:emoji] %></span>
+            <span class="pet-care-actions__label"><%= action[:label] %></span>
+            <% if definition[:energy_cost].to_i.positive? %>
+              <span class="pet-care-actions__energy"><%= definition[:energy_cost] %> EN</span>
+            <% end %>
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <div class="pet-panel__footer pet-panel__footer--split">
+    <%= button_to "Back to Overview",
+                  overview_panel_user_pet_path(user_pet, format: :turbo_stream),
+                  method: :get,
+                  form: { data: { turbo_stream: true, turbo_frame: dom_id(user_pet, :panel) }, class: "pet-panel__footer-form" },
+                  class: "pet-panel__secondary-button" %>
+  </div>
+</section>

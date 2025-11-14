@@ -1,0 +1,17 @@
+<% content_for :title, "Exploration Mods" %>
+
+<section class="space-y-6">
+  <header class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div>
+      <h1 class="text-3xl font-bold text-slate-900">Exploration Mods</h1>
+      <p class="text-sm text-slate-500">Base zones plus their prefix/suffix modifiers, sourced from config/exploration_mods.yml.</p>
+    </div>
+    <%= link_to "Reload Library", admin_mods_path, class: "inline-flex items-center rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-600" %>
+  </header>
+
+  <div class="space-y-10">
+    <%= render partial: "section", locals: { title: "Base Zones", mods: @bases, accent: "bg-blue-50 border-blue-200" } %>
+    <%= render partial: "section", locals: { title: "Prefixes", mods: @prefixes, accent: "bg-emerald-50 border-emerald-200" } %>
+    <%= render partial: "section", locals: { title: "Suffixes", mods: @suffixes, accent: "bg-rose-50 border-rose-200" } %>
+  </div>
+</section>

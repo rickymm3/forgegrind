@@ -52,11 +52,17 @@ class Admin::UserPetsController < Admin::BaseController
       :last_good_day,
       :state_flags_json,
       :evolution_journal_json,
-      :badges_json
+      :badges_json,
+      badge_keys: []
     )
   end
 
   def update_structured_attributes(user_pet, permitted)
+    if permitted.key?(:badge_keys)
+      badge_values = Array(permitted.delete(:badge_keys)).reject(&:blank?).map(&:to_s)
+      permitted[:badges] = badge_values
+    end
+
     %i[state_flags evolution_journal badges].each do |attribute|
       json_param = "#{attribute}_json".to_sym
       next unless permitted.key?(json_param)

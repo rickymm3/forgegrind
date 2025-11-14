@@ -1,0 +1,105 @@
+<%= form_with model: [:admin, @ability], local: true do |f| %>
+  <% f.object.ability_permissions.build if f.object.ability_permissions.empty? %>
+  <% f.object.ability_effects.build if f.object.ability_effects.empty? %>
+
+  <% if @ability.errors.any? %>
+    <div id="error_explanation">
+      <h2><%= pluralize(@ability.errors.count, "error") %> prohibited this ability from being saved:</h2>
+      <ul>
+        <% @ability.errors.full_messages.each do |msg| %>
+          <li><%= msg %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="field">
+    <%= f.label :name %>
+    <%= f.text_field :name, class: "border rounded p-2 w-full" %>
+  </div>
+
+  <div class="field">
+    <%= f.label :reference %>
+    <%= f.text_field :reference, class: "border rounded p-2 w-full font-mono text-sm" %>
+    <p class="text-xs text-slate-500 mt-1">Unique key used when referencing this ability in data files.</p>
+  </div>
+
+  <div class="field">
+    <%= f.label :element_type %>
+    <%= f.text_field :element_type, class: "border rounded p-2 w-full" %>
+  </div>
+
+  <div class="field">
+    <%= f.label :description %>
+    <%= f.text_area :description, class: "border rounded p-2 w-full", rows: 4 %>
+  </div>
+
+  <h3>Permissions</h3>
+  <% f.object.ability_permissions.each do |perm_obj| %>
+    <%= f.fields_for :ability_permissions, perm_obj do |perm| %>
+      <div class="nested-permission mb-4 border p-2 rounded">
+        <%= perm.hidden_field :id %>
+        <div class="field mb-2">
+          <%= perm.label :permitted_type, "Type of Permission" %>
+          <%= perm.select :permitted_type,
+                          options_for_select([["PetType", "PetType"], ["Pet", "Pet"]], perm.object.permitted_type),
+                          {},
+                          class: "border rounded p-1 w-full" %>
+        </div>
+        <div class="field mb-2">
+          <%= perm.label :permitted_id, "Permitted Item" %>
+          <% options = case perm.object.permitted_type
+                      when "PetType"
+                        PetType.pluck(:name, :id)
+                      when "Pet"
+                        Pet.pluck(:name, :id)
+                      else
+                        []
+                      end %>
+          <%= perm.select :permitted_id,
+                          options,
+                          { include_blank: true },
+                          class: "border rounded p-1 w-full" %>
+        </div>
+        <div class="field">
+          <%= perm.check_box :_destroy %>
+          <%= perm.label :_destroy, "Remove this permission" %>
+        </div>
+      </div>
+    <% end %>
+  <% end %>
+
+  <h3>Effects</h3>
+  <% f.object.ability_effects.each do |ae_obj| %>
+    <%= f.fields_for :ability_effects, ae_obj do |ae| %>
+      <div class="nested-effect mb-4 border p-2 rounded">
+        <%= ae.hidden_field :id %>
+        <div class="field mb-2">
+          <%= ae.label :effect_id, "Effect" %>
+          <%= ae.collection_select :effect_id,
+                                    Effect.all,
+                                    :id,
+                                    :name,
+                                    { include_blank: true },
+                                    class: "border rounded p-1 w-full" %>
+        </div>
+        <div class="field mb-2">
+          <%= ae.label :magnitude %>
+          <%= ae.number_field :magnitude, class: "border rounded p-1 w-full" %>
+        </div>
+        <div class="field mb-2">
+          <%= ae.label :duration %>
+          <%= ae.number_field :duration, class: "border rounded p-1 w-full" %>
+        </div>
+        <div class="field">
+          <%= ae.check_box :_destroy %>
+          <%= ae.label :_destroy, "Remove this effect" %>
+        </div>
+      </div>
+    <% end %>
+  <% end %>
+
+  <div class="actions mt-4">
+    <%= f.submit "Save Ability", class: "px-4 py-2 bg-blue-600 text-white rounded" %>
+  </div>
+<% end %>

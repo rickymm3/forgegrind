@@ -27,14 +27,19 @@ class EvolutionEngine
     misses = []
 
     candidate_rules.each do |rule|
-      if guard_satisfied?(rule)
-        Rails.logger.info("[EvolutionEngine] Match rule=#{rule.id} parent=#{user_pet.pet_id} child=#{rule.child_pet_id} window=#{window_key(rule, level: level, event: event)}")
-        return Result.new(
-          evolved: true,
-          child_pet: rule.child_pet,
-          rule: rule,
-          misses: misses
-        )
+      if guard_satisfied?(rule) && badges_satisfied?(rule)
+        child = resolve_child(rule)
+        if child
+          Rails.logger.info("[EvolutionEngine] Match rule=#{rule.id} parent=#{user_pet.pet_id} child=#{child.id} window=#{window_key(rule, level: level, event: event)}")
+          return Result.new(
+            evolved: true,
+            child_pet: child,
+            rule: rule,
+            misses: misses
+          )
+        else
+          misses << "chance"
+        end
       else
         wkey = window_key(rule, level: level, event: event)
         Rails.logger.info("[EvolutionEngine] Miss rule=#{rule.id} window=#{wkey}")
@@ -76,6 +81,24 @@ class EvolutionEngine
     any_pass = any_conditions.empty? || any_conditions.any? { |condition| condition_pass?(condition) }
 
     all_pass && any_pass
+  end
+
+  def badges_satisfied?(rule)
+    required = Array(rule.required_badges)
+    return true if required.empty?
+
+    required.all? { |badge| badge_unlocked?(badge) }
+  end
+
+  def resolve_child(rule)
+    chance = rule.success_chance_percent.to_i
+    chance = 100 if chance <= 0
+
+    if chance >= 100 || rand(100) < chance
+      rule.child_pet
+    else
+      rule.fallback_child_pet
+    end
   end
 
   def condition_pass?(condition)

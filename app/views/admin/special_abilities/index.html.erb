@@ -1,0 +1,36 @@
+<% content_for :title, "Special Abilities" %>
+
+<section class="space-y-6">
+  <div class="flex items-center justify-between">
+    <h1 class="text-2xl font-semibold text-slate-100">Special Abilities</h1>
+    <%= link_to "New Special Ability", new_admin_special_ability_path,
+                class: "inline-flex items-center rounded-full bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-500" %>
+  </div>
+
+  <div class="overflow-hidden rounded-3xl border border-slate-800 bg-slate-900/60">
+    <table class="w-full text-left text-sm text-slate-200">
+      <thead class="bg-slate-900/80">
+        <tr>
+          <th class="py-3 px-4 font-semibold text-slate-300">Reference</th>
+          <th class="py-3 px-4 font-semibold text-slate-300">Name</th>
+          <th class="py-3 px-4 font-semibold text-slate-300">Tagline</th>
+          <th class="py-3 px-4 font-semibold text-slate-300">Pets</th>
+          <th class="py-3 px-4"></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-800">
+        <% @special_abilities.each do |ability| %>
+          <tr>
+            <td class="py-3 px-4 font-mono text-xs text-slate-400"><%= ability.reference %></td>
+            <td class="py-3 px-4"><%= ability.name %></td>
+            <td class="py-3 px-4 text-slate-400"><%= ability.tagline.presence || "—" %></td>
+            <td class="py-3 px-4 text-slate-300"><%= ability.pets.count %></td>
+            <td class="py-3 px-4 text-right">
+              <%= link_to "View", admin_special_ability_path(ability), class: "text-indigo-300 hover:text-indigo-200" %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</section>

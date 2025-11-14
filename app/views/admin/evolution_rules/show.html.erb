@@ -1,0 +1,50 @@
+<h1 class="text-2xl font-bold mb-2">Evolution Rule #<%= @rule.id %></h1>
+
+<%
+  related_links = []
+  related_links << { label: "Parent: #{@rule.parent_pet.name}", path: admin_pet_path(@rule.parent_pet) } if @rule.parent_pet
+  related_links << { label: "Child: #{@rule.child_pet.name}", path: admin_pet_path(@rule.child_pet) } if @rule.child_pet
+  related_links << { label: "Create new rule", path: new_admin_evolution_rule_path(parent_pet_id: @rule.parent_pet_id), icon: "+" }
+%>
+<%= admin_related_links(related_links) %>
+
+<div class="mb-4">
+  <%= link_to "Edit", edit_admin_evolution_rule_path(@rule), class: "px-3 py-2 bg-amber-600 text-white rounded" %>
+  <%= link_to "Back", admin_evolution_rules_path, class: "ml-2 px-3 py-2 bg-slate-600 text-white rounded" %>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+  <div class="p-4 border rounded">
+    <h3 class="font-semibold mb-2">Core</h3>
+    <p><strong>Parent:</strong> <%= @rule.parent_pet&.name %></p>
+    <p><strong>Child:</strong> <%= @rule.child_pet&.name %></p>
+    <p><strong>Priority:</strong> <%= @rule.priority %></p>
+    <p><strong>One-shot:</strong> <%= @rule.one_shot? ? "Yes" : "No" %></p>
+    <p><strong>Seasonal:</strong> <%= @rule.seasonal_tag.presence || "-" %></p>
+    <p><strong>Required Item:</strong> <%= @rule.required_item&.name || "-" %></p>
+  </div>
+
+  <div class="p-4 border rounded">
+    <h3 class="font-semibold mb-2">Window</h3>
+    <% if @rule.trigger_level.present? %>
+      <p><strong>Trigger Level:</strong> <%= @rule.trigger_level %></p>
+    <% end %>
+    <% if @rule.window_min_level.present? || @rule.window_max_level.present? %>
+      <p><strong>Level Range:</strong> <%= "#{@rule.window_min_level || '?'} - #{@rule.window_max_level || '?'}" %></p>
+    <% end %>
+    <% if @rule.window_event.present? %>
+      <p><strong>Event:</strong> <%= @rule.window_event %></p>
+    <% end %>
+  </div>
+</div>
+
+<div class="p-4 border rounded mt-6">
+  <h3 class="font-semibold mb-2">Guards</h3>
+  <% guard = @rule.guard_json.presence || {} %>
+  <pre class="bg-slate-50 p-3 rounded text-sm"><%= JSON.pretty_generate(guard) %></pre>
+</div>
+
+<div class="p-4 border rounded mt-6">
+  <h3 class="font-semibold mb-2">Notes</h3>
+  <p><%= @rule.notes.presence || "-" %></p>
+</div>

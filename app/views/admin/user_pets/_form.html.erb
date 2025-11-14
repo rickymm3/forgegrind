@@ -1,0 +1,159 @@
+<% user_pet ||= @user_pet %>
+<% label_class = "block text-sm font-semibold text-slate-600" %>
+<% input_class = "mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm" %>
+<% badge_definitions = BadgeRegistry.definitions.values.sort_by(&:label) %>
+<% current_badges = Array(user_pet.badges).map(&:to_s) %>
+<% unknown_badges = current_badges - badge_definitions.map(&:key) %>
+
+<div class="card bg-white shadow-sm rounded-2xl p-6">
+  <%= form_with model: [:admin, user_pet], local: true, class: "space-y-8" do |f| %>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="space-y-4">
+        <h2 class="text-lg font-semibold text-slate-800">Core</h2>
+        <div class="space-y-3">
+          <div class="field">
+            <%= f.label :name, class: label_class %>
+            <%= f.text_field :name, class: input_class %>
+          </div>
+          <div class="field">
+            <%= f.label :level, class: label_class %>
+            <%= f.number_field :level, class: input_class %>
+          </div>
+          <div class="field">
+            <%= f.label :exp, class: label_class %>
+            <%= f.number_field :exp, class: input_class %>
+          </div>
+          <div class="field">
+            <%= f.label :energy, class: label_class %>
+            <%= f.number_field :energy, class: input_class %>
+          </div>
+          <div class="field">
+            <%= f.label :interactions_remaining, class: label_class %>
+            <%= f.number_field :interactions_remaining, class: input_class %>
+          </div>
+          <div class="field">
+            <%= f.label :asleep_until, class: label_class %>
+            <%= f.datetime_field :asleep_until, class: input_class %>
+          </div>
+        </div>
+      </div>
+      <div class="space-y-4">
+        <h2 class="text-lg font-semibold text-slate-800">Needs</h2>
+        <div class="space-y-3">
+          <% %i[hunger hygiene boredom injury_level mood].each do |attr| %>
+            <div class="field">
+              <%= f.label attr, class: label_class %>
+              <%= f.number_field attr, class: input_class %>
+            </div>
+          <% end %>
+        </div>
+        <div class="space-y-3">
+          <h3 class="text-sm font-semibold text-slate-700">Personality</h3>
+          <% %i[playfulness affection temperament curiosity confidence].each do |attr| %>
+            <div class="field">
+              <%= f.label attr, class: label_class %>
+              <%= f.number_field attr, class: input_class %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="space-y-4">
+        <h2 class="text-lg font-semibold text-slate-800">Tracking</h2>
+        <div class="field">
+          <%= f.label :needs_updated_at, class: label_class %>
+          <%= f.datetime_field :needs_updated_at, class: input_class %>
+        </div>
+        <div class="field">
+          <%= f.label :last_energy_update_at, class: label_class %>
+          <%= f.datetime_field :last_energy_update_at, class: input_class %>
+        </div>
+        <div class="field">
+          <%= f.label :care_good_days_count, class: label_class %>
+          <%= f.number_field :care_good_days_count, class: input_class %>
+        </div>
+        <div class="field">
+          <%= f.label :last_good_day, class: label_class %>
+          <%= f.date_field :last_good_day, class: input_class %>
+        </div>
+      </div>
+      <div class="space-y-4">
+        <h2 class="text-lg font-semibold text-slate-800">JSON Attributes</h2>
+        <div class="field">
+          <label class="block text-sm font-semibold text-slate-600">State Flags (JSON)</label>
+          <%= text_area_tag "user_pet[state_flags_json]",
+                           JSON.pretty_generate(user_pet.state_flags || {}),
+                           rows: 6,
+                           class: "mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-xs font-mono" %>
+        </div>
+        <div class="field">
+          <label class="block text-sm font-semibold text-slate-600">Evolution Journal (JSON)</label>
+          <%= text_area_tag "user_pet[evolution_journal_json]",
+                           JSON.pretty_generate(user_pet.evolution_journal || {}),
+                           rows: 6,
+                           class: "mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-xs font-mono" %>
+        </div>
+        <div class="field">
+          <label class="block text-sm font-semibold text-slate-600">Badges (JSON array)</label>
+          <%= text_area_tag "user_pet[badges_json]",
+                           JSON.pretty_generate(user_pet.badges || []),
+                           rows: 4,
+                           class: "mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-xs font-mono" %>
+        </div>
+      </div>
+    </div>
+
+    <div class="space-y-4">
+      <h2 class="text-lg font-semibold text-slate-800">Badge Manager</h2>
+      <p class="text-sm text-slate-500">Quickly grant or revoke known badges. The JSON field above will update automatically.</p>
+      <%= hidden_field_tag "user_pet[badge_keys][]", "" %>
+      <% if badge_definitions.any? %>
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <% badge_definitions.each do |badge| %>
+            <% checkbox_id = "badge_#{badge.key}" %>
+            <label class="flex items-start gap-3 rounded-xl border border-slate-200 p-3 cursor-pointer hover:border-indigo-300" id="label_<%= checkbox_id %>">
+              <%= check_box_tag "user_pet[badge_keys][]",
+                                badge.key,
+                                current_badges.include?(badge.key),
+                                id: checkbox_id,
+                                class: "mt-1 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" %>
+              <div class="space-y-1">
+                <div class="flex items-center justify-between gap-2">
+                  <span class="text-sm font-semibold text-slate-800"><%= badge.label %></span>
+                  <% if badge.color.present? %>
+                    <span class="text-[11px] font-semibold uppercase rounded-full px-2 py-0.5" style="background-color: <%= badge.color %>22; color: <%= badge.color %>"><%= badge.key %></span>
+                  <% else %>
+                    <span class="text-[11px] font-semibold uppercase text-slate-400"><%= badge.key %></span>
+                  <% end %>
+                </div>
+                <% if badge.description.present? %>
+                  <p class="text-xs text-slate-500"><%= badge.description %></p>
+                <% end %>
+                <% if badge.conditions.present? %>
+                  <p class="text-[11px] text-slate-400">Conditions: <%= badge.conditions.keys.join(", ") %></p>
+                <% end %>
+              </div>
+            </label>
+          <% end %>
+        </div>
+      <% else %>
+        <p class="text-sm text-slate-500">No badge registry definitions found. Use the raw JSON field above to manage badges.</p>
+      <% end %>
+
+      <% if unknown_badges.any? %>
+        <div class="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+          <p class="font-semibold">Unregistered badges</p>
+          <p class="mt-1">These badges exist on the pet but are not defined in config/badges.yml:</p>
+          <p class="mt-1 font-mono"><%= unknown_badges.join(", ") %></p>
+        </div>
+      <% end %>
+    </div>
+
+    <div class="flex items-center justify-end gap-3">
+      <%= link_to "Cancel", admin_user_pet_path(user_pet), class: "text-sm font-semibold text-slate-600 hover:text-slate-800" %>
+      <%= f.submit "Save Changes", class: "inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700" %>
+    </div>
+  <% end %>
+</div>

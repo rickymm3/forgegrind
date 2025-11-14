@@ -73,3 +73,12 @@ application.register("slot-countdown", SlotCountdownController)
 
 import PetDisplayController from "./pet_display_controller"
 application.register("pet-display", PetDisplayController)
+
+import BadgeTrackerController from "./badge_tracker_controller"
+application.register("badge-tracker", BadgeTrackerController)
+
+import BadgeBuilderController from "./badge_builder_controller"
+application.register("badge-builder", BadgeBuilderController)
+
+import TabbarController from "./tabbar_controller"
+application.register("tabbar", TabbarController)

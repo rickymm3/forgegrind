@@ -1,0 +1,21 @@
+- cooldown_classes = (card_classes + ["exploration-card--cooldown"]).join(" ")
+
+%article{ class: cooldown_classes }
+  .exploration-card__status-row
+    .exploration-card__eyebrow
+      %span.exploration-card__slot-label= slot_label || "Slot"
+      %span.exploration-card__state-label Rescout cooling down
+    %span.exploration-card__icon-chip
+      %svg.exploration-icon{ viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", 'stroke-width': "1.8" }
+        %path{ d: "M12 6v6l4 2", 'stroke-linecap': "round", 'stroke-linejoin': "round" }
+
+  .exploration-card__body
+    - if cooldown_seconds.positive?
+      %p.exploration-card__message{ data: { controller: "slot-countdown", slot_countdown_seconds_value: cooldown_seconds, slot_countdown_refresh_url_value: explorations_path(format: :turbo_stream) } }
+        Ready to scout in
+        %span.exploration-card__countdown{ data: { slot_countdown_target: "output" } }= format_countdown.call(cooldown_seconds)
+    - else
+      %p.exploration-card__message Scouts returning shortly…
+
+  .exploration-card__footer
+    %span.exploration-card__status-muted Please check back soon

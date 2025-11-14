@@ -1,0 +1,30 @@
+- slot_entries ||= []
+
+- list_classes = ["exploration-list"]
+- list_classes << "exploration-list--empty" if slot_entries.empty?
+
+%div{ class: list_classes.join(' '), data: { controller: "exploration-list" } }
+  - if slot_entries.empty?
+    .explorations-empty
+      %h2.explorations-empty__title No expeditions available
+      %p.explorations-empty__copy
+        Send scouts to uncover fresh routes. Each expedition unlocks new encounters and rewards.
+      %div
+        = button_to "Scout expeditions",
+                    scout_explorations_path,
+                    method: :post,
+                    class: "explorations-button explorations-button--primary"
+  - else
+    - slot_entries.each do |entry|
+      = render "explorations/world_tile",
+               slot_index: entry.slot_index,
+               generated_exploration: entry.generated_exploration,
+               user_exploration: entry.user_exploration,
+               requirement_progress: entry.requirement_progress,
+               requirement_groups: entry.requirement_groups,
+               selected: entry.selected,
+               state: entry.state,
+               cooldown_seconds: entry.cooldown_seconds,
+               cooldown_ends_at: entry.cooldown_ends_at,
+               reroll_cooldown_seconds: entry.reroll_cooldown_seconds,
+               reroll_available_at: entry.reroll_available_at
