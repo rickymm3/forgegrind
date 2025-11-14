@@ -1,5 +1,6 @@
 <% xp_needed = UserPet::EXP_PER_LEVEL %>
 <% xp_remaining = [xp_needed - user_pet.exp.to_i, 0].max %>
+<% leveling_items ||= [] %>
 
 <section class="level-up-panel">
   <div class="level-up-panel__header">
@@ -38,9 +39,12 @@
       <div class="level-up-panel__actions">
         <%= f.submit "Confirm Level Up", class: "level-up-panel__primary" %>
         <%= button_to "Cancel",
-                      reset_panel_user_pet_path(user_pet, format: :turbo_stream),
-                      method: :post,
-                      form: { data: { turbo_stream: true, turbo_frame: dom_id(user_pet, :panel) }, class: "level-up-panel__cancel-form" },
+                      details_panel_user_pet_path(user_pet, format: :turbo_stream),
+                      method: :get,
+                      form: {
+                        class: "level-up-panel__cancel-form",
+                        data: { turbo_frame: user_pet_panel_dom_id(user_pet) }
+                      },
                       class: "level-up-panel__secondary" %>
       </div>
     <% end %>

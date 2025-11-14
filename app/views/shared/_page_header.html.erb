@@ -1,0 +1,48 @@
+<%
+  title         ||= ""
+  eyebrow       ||= nil
+  subtitle      ||= nil
+  back_path     ||= nil
+  back_label    ||= "Back"
+  back_data     ||= {}
+  right_content = local_assigns[:right]
+  body_content  = local_assigns[:body]
+  extra_classes = Array(local_assigns[:class] || local_assigns[:class_name])
+%>
+
+<div class="<%= ["page-header", *extra_classes].compact.join(" ") %>">
+  <div class="page-header__row">
+    <div class="page-header__primary">
+      <% if back_path.present? %>
+        <%= link_to back_path,
+                    class: "page-header__back",
+                    data: back_data do %>
+          <span aria-hidden="true" class="page-header__back-icon">←</span>
+          <span class="sr-only"><%= back_label %></span>
+        <% end %>
+      <% end %>
+
+      <div class="page-header__text">
+        <% if eyebrow.present? %>
+          <p class="page-header__eyebrow"><%= eyebrow %></p>
+        <% end %>
+        <h1 class="page-header__title"><%= title %></h1>
+        <% if subtitle.present? %>
+          <p class="page-header__subtitle"><%= subtitle %></p>
+        <% end %>
+      </div>
+    </div>
+
+    <% if right_content.present? %>
+      <div class="page-header__meta">
+        <%= right_content %>
+      </div>
+    <% end %>
+  </div>
+
+  <% if body_content.present? %>
+    <div class="page-header__body">
+      <%= body_content %>
+    </div>
+  <% end %>
+</div>

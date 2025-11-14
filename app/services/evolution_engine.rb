@@ -211,18 +211,23 @@ class EvolutionEngine
   end
 
   def item_held?(item_identifier)
+    held = user_pet.held_user_item
+    held_item = held&.item
+    return false unless held_item
     return false unless item_identifier.present?
 
-    item = case item_identifier
-           when Integer
-             Item.find_by(id: item_identifier)
-           else
-             Item.find_by(name: item_identifier) || Item.find_by(item_type: item_identifier)
-           end
+    case item_identifier
+    when Integer
+      held_item.id == item_identifier
+    when Item
+      held_item.id == item_identifier.id
+    else
+      expected = item_identifier.to_s
+      return false if expected.blank?
 
-    return false unless item
-
-    user_pet.user.user_items.exists?(item_id: item.id)
+      held_item.name.to_s.casecmp(expected).zero? ||
+        held_item.item_type.to_s.casecmp(expected).zero?
+    end
   end
 
   def season_matches?(expected)

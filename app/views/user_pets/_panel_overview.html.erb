@@ -56,6 +56,9 @@
                   details_panel_user_pet_path(user_pet, format: :turbo_stream),
                   method: :get,
                   class: "pet-panel__primary-button pet-panel__primary-button--full",
-                  form: { data: { turbo_stream: true }, class: "pet-panel__footer-form" } %>
+                  form: {
+                    class: "pet-panel__footer-form",
+                    data: { turbo_frame: user_pet_panel_dom_id(user_pet) }
+                  } %>
   </div>
 </section>

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_06_170500) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_14_140326) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -310,6 +310,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_06_170500) do
     t.text "description"
     t.bigint "special_ability_id"
     t.integer "hatch_weight", default: 100, null: false
+    t.string "sprite_filename"
     t.index ["default_ability_id"], name: "index_pets_on_default_ability_id"
     t.index ["egg_id"], name: "index_pets_on_egg_id"
     t.index ["rarity_id"], name: "index_pets_on_rarity_id"

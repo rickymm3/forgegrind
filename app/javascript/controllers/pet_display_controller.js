@@ -66,11 +66,14 @@ export default class extends Controller {
     if (!activePreview) return
 
     previewEntries.forEach((entry) => {
-      const key = (entry.key || entry[:key]).toString()
-      const after = this.safeNumber(entry.after ?? entry[:after])
-      const afterPercent = this.safeNumber(entry.after_percent ?? entry[:after_percent] ?? after)
-      const delta = this.safeNumber(entry.delta ?? entry[:delta] ?? (after - this.safeNumber(entry.before ?? entry[:before])))
-      this.updateNeedDisplay(key, after, afterPercent, delta)
+      const key = this.fetchEntryValue(entry, "key")
+      const after = this.safeNumber(this.fetchEntryValue(entry, "after"))
+      const afterPercent = this.safeNumber(this.fetchEntryValue(entry, "after_percent") ?? after)
+      const before = this.safeNumber(this.fetchEntryValue(entry, "before"))
+      const computedDelta = after - before
+      const delta = this.safeNumber(this.fetchEntryValue(entry, "delta") ?? computedDelta)
+      const normalizedKey = key == null ? null : key.toString()
+      this.updateNeedDisplay(normalizedKey, after, afterPercent, delta)
     })
 
     const energyDetail = detail.energy || {}
@@ -145,6 +148,20 @@ export default class extends Controller {
   safeNumber(value) {
     const num = Number(value)
     return Number.isFinite(num) ? num : 0
+  }
+
+  fetchEntryValue(entry, key) {
+    if (!entry || !key) return undefined
+    if (Object.prototype.hasOwnProperty.call(entry, key)) {
+      return entry[key]
+    }
+
+    const camelKey = key.replace(/_([a-z])/g, (_, char) => char.toUpperCase())
+    if (Object.prototype.hasOwnProperty.call(entry, camelKey)) {
+      return entry[camelKey]
+    }
+
+    return undefined
   }
 
   clamp(value, min, max) {

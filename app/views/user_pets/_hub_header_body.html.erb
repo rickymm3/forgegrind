@@ -1,0 +1,41 @@
+<%
+  active_collection ||= :pets
+  pet_count          ||= 0
+  egg_count          ||= 0
+%>
+<div class="page-toolbar">
+  <div class="page-toolbar__segment">
+    <button type="button"
+            class="icon-toggle"
+            data-action="click->pet-hub#select"
+            data-pet-hub-target="toggle"
+            data-collection="eggs"
+            aria-pressed="<%= active_collection.to_s == "eggs" %>">
+      <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.4">
+        <path d="M12 21c4.4 0 8-3.6 8-8 0-3.4-2.2-8-8-13-5.8 5-8 9.6-8 13 0 4.4 3.6 8 8 8z" />
+      </svg>
+      <span class="sr-only">Show eggs</span>
+    </button>
+
+    <div class="page-toolbar__summary">
+      <p class="page-toolbar__summary-title">Pets</p>
+      <p class="page-toolbar__summary-meta">
+        <span id="pet-count"><%= pluralize(pet_count, "pet") %></span>
+        ·
+        <span id="egg-count"><%= pluralize(egg_count, "egg") %></span>
+      </p>
+    </div>
+
+    <button type="button"
+            class="icon-toggle"
+            data-action="click->pet-hub#select"
+            data-pet-hub-target="toggle"
+            data-collection="pets"
+            aria-pressed="<%= active_collection.to_s == "pets" %>">
+      <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.4">
+        <path d="M4.8 10.2c0-2.7 2.3-4.9 5.2-4.9 1.3 0 2.5.5 3.5 1.3.9-.8 2.1-1.3 3.4-1.3 2.9 0 5.2 2.2 5.2 4.9 0 4.9-8.6 9.5-8.6 9.5S4.8 15.1 4.8 10.2z" />
+      </svg>
+      <span class="sr-only">Show pets</span>
+    </button>
+  </div>
+</div>

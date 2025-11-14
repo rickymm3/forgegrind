@@ -15,7 +15,6 @@ Rails.application.routes.draw do
       post :interact_preview
       post :energy_tick
       get  :level_up_panel
-      post :reset_panel
       get  :details_panel
       get  :overview_panel
     end

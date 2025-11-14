@@ -1,9 +1,12 @@
 <div id="<%= dom_id pet %>" class="w-full my-5 space-y-6">
-  <% if pet.image.attached? %>
-    <div class="w-full max-w-xs">
-      <%= image_tag pet.image, class: "rounded-2xl border border-slate-200 object-cover w-full h-auto" %>
-    </div>
-  <% end %>
+  <div class="w-full max-w-xs space-y-2">
+    <%= image_tag pet_sprite_path(pet), class: "rounded-2xl border border-slate-200 object-cover w-full h-auto", alt: pet.name %>
+    <% logical_path = pet_sprite_logical_path(pet) %>
+    <p class="text-xs font-mono text-slate-500 break-all">
+      <strong>Logical path:</strong>
+      <%= logical_path.presence || "—" %>
+    </p>
+  </div>
 
   <dl class="grid grid-cols-1 md:grid-cols-2 gap-6">
     <div class="space-y-2">

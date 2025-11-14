@@ -1,7 +1,6 @@
 # app/models/pet.rb
 
 class Pet < ApplicationRecord
-  has_one_attached :image
   belongs_to :egg, optional: true
   belongs_to :rarity
   belongs_to :special_ability, optional: true
@@ -36,6 +35,7 @@ class Pet < ApplicationRecord
   has_many :user_pets, dependent: :restrict_with_error
 
   before_validation :assign_default_special_ability, if: -> { special_ability_id.blank? }
+  before_validation :assign_default_sprite_filename, if: -> { sprite_filename.blank? && name.present? }
 
   # Load the YAML mapping and return two arrays for this pet:
   #   :standard => [ "tackle", "growl" ], 
@@ -56,5 +56,9 @@ class Pet < ApplicationRecord
     return if reference.blank?
 
     self.special_ability ||= SpecialAbility.find_by(reference: reference)
+  end
+
+  def assign_default_sprite_filename
+    self.sprite_filename = "#{name.to_s.parameterize(separator: '_')}.png"
   end
 end

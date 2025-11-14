@@ -5,13 +5,13 @@
 - content_for :main_inner_classes_override, "explorations-main__inner"
 - content_for :main_style, "display: flex; flex-direction: column; min-height: 0;"
 
-.explorations-page
-  %header.explorations-page__intro
-    %p.explorations-page__eyebrow Expedition Log
-    %h1.explorations-page__title Leading the way
-    %p.explorations-page__subtitle
-      Choose a destination, assemble your party, and push deeper into the wilds.
+- content_for :header do
+  = render "shared/page_header",
+           eyebrow: "Expedition Log",
+           title: "Leading the way",
+           subtitle: "Choose a destination, assemble your party, and push deeper into the wilds."
 
+.explorations-page
   .explorations-page__content
     = turbo_frame_tag "worlds-list", class: "explorations-page__frame" do
       = render "explorations/worlds_list",

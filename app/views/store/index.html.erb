@@ -1,63 +1,39 @@
 <% content_for :title, "Store" %>
+<% content_for :main_class, "px-0 pt-4 flex flex-col" %>
+<% content_for :main_inner_class, "px-4 flex flex-col h-full" %>
 
-<div class="relative flex min-h-screen flex-col overflow-x-hidden">
-  <header class="sticky top-0 z-30 border-b border-slate-800 bg-slate-950/85 backdrop-blur supports-[backdrop-filter]:bg-slate-950/60">
-    <div class="mx-auto flex w-full max-w-5xl items-center justify-between gap-4 px-4 py-4">
-      <div class="flex flex-col">
-        <span class="text-xs uppercase tracking-wide text-indigo-200">Forgegrind</span>
-        <h1 class="text-2xl font-semibold text-slate-100">Marketplace</h1>
-      </div>
-      <nav class="flex items-center gap-2">
-        <% tabs = { "items" => "Items", "eggs" => "Eggs" } %>
-        <% tabs.each do |tab_key, tab_label| %>
-          <% active = @active_tab == tab_key %>
-          <%= link_to tab_label,
-                      store_path(tab: tab_key),
-                      class: [
-                        "inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition",
-                        active ? "bg-indigo-600 text-white shadow shadow-indigo-600/40" : "border border-slate-700/70 bg-slate-900/60 text-slate-300 hover:text-white"
-                      ].join(" "),
-                      data: { turbo_frame: "_top" } %>
-        <% end %>
-      </nav>
-    </div>
-    <% stat = current_user.user_stat %>
-    <div class="mx-auto w-full max-w-5xl px-4 pb-3 mb-2">
-      <div class="flex items-center gap-3 text-xs font-semibold uppercase tracking-wide text-slate-200">
-        <div class="inline-flex items-center gap-2 rounded-full border border-indigo-500/30 bg-indigo-500/10 px-3 py-1">
-          <span class="text-indigo-200">Diamonds</span>
-          <span class="text-white"><%= number_with_delimiter(stat&.diamonds || 0) %></span>
-        </div>
-        <div class="inline-flex items-center gap-2 rounded-full border border-amber-500/40 bg-amber-500/10 px-3 py-1">
-          <span class="text-amber-200">Trophies</span>
-          <span class="text-white"><%= number_with_delimiter(stat&.trophies || 0) %></span>
-        </div>
-      </div>
-    </div>
-  </header>
+<% tabs = { "items" => "Items", "eggs" => "Eggs" } %>
+<% header_body = render("store/header_body", tabs: tabs, active_tab: @active_tab, condensed: true) %>
 
-  <main class="mx-auto w-full max-w-5xl flex-1 px-4 pb-32 pt-8">
-    <% case @active_tab %>
-    <% when "items" %>
-      <section class="rounded-3xl border border-slate-800 bg-slate-950/70 p-8 shadow-inner shadow-slate-950/40">
-        <div class="space-y-4 text-center text-slate-300">
-          <h2 class="text-xl font-semibold text-slate-100">Items arriving soon</h2>
-          <p class="text-sm">
-            The Forge is still crafting consumables and gear. Check back later for limited-time bundles and seasonal offerings.
-          </p>
-        </div>
-      </section>
-    <% when "eggs" %>
-      <section class="space-y-6">
-        <div id="store-eggs-carousel">
-          <%= render "eggs_carousel", eggs: @eggs, highlighted_egg_id: @highlighted_egg_id %>
-        </div>
-        <%= turbo_frame_tag "toast-container", class: "fixed top-6 right-6 z-40 flex flex-col items-end" %>
-      </section>
-    <% else %>
-      <p class="rounded-3xl border border-rose-500/30 bg-rose-500/10 p-4 text-sm text-rose-100">
-        Unknown tab.
-      </p>
-    <% end %>
-  </main>
+<% content_for :header do %>
+  <%= render "shared/page_header",
+             title: "Marketplace",
+             subtitle: "Browse limited-time eggs and curated bundles.",
+             class: "page-header--condensed",
+             body: header_body %>
+<% end %>
+
+<div class="mx-auto w-full max-w-5xl flex-1 pb-32 pt-8">
+  <% case @active_tab %>
+  <% when "items" %>
+    <section class="rounded-3xl border border-slate-800 bg-slate-950/70 p-8 shadow-inner shadow-slate-950/40">
+      <div class="space-y-4 text-center text-slate-300">
+        <h2 class="text-xl font-semibold text-slate-100">Items arriving soon</h2>
+        <p class="text-sm">
+          The Forge is still crafting consumables and gear. Check back later for limited-time bundles and seasonal offerings.
+        </p>
+      </div>
+    </section>
+  <% when "eggs" %>
+    <section class="space-y-6">
+      <div id="store-eggs-carousel">
+        <%= render "eggs_carousel", eggs: @eggs, highlighted_egg_id: @highlighted_egg_id %>
+      </div>
+      <%= turbo_frame_tag "toast-container", class: "fixed top-6 right-6 z-40 flex flex-col items-end" %>
+    </section>
+  <% else %>
+    <p class="rounded-3xl border border-rose-500/30 bg-rose-500/10 p-4 text-sm text-rose-100">
+      Unknown tab.
+    </p>
+  <% end %>
 </div>

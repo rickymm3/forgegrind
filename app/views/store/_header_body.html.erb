@@ -1,0 +1,30 @@
+<%
+  stat        ||= current_user.user_stat
+  tabs        ||= {}
+  active_tab  ||= nil
+  condensed   ||= false
+  toolbar_cls = ["page-toolbar"]
+  toolbar_cls << "page-toolbar--stacked" unless condensed
+%>
+<div class="<%= toolbar_cls.join(" ") %>">
+  <nav class="page-toolbar__tabs">
+    <% tabs.each do |tab_key, tab_label| %>
+      <% active = active_tab == tab_key %>
+      <%= link_to tab_label,
+                  store_path(tab: tab_key),
+                  class: ["tab-pill", ("tab-pill--active" if active)].compact.join(" "),
+                  data: { turbo_frame: "_top" } %>
+    <% end %>
+  </nav>
+
+  <div class="page-toolbar__stats">
+    <div class="stat-chip stat-chip--indigo">
+      <span class="stat-chip__label">Diamonds</span>
+      <span class="stat-chip__value"><%= number_with_delimiter(stat&.diamonds || 0) %></span>
+    </div>
+    <div class="stat-chip stat-chip--amber">
+      <span class="stat-chip__label">Trophies</span>
+      <span class="stat-chip__value"><%= number_with_delimiter(stat&.trophies || 0) %></span>
+    </div>
+  </div>
+</div>

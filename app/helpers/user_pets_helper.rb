@@ -8,38 +8,14 @@ module UserPetsHelper
   def action_panel_dom_id(user_pet)
     ActionView::RecordIdentifier.dom_id(user_pet, :action_panel)
   end
-  SPRITE_OVERRIDES = {
-    "lupin"      => "nature-egg/lupin/lupin.webp",
-    "fenra"      => "nature-egg/lupin/fenra.webp",
-    "blazewulf"  => "nature-egg/lupin/blazewulf.webp",
-    "duskhound"  => "nature-egg/lupin/duskhound.webp",
-    "ironfang"   => "nature-egg/lupin/ironfang.webp",
-    "galeclaw"   => "nature-egg/lupin/galeclaw.webp",
-    "fenshadow"  => "nature-egg/lupin/fenshadow.webp",
-    "pyrolune"   => "nature-egg/lupin/pyrolune.webp",
-    "tempestral" => "nature-egg/lupin/tempestra.webp",
-    "steelbane"  => "nature-egg/lupin/steelbane.webp",
-    "aetherfang" => "nature-egg/lupin/aetherfang.webp"
-  }.freeze
-
   def pet_sprite_path(pet)
-    slug = pet.name.to_s.parameterize(separator: '_')
-    candidates = []
-    override = SPRITE_OVERRIDES[slug]
-    candidates << override if override.present?
-    candidates << "nature-egg/lupin/#{slug}.webp"
-    candidates << "nature-egg/lupin/#{slug}.png"
-    candidates << "pets/nature-egg/#{slug}.webp"
-    candidates << "pets/nature-egg/#{slug}.png"
-    candidates << "assets/nature-egg/lupin/#{slug}.webp"
-    candidates << "assets/nature-egg/lupin/#{slug}.png"
-    candidates << "pets/#{slug}.webp"
-    candidates << "pets/#{slug}.png"
-    candidates << "pets/#{slug}.jpg"
+    filename = pet&.sprite_filename.presence || default_sprite_filename_for(pet)
+    logical_paths = sprite_directories_for(pet).map { |dir| logical_asset_path(dir, filename) }
+    logical_paths << "pets/#{filename}" if filename.present?
 
-    candidates.compact.uniq.each do |logical_path|
-      asset_url = asset_url_for(logical_path)
-      return asset_url if asset_url
+    logical_paths.compact.each do |logical_path|
+      url = asset_url_for(logical_path)
+      return url if url.present?
     end
 
     asset_url_for("pets/placeholder.svg") || ""
@@ -105,7 +81,74 @@ module UserPetsHelper
     badges
   end
 
+  def pet_sprite_logical_path(pet)
+    filename = pet&.sprite_filename.presence || default_sprite_filename_for(pet)
+    directory = sprite_directories_for(pet).first
+    return "" unless filename.present?
+
+    logical_asset_path(directory, filename) || "pets/#{filename}"
+  end
+
   private
+
+  def default_sprite_filename_for(pet)
+    return "" unless pet
+    "#{pet.name.to_s.parameterize(separator: '_')}.png"
+  end
+
+  def logical_asset_path(directory, filename)
+    return nil unless filename.present?
+    if directory.present?
+      "pets/#{directory}/#{filename}"
+    else
+      "pets/#{filename}"
+    end
+  end
+
+  def sprite_directories_for(pet)
+    return [] unless pet
+
+    dirs = []
+    if evolution_form?(pet)
+      dirs << base_form_directory(pet)
+    end
+    dirs << egg_directory(pet.egg)
+    dirs.compact.uniq
+  end
+
+  def evolution_form?(pet)
+    pet.evolves_from.exists? || pet.evolution_rules_as_child.exists?
+  end
+
+  def egg_directory(egg)
+    return "egg-unknown" unless egg
+
+    slug = egg.name.to_s.parameterize(separator: '_')
+    slug = slug.sub(/_egg\z/, "")
+    slug = slug.presence || "unknown"
+    "egg-#{slug}"
+  end
+
+  def base_form_directory(pet)
+    base = root_base_pet(pet)
+    "base-#{base.name.to_s.parameterize(separator: '_')}"
+  end
+
+  def root_base_pet(pet)
+    seen_ids = []
+    current = pet
+
+    loop do
+      parent = current.evolves_from.first
+      break unless parent
+      break if seen_ids.include?(parent.id)
+
+      seen_ids << parent.id
+      current = parent
+    end
+
+    current
+  end
 
   def asset_url_for(logical_path)
     ActionController::Base.helpers.asset_path(logical_path)

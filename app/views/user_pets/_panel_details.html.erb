@@ -11,6 +11,7 @@
     percent: value.clamp(0.0, 100.0).round(1)
   }
 end %>
+<% leveling_items ||= [] %>
 <% xp_ratio   = (user_pet.exp.to_f / UserPet::EXP_PER_LEVEL).clamp(0.0, 1.0) %>
 <% xp_percent = (xp_ratio * 100).round(1) %>
 <% exploring    = user_pet.exploring? %>
@@ -97,17 +98,29 @@ end %>
             <p class="pet-panel__helper">Ready to level up now.</p>
           <% end %>
         </div>
-    <% unless level_up_disabled %>
-      <%= button_to "Level Up",
-                    level_up_panel_user_pet_path(user_pet, format: :turbo_stream),
-                    method: :get,
-                    form: {
-                      data: { turbo_stream: true, turbo_frame: dom_id(user_pet, :panel) },
-                      class: "pet-panel__level-form"
-                    },
-                    class: "pet-panel__primary-button" %>
-    <% end %>
-  </div>
+        <% unless level_up_disabled %>
+          <%= form_with url: level_up_user_pet_path(user_pet),
+                        method: :post,
+                        data: { turbo_frame: "_top" },
+                        class: "pet-panel__level-form" do |f| %>
+            <div class="pet-panel__level-field">
+              <label for="held_user_item_id" class="pet-panel__label">Hold an item (optional)</label>
+              <% if leveling_items.present? %>
+                <%= f.collection_select :held_user_item_id,
+                                        leveling_items,
+                                        :id,
+                                        ->(user_item) { "#{user_item.item.name} (#{user_item.quantity})" },
+                                        { include_blank: "None" },
+                                        class: "pet-panel__select" %>
+              <% else %>
+                <p class="pet-panel__helper">No compatible items available.</p>
+                <%= f.hidden_field :held_user_item_id, value: nil %>
+              <% end %>
+            </div>
+            <%= f.submit "Level Up", class: "pet-panel__primary-button" %>
+          <% end %>
+        <% end %>
+      </div>
     </div>
 
     <div class="pet-panel__column">
@@ -169,7 +182,10 @@ end %>
     <%= button_to "Back to Overview",
                   overview_panel_user_pet_path(user_pet, format: :turbo_stream),
                   method: :get,
-                  form: { data: { turbo_stream: true, turbo_frame: dom_id(user_pet, :panel) }, class: "pet-panel__footer-form" },
+                  form: {
+                    class: "pet-panel__footer-form",
+                    data: { turbo_frame: user_pet_panel_dom_id(user_pet) }
+                  },
                   class: "pet-panel__secondary-button" %>
   </div>
 </section>

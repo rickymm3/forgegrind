@@ -32,9 +32,9 @@
 <% end %>
 
 <div class="pet-page">
-  <div id="<%= dom_id(user_pet, :panel) %>" class="pet-panel-container">
+  <turbo-frame id="<%= user_pet_panel_dom_id(user_pet) %>" class="pet-panel-container">
     <%= render "user_pets/panel_overview", user_pet: user_pet %>
-  </div>
+  </turbo-frame>
 </div>
 
 <%= render "user_pets/action_panel_frame",

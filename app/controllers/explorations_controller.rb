@@ -128,12 +128,21 @@ class ExplorationsController < ApplicationController
   end
 
   def scout
+    slot_index = params[:slot_index].presence
+    slot_index = slot_index.to_i if slot_index
+    max_slots = ExplorationGenerator::DEFAULT_COUNT
+    slot_index = nil unless slot_index.present? && slot_index.between?(1, max_slots)
+
     generator = ExplorationGenerator.new(current_user)
-    generator.generate!(force: true)
+    generator.generate!(force: true, slot_index: slot_index)
 
     load_exploration_sets
     assign_rescout_state
-    selected = find_selected_generated(@generated_explorations)
+    selected = if slot_index
+                 @generated_explorations.find { |gen| gen.slot_index == slot_index } || find_selected_generated(@generated_explorations)
+               else
+                 find_selected_generated(@generated_explorations)
+               end
     @slot_entries = build_slot_entries(selected)
 
     respond_to do |format|

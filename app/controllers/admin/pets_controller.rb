@@ -25,7 +25,6 @@ class Admin::PetsController < Admin::BaseController
   end
 
   def update
-    purge_image(@pet) if remove_image_param?(:pet)
     if @pet.update(pet_params)
       redirect_to admin_pet_path(@pet), notice: "Pet was successfully updated."
     else
@@ -61,7 +60,7 @@ class Admin::PetsController < Admin::BaseController
       :rarity_id,
       :description,
       :special_ability_id,
-      :image,
+      :sprite_filename,
       :power,
       :hp,
       :atk,
@@ -70,13 +69,5 @@ class Admin::PetsController < Admin::BaseController
       :sp_def,
       :speed
     )
-  end
-
-  def remove_image_param?(resource_key)
-    ActiveModel::Type::Boolean.new.cast(params.dig(resource_key, :remove_image))
-  end
-
-  def purge_image(record)
-    record.image.purge_later if record.image.attached?
   end
 end

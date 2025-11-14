@@ -1,6 +1,7 @@
 class UserPetsController < ApplicationController
   before_action :authenticate_user!
-  before_action :set_user_pet, only: [:show, :level_up, :destroy, :interact_preview, :interact, :energy_tick, :details_panel, :overview_panel, :level_up_panel, :reset_panel]
+  before_action :set_user_pet, only: [:show, :level_up, :destroy, :interact_preview, :interact, :energy_tick, :details_panel, :overview_panel, :level_up_panel]
+  before_action :guard_retired_pet!, only: [:show, :level_up, :interact_preview, :interact, :energy_tick, :details_panel, :overview_panel, :level_up_panel]
   before_action :refresh_pet_state, only: [:show, :interact_preview, :interact, :level_up, :energy_tick, :details_panel, :overview_panel, :level_up_panel]
 
   def index
@@ -14,7 +15,7 @@ class UserPetsController < ApplicationController
   end
 
   def details_panel
-    render_panel(:details)
+    render_panel(:details, extra_locals: { leveling_items: available_leveling_items })
   end
 
   def overview_panel
@@ -23,35 +24,16 @@ class UserPetsController < ApplicationController
 
   def level_up_panel
     if @user_pet.level >= UserPet::LEVEL_CAP
-      render_action_panel(state: :error, context: panel_context, message: "Max level reached.") and return
+      flash[:alert] = "Max level reached."
+      return redirect_to user_pet_path(@user_pet)
     end
 
     unless @user_pet.exp >= UserPet::EXP_PER_LEVEL
-      remaining = UserPet::EXP_PER_LEVEL - @user_pet.exp.to_i
-      render_action_panel(state: :error,
-                          context: panel_context,
-                          message: "Earn #{remaining} more XP to level up.") and return
+      flash[:alert] = "Earn #{UserPet::EXP_PER_LEVEL - @user_pet.exp.to_i} more XP to level up."
+      return redirect_to user_pet_path(@user_pet)
     end
 
-    @leveling_items = current_user.user_items
-                                  .includes(:item)
-                                  .joins(:item)
-                                  .where(items: { item_type: UserPet.leveling_stone_types })
-
-    respond_to do |format|
-      format.turbo_stream do
-        render turbo_stream: turbo_stream.replace(
-          helpers.dom_id(@user_pet, :panel),
-          partial: "user_pets/level_up_panel",
-          locals: { user_pet: @user_pet, leveling_items: @leveling_items }
-        )
-      end
-      format.html { redirect_to user_pet_path(@user_pet) }
-    end
-  end
-
-  def reset_panel
-    render_panel(:details)
+    render_panel(:level_up, extra_locals: { leveling_items: available_leveling_items })
   end
 
   def equip
@@ -182,12 +164,21 @@ class UserPetsController < ApplicationController
       end
     end
 
+    evolution_result = nil
+
     @user_pet.transaction do
+      @user_pet.update!(held_user_item: held_item) if held_item.present?
+
       @user_pet.update!(
         exp:   @user_pet.exp - UserPet::EXP_PER_LEVEL,
         level: @user_pet.level + 1
       )
+
+      evolution_result = EvolutionEngine.new(user_pet: @user_pet).evaluate_on_level_up!
+
       if held_item.present?
+        @user_pet.update!(held_user_item: nil)
+
         new_quantity = held_item.quantity.to_i - 1
         if new_quantity <= 0
           held_item.destroy!
@@ -195,10 +186,8 @@ class UserPetsController < ApplicationController
           held_item.update!(quantity: new_quantity)
         end
       end
-      @user_pet.update!(held_user_item: nil)
     end
 
-    evolution_result = EvolutionEngine.new(user_pet: @user_pet).evaluate_on_level_up!
     notice = if evolution_result.evolved
                apply_evolution!(evolution_result)
              else
@@ -565,22 +554,36 @@ class UserPetsController < ApplicationController
     end
   end
 
-  def render_panel(type)
-    partial = type == :details ? "user_pets/panel_details" : "user_pets/panel_overview"
+  def render_panel(type, extra_locals: {})
+    partial =
+      case type
+      when :details then "user_pets/panel_details"
+      when :overview then "user_pets/panel_overview"
+      when :level_up then "user_pets/level_up_panel"
+      else
+        "user_pets/panel_overview"
+      end
+
+    locals   = { user_pet: @user_pet }.merge(extra_locals)
+    frame_id = helpers.user_pet_panel_dom_id(@user_pet)
+
     respond_to do |format|
       format.turbo_stream do
         render turbo_stream: turbo_stream.replace(
-          helpers.dom_id(@user_pet, :panel),
+          frame_id,
           partial: partial,
-          locals: panel_locals
+          locals: locals
         )
       end
-      format.html { redirect_to user_pet_path(@user_pet) }
-    end
-  end
 
-  def panel_locals
-    { user_pet: @user_pet }
+      format.html do
+        if turbo_frame_request?
+          render partial: partial, locals: locals, formats: :html
+        else
+          redirect_to user_pet_path(@user_pet)
+        end
+      end
+    end
   end
 
   def apply_evolution!(result)
@@ -616,5 +619,27 @@ class UserPetsController < ApplicationController
     @user_pet.update!(evolution_journal: journal)
   rescue StandardError => e
     Rails.logger.warn("[UserPetsController] record_evolution_misses failed: #{e.class} - #{e.message}")
+  end
+
+  def available_leveling_items
+    @available_leveling_items ||= current_user.user_items
+                                              .includes(:item)
+                                              .joins(:item)
+                                              .where(items: { item_type: UserPet.leveling_stone_types })
+                                              .where("user_items.quantity > 0")
+  end
+
+  def guard_retired_pet!
+    return unless @user_pet&.retired?
+
+    successor = @user_pet.successor_user_pet
+    notice = if successor
+               "#{@user_pet.name.presence || @user_pet.pet.name} has evolved into #{successor.name.presence || successor.pet.name}."
+             else
+               "#{@user_pet.name.presence || @user_pet.pet.name} has retired and can no longer be interacted with."
+             end
+
+    redirect_target = successor ? user_pet_path(successor) : user_pets_path
+    redirect_to redirect_target, alert: notice
   end
 end

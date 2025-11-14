@@ -12,7 +12,7 @@ class Admin::UserPetsController < Admin::BaseController
   end
 
   def update
-    permitted = user_pet_params
+    permitted = user_pet_params.to_h.deep_symbolize_keys
 
     if update_structured_attributes(@user_pet, permitted) && @user_pet.update(permitted)
       redirect_to admin_user_pet_path(@user_pet), notice: "Pet updated successfully."
@@ -61,6 +61,7 @@ class Admin::UserPetsController < Admin::BaseController
     if permitted.key?(:badge_keys)
       badge_values = Array(permitted.delete(:badge_keys)).reject(&:blank?).map(&:to_s)
       permitted[:badges] = badge_values
+      permitted.delete(:badges_json)
     end
 
     %i[state_flags evolution_journal badges].each do |attribute|

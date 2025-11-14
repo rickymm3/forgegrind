@@ -1,43 +1,21 @@
 <% content_for :title, "Pets" %>
+<% content_for :main_class, "px-0 pt-4 flex flex-col" %>
+<% content_for :main_inner_class, "px-4 flex flex-col h-full" %>
 
-<div class="relative flex min-h-screen flex-col" data-controller="pet-hub" data-pet-hub-active-value="<%= @active_collection %>">
-  <header class="sticky top-0 z-40 border-b border-slate-800 bg-slate-950/85 backdrop-blur supports-[backdrop-filter]:bg-slate-950/60"
-          style="min-height: 10vh; max-height: 100px;">
-    <div class="mx-auto flex h-full w-full max-w-4xl items-center justify-between gap-4 px-4 py-3">
-      <button type="button"
-              class="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-700/60 bg-slate-900/60 text-slate-300 transition hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
-              data-action="click->pet-hub#select"
-              data-pet-hub-target="toggle"
-              data-collection="eggs"
-              aria-pressed="false"
-              aria-label="Show eggs">
-        <svg aria-hidden="true" class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.4">
-          <path d="M12 21c4.4 0 8-3.6 8-8 0-3.4-2.2-8-8-13-5.8 5-8 9.6-8 13 0 4.4 3.6 8 8 8z" />
-        </svg>
-      </button>
+<% header_body = render("user_pets/hub_header_body",
+                        active_collection: @active_collection,
+                        pet_count: @user_pets.size,
+                        egg_count: @user_eggs.size) %>
 
-      <div class="flex flex-col items-center text-center">
-        <span class="text-lg font-semibold uppercase tracking-wide text-slate-100">Pets</span>
-        <span class="text-xs text-slate-400">
-          <span id="pet-count"><%= pluralize(@user_pets.size, "pet") %></span>
-          ·
-          <span id="egg-count"><%= pluralize(@user_eggs.size, "egg") %></span>
-        </span>
-      </div>
+<% content_for :header do %>
+  <%= render "shared/page_header",
+             eyebrow: "Collection",
+             title: "Pets & Eggs",
+             subtitle: "Swap between companions and eggs to manage your squad.",
+             body: header_body %>
+<% end %>
 
-      <button type="button"
-              class="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-700/60 bg-slate-900/60 text-slate-300 transition hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
-              data-action="click->pet-hub#select"
-              data-pet-hub-target="toggle"
-              data-collection="pets"
-              aria-pressed="false"
-              aria-label="Show pets">
-        <svg aria-hidden="true" class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.4">
-          <path d="M4.8 10.2c0-2.7 2.3-4.9 5.2-4.9 1.3 0 2.5.5 3.5 1.3.9-.8 2.1-1.3 3.4-1.3 2.9 0 5.2 2.2 5.2 4.9 0 4.9-8.6 9.5-8.6 9.5S4.8 15.1 4.8 10.2z" />
-        </svg>
-      </button>
-    </div>
-  </header>
+<div class="pet-hub flex-1" data-controller="pet-hub" data-pet-hub-active-value="<%= @active_collection %>">
 
   <div class="mx-auto w-full max-w-4xl flex-1 px-4 pb-28 pt-6">
     <section class="space-y-6" data-pet-hub-target="panel" data-collection="pets">
