@@ -86,6 +86,7 @@ module Containers
 
       open_count.times do
         rolls = random.rand(loot_table.rolls_min..loot_table.rolls_max)
+        rolls += bonus_pet_care_roll if pet_care_box?
         rolls.times do
           entry = WeightedPicker.pick(entries.map { |loot_entry| { value: loot_entry, weight: loot_entry.weight } }, rng: random)
           next unless entry
@@ -191,6 +192,24 @@ module Containers
 
     def random
       @random ||= Random.new
+    end
+
+    def hero_stat
+      @hero_stat ||= ensure_user_stat
+    end
+
+    def pet_care_box?
+      chest_type.key.to_s.start_with?("pet_care_box")
+    end
+
+    def bonus_pet_care_roll
+      level = hero_stat&.hero_upgrade_level(:overflowing_care_boxes).to_i
+      return 0 if level <= 0
+
+      chance = GameConfig.overflowing_care_boxes_bonus_chance(level)
+      random.rand < chance ? 1 : 0
+    rescue StandardError
+      0
     end
 
     CHEST_CURRENCY_REWARDS = {

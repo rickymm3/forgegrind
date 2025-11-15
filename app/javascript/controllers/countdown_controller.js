@@ -23,7 +23,7 @@ export default class extends Controller {
     completedEdges: Number,
     activeEdgeFraction: Number
   }
-  static targets = ["output", "progress", "activeProgress"]
+  static targets = ["output", "progress", "activeProgress", "barFill"]
 
   connect() {
     const totalFromDataset = this.hasTotalValue ? Number(this.totalValue || 0) : 0
@@ -175,6 +175,9 @@ export default class extends Controller {
   refreshDisplay(remaining) {
     const elapsedDelta = Math.max(0, this.initialRemaining - remaining)
     const totalElapsed = this.elapsedBase + elapsedDelta
+    let totalEdges = null
+    let completedEdges = 0
+    let segmentFraction = 0
 
     if (this.hasOutputTarget) {
       this.outputTarget.textContent = this.formatTime(remaining)
@@ -182,8 +185,8 @@ export default class extends Controller {
 
     if (this.hasProgressTarget) {
       if (this.hasTotalEdgesValue && Number(this.totalEdgesValue || 0) > 0) {
-        const totalEdges = Math.max(1, Number(this.totalEdgesValue || 0))
-        const completedEdges = Math.max(
+        totalEdges = Math.max(1, Number(this.totalEdgesValue || 0))
+        completedEdges = Math.max(
           0,
           Math.min(Number(this.hasCompletedEdgesValue ? this.completedEdgesValue || 0 : 0), totalEdges)
         )
@@ -195,27 +198,44 @@ export default class extends Controller {
       }
     }
 
-    if (this.hasActiveProgressTarget && this.hasTotalEdgesValue && Number(this.totalEdgesValue || 0) > 0) {
-      const totalEdges = Math.max(1, Number(this.totalEdgesValue || 0))
-      const completedEdges = Math.max(
+    if (this.hasTotalEdgesValue && Number(this.totalEdgesValue || 0) > 0) {
+      totalEdges = totalEdges || Math.max(1, Number(this.totalEdgesValue || 0))
+      completedEdges = completedEdges || Math.max(
         0,
         Math.min(Number(this.hasCompletedEdgesValue ? this.completedEdgesValue || 0 : 0), totalEdges)
       )
-      const completedPercent = (completedEdges / totalEdges) * 100
 
-      let segmentFraction = 0
       if (this.segmentTotalSeconds > 0) {
         const progressed = Math.min(this.segmentTotalSeconds, this.segmentElapsedBase + elapsedDelta)
         segmentFraction = Math.max(0, Math.min(1, progressed / this.segmentTotalSeconds))
       } else if (this.hasActiveEdgeFractionValue) {
         segmentFraction = Math.max(0, Math.min(1, Number(this.activeEdgeFractionValue || 0)))
       }
+    }
 
+    if (this.hasActiveProgressTarget && totalEdges) {
+      const completedPercent = (completedEdges / totalEdges) * 100
       const segmentPercent = Math.min(100, (segmentFraction / totalEdges) * 100)
       const cappedSegmentPercent = Math.min(100 - completedPercent, segmentPercent)
-
       this.activeProgressTarget.style.left = `${completedPercent.toFixed(1)}%`
       this.activeProgressTarget.style.width = `${cappedSegmentPercent.toFixed(1)}%`
+    }
+
+    if (this.hasBarFillTarget && totalEdges) {
+      this.barFillTargets.forEach((bar) => {
+        const edgeIndex = Number(bar.dataset.edgeIndex || 0)
+        let width = 0
+        if (edgeIndex < completedEdges) {
+          width = 100
+        } else if (edgeIndex === completedEdges) {
+          width = Math.min(100, segmentFraction * 100)
+        }
+        const state = width >= 99.5 ? "complete" : width > 0 ? "active" : "idle"
+        bar.style.width = `${width.toFixed(1)}%`
+        bar.classList.toggle("segment-timeline__bar-fill--complete", state === "complete")
+        bar.classList.toggle("segment-timeline__bar-fill--active", state === "active")
+        bar.classList.toggle("segment-timeline__bar-fill--idle", state === "idle")
+      })
     }
 
     if (this.userExplorationId) {

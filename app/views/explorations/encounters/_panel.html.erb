@@ -62,6 +62,7 @@
           <% label = encounter_text_for(user_exploration, option[:label], option: option) %>
           <% description = encounter_text_for(user_exploration, option[:description], option: option) if option[:description].present? %>
           <% requirement_labels = encounter_requirement_labels(option) %>
+          <% timer_seconds = user_exploration.option_timer_seconds(option) %>
 
           <% if option_available %>
             <%= button_to resolve_encounter_user_exploration_path(user_exploration),
@@ -80,9 +81,9 @@
                   <% end %>
                 </div>
               <% end %>
-              <% if option[:timer_seconds].to_i.positive? %>
+              <% if timer_seconds.present? %>
                 <span class="text-[11px] font-medium text-indigo-500">
-                  Resolves in <%= distance_of_time_in_words(option[:timer_seconds].to_i.seconds.from_now) %>
+                  Resolves in <%= exploration_duration_label(timer_seconds) %>
                 </span>
               <% end %>
             <% end %>

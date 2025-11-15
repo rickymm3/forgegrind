@@ -87,7 +87,8 @@ class PetCareService
 
       validate_energy!(definition)
       required_items = resolve_required_items(definition)
-      multiplier = glow_multiplier
+      crit_roll = roll_critical_care(definition, required_items: required_items)
+      multiplier = glow_multiplier * crit_roll[:multiplier]
 
       spend_glow_essence!
       apply_energy_cost!(definition[:energy_cost])
@@ -110,6 +111,7 @@ class PetCareService
       if glow_boost?
         result[:glow] = { multiplier: multiplier }
       end
+      result[:critical] = crit_roll if crit_roll[:triggered]
 
       exp_gain = grant_care_exp!
       result[:exp] = { gained: exp_gain, total: @user_pet.exp.to_i }
@@ -270,5 +272,38 @@ class PetCareService
     gained = [CARE_EXP_REWARD, exp_cap - current_exp].min
     user_pet.exp = current_exp + gained
     gained
+  end
+
+  def roll_critical_care(definition, required_items:)
+    return base_crit_result unless Array(definition[:required_item_types]).present? && required_items.present?
+
+    level = hero_stat&.hero_upgrade_level(:critical_care).to_i
+    return base_crit_result if level <= 0
+
+    chance = GameConfig.critical_care_crit_chance(level)
+    triggered = random.rand < chance
+    multiplier = triggered ? GameConfig.critical_care_crit_multiplier : 1.0
+
+    {
+      triggered: triggered,
+      chance: chance,
+      multiplier: multiplier
+    }
+  rescue StandardError
+    base_crit_result
+  end
+
+  def base_crit_result
+    { triggered: false, chance: 0.0, multiplier: 1.0 }
+  end
+
+  def hero_stat
+    @hero_stat ||= user.ensure_user_stat
+  rescue StandardError
+    nil
+  end
+
+  def random
+    @random ||= Random.new
   end
 end

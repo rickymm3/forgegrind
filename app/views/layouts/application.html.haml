@@ -43,7 +43,8 @@
           = yield
       - unless admin_namespace?
         %footer.app-shell__tabbar{ data: { controller: "tabbar", tabbar_state_value: "visible" } }
-          = render partial: "shared/nav/tabbar", locals: { dom_id: "primary-tabbar" }
+          .tabbar-panel{ data: { tabbar_target: "panel" }, aria: { hidden: "false" } }
+            = render partial: "shared/nav/tabbar", locals: { dom_id: "primary-tabbar" }
           %button.tabbar-toggle{ type: "button",
                                  aria: { pressed: "false", label: "Hide navigation" },
                                  data: { action: "tabbar#toggle", tabbar_target: "toggle" } }

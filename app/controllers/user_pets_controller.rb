@@ -195,6 +195,7 @@ class UserPetsController < ApplicationController
                "Leveled up to #{@user_pet.level}!"
              end
 
+    current_user.grant_player_experience!(GameConfig.player_exp_for_pet_level_up)
     redirect_to @user_pet, notice: notice
   end
 
@@ -547,7 +548,9 @@ class UserPetsController < ApplicationController
 
   def care_success_message(interaction, result)
     base = "#{interaction.to_s.humanize} successful"
-    if result.respond_to?(:delta) && result.delta
+    if result.is_a?(Hash) && result.dig(:critical, :triggered)
+      "#{base} · Critical Care bonus!"
+    elsif result.respond_to?(:delta) && result.delta
       "#{base} (+#{result.delta})"
     else
       base

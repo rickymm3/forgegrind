@@ -18,16 +18,16 @@ module ExplorationModLibrary
       config.fetch(:suffixes, {})
     end
 
-    def sample_base
-      weighted_sample(bases)
+    def sample_base(player_level: nil)
+      weighted_sample(bases, player_level: player_level)
     end
 
-    def sample_prefix
-      weighted_sample(prefixes)
+    def sample_prefix(player_level: nil)
+      weighted_sample(prefixes, player_level: player_level)
     end
 
-    def sample_suffix
-      weighted_sample(suffixes)
+    def sample_suffix(player_level: nil)
+      weighted_sample(suffixes, player_level: player_level)
     end
 
     def rarity_palette
@@ -71,7 +71,7 @@ module ExplorationModLibrary
       end
     end
 
-    def weighted_sample(entries)
+    def weighted_sample(entries, player_level: nil)
       return entries.first if entries.is_a?(Array)
       return [nil, {}] if entries.blank?
 
@@ -79,6 +79,11 @@ module ExplorationModLibrary
         weight = value[:weight].presence || value['weight'].presence || 1
         config_value = value.respond_to?(:with_indifferent_access) ? value.with_indifferent_access : value
         [key, config_value, weight.to_f]
+      end
+
+      if player_level
+        eligible = rows.select { |(_, config_value, _)| allowed_for_player_level?(config_value, player_level) }
+        rows = eligible if eligible.any?
       end
 
       total = rows.sum { |(_, _, weight)| weight }
@@ -92,6 +97,15 @@ module ExplorationModLibrary
 
       last = rows.last
       [last[0].to_s, last[1]]
+    end
+
+    def allowed_for_player_level?(config, player_level)
+      level = player_level.to_i
+      min = config[:player_level_min] || config['player_level_min'] || 1
+      max = config[:player_level_max] || config['player_level_max']
+      return false if level < min.to_i
+      return false if max.present? && level > max.to_i
+      true
     end
 
     def combination_keys(prefix_key, base_key, suffix_key)

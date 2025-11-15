@@ -15,77 +15,84 @@
              body: header_body %>
 <% end %>
 
-<div class="pet-hub flex-1" data-controller="pet-hub" data-pet-hub-active-value="<%= @active_collection %>">
+<% pets_active = @active_collection == "pets" %>
+<% eggs_active = @active_collection == "eggs" %>
+
+<div class="pet-hub flex-1">
 
   <div class="mx-auto w-full max-w-4xl flex-1 px-4 pb-28 pt-6">
-    <section class="space-y-6" data-pet-hub-target="panel" data-collection="pets">
-      <% if @user_pets.any? %>
-        <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-          <% @user_pets.each do |user_pet| %>
-          <% display_name = user_pet.name.presence || user_pet.pet.name %>
-          <% sprite_path = pet_sprite_path(user_pet.pet) %>
-          <% badge_text = "Lvl #{user_pet.level}" %>
-          <% state_badges = pet_state_badges(user_pet) %>
-          <%= link_to user_pet_path(user_pet),
-                      class: "group relative block aspect-[3/4] overflow-hidden rounded-3xl border border-slate-800 bg-slate-900/60 shadow-inner shadow-slate-950/40 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950",
-                      data: { turbo_prefetch: false },
-                      aria: { label: "#{display_name} – #{badge_text}" } do %>
-            <span class="sr-only"><%= display_name %></span>
-            <% if sprite_path.present? %>
-              <%= image_tag sprite_path,
-                            alt: "",
-                            loading: "lazy",
-                            class: "absolute inset-0 h-full w-full object-cover transition duration-200 group-hover:scale-105" %>
-            <% else %>
-              <div class="absolute inset-0 flex items-center justify-center bg-slate-800 text-sm text-slate-300">
-                <%= display_name %>
-              </div>
-            <% end %>
-            <% if state_badges.any? %>
-              <div class="absolute top-2 left-2 flex flex-col gap-1">
-                <% state_badges.each do |badge| %>
-                  <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold shadow-lg shadow-slate-900/40 <%= badge[:class] %>"
-                        <%= "title=\"#{badge[:title]}\"" if badge[:title].present? %>>
-                    <%= badge[:label] %>
-                  </span>
+    <% if pets_active %>
+      <section class="space-y-6">
+        <% if @user_pets.any? %>
+          <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+            <% @user_pets.each do |user_pet| %>
+              <% display_name = user_pet.name.presence || user_pet.pet.name %>
+              <% sprite_path = pet_sprite_path(user_pet.pet) %>
+              <% badge_text = "Lvl #{user_pet.level}" %>
+              <% state_badges = pet_state_badges(user_pet) %>
+              <%= link_to user_pet_path(user_pet),
+                          class: "group relative block aspect-[3/4] overflow-hidden rounded-3xl border border-slate-800 bg-slate-900/60 shadow-inner shadow-slate-950/40 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950",
+                          data: { turbo_prefetch: false },
+                          aria: { label: "#{display_name} – #{badge_text}" } do %>
+                <span class="sr-only"><%= display_name %></span>
+                <% if sprite_path.present? %>
+                  <%= image_tag sprite_path,
+                                alt: "",
+                                loading: "lazy",
+                                class: "absolute inset-0 h-full w-full object-cover transition duration-200 group-hover:scale-105" %>
+                <% else %>
+                  <div class="absolute inset-0 flex items-center justify-center bg-slate-800 text-sm text-slate-300">
+                    <%= display_name %>
+                  </div>
                 <% end %>
-              </div>
+                <% if state_badges.any? %>
+                  <div class="absolute top-2 left-2 flex flex-col gap-1">
+                    <% state_badges.each do |badge| %>
+                      <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold shadow-lg shadow-slate-900/40 <%= badge[:class] %>"
+                            <%= "title=\"#{badge[:title]}\"" if badge[:title].present? %>>
+                        <%= badge[:label] %>
+                      </span>
+                    <% end %>
+                  </div>
+                <% end %>
+                <span class="absolute top-2 right-2 inline-flex items-center rounded-full bg-slate-950/85 px-2 py-1 text-[11px] font-semibold text-indigo-200 drop-shadow-md" aria-label="Level <%= user_pet.level %>">
+                  <%= badge_text %>
+                </span>
+              <% end %>
             <% end %>
-            <span class="absolute top-2 right-2 inline-flex items-center rounded-full bg-slate-950/85 px-2 py-1 text-[11px] font-semibold text-indigo-200 drop-shadow-md" aria-label="Level <%= user_pet.level %>">
-              <%= badge_text %>
-            </span>
-          <% end %>
+          </div>
+        <% else %>
+          <div class="rounded-3xl border border-slate-800 bg-slate-900/60 p-10 text-center text-slate-300">
+            <p class="text-base font-semibold text-slate-100">No pets yet</p>
+            <p class="mt-2 text-sm">Open eggs to hatch your first companion.</p>
+            <%= link_to "Visit the Store",
+                        adopt_path,
+                        class: "mt-4 inline-flex items-center gap-2 rounded-full bg-indigo-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950" %>
+          </div>
         <% end %>
-        </div>
-      <% else %>
-        <div class="rounded-3xl border border-slate-800 bg-slate-900/60 p-10 text-center text-slate-300">
-          <p class="text-base font-semibold text-slate-100">No pets yet</p>
-          <p class="mt-2 text-sm">Open eggs to hatch your first companion.</p>
-          <%= link_to "Visit the Store",
-                      adopt_path,
-                      class: "mt-4 inline-flex items-center gap-2 rounded-full bg-indigo-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950" %>
-        </div>
-      <% end %>
-    </section>
+      </section>
+    <% end %>
 
-    <section class="space-y-6 hidden" data-pet-hub-target="panel" data-collection="eggs">
-      <% if @user_eggs.any? %>
-        <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-          <% @user_eggs.each do |user_egg| %>
-            <%= turbo_frame_tag egg_card_dom_id(user_egg) do %>
-              <%= render "user_eggs/inventory_card", user_egg: user_egg %>
+    <% if eggs_active %>
+      <section class="space-y-6">
+        <% if @user_eggs.any? %>
+          <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+            <% @user_eggs.each do |user_egg| %>
+              <%= turbo_frame_tag egg_card_dom_id(user_egg) do %>
+                <%= render "user_eggs/inventory_card", user_egg: user_egg %>
+              <% end %>
             <% end %>
-          <% end %>
-        </div>
-      <% else %>
-        <div class="rounded-3xl border border-slate-800 bg-slate-900/60 p-10 text-center text-slate-300">
-          <p class="text-base font-semibold text-slate-100">No eggs in incubation</p>
-          <p class="mt-2 text-sm">Pick up a new egg from the store to start hatching.</p>
-          <%= link_to "Browse Store",
-                      adopt_path,
-                      class: "mt-4 inline-flex items-center gap-2 rounded-full bg-indigo-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950" %>
-        </div>
-      <% end %>
-    </section>
+          </div>
+        <% else %>
+          <div class="rounded-3xl border border-slate-800 bg-slate-900/60 p-10 text-center text-slate-300">
+            <p class="text-base font-semibold text-slate-100">No eggs in incubation</p>
+            <p class="mt-2 text-sm">Pick up a new egg from the store to start hatching.</p>
+            <%= link_to "Browse Store",
+                        adopt_path,
+                        class: "mt-4 inline-flex items-center gap-2 rounded-full bg-indigo-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950" %>
+          </div>
+        <% end %>
+      </section>
+    <% end %>
   </div>
 </div>

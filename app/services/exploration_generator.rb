@@ -21,6 +21,7 @@ class ExplorationGenerator
 
   def initialize(user)
     @user = user
+    @user_stat = user.ensure_user_stat
   end
 
   def generate!(count: DEFAULT_COUNT, force: false, slot_index: nil)
@@ -56,7 +57,7 @@ class ExplorationGenerator
 
   private
 
-  attr_reader :user
+  attr_reader :user, :user_stat
 
   def active_slot_indices
     user.user_explorations
@@ -67,9 +68,10 @@ class ExplorationGenerator
   end
 
   def create_generated_exploration(slot_index:)
-    base_key, base_config = ExplorationModLibrary.sample_base
-    raw_prefix_key, prefix_config = ExplorationModLibrary.sample_prefix
-    raw_suffix_key, suffix_config = ExplorationModLibrary.sample_suffix
+    player_level = user.player_level
+    base_key, base_config = ExplorationModLibrary.sample_base(player_level: player_level)
+    raw_prefix_key, prefix_config = ExplorationModLibrary.sample_prefix(player_level: player_level)
+    raw_suffix_key, suffix_config = ExplorationModLibrary.sample_suffix(player_level: player_level)
 
     prefix_key = normalize_component_key(raw_prefix_key)
     suffix_key = normalize_component_key(raw_suffix_key)
@@ -151,7 +153,9 @@ class ExplorationGenerator
       end
     end
 
-    [(duration * multiplier).to_i + additive, 300].max
+    total = (duration * multiplier).to_i + additive
+    total = (total * swift_expeditions_multiplier).round
+    [total, 300].max
   end
 
   def build_name(base_config, prefix_config, suffix_config, combination_config)
@@ -449,6 +453,13 @@ class ExplorationGenerator
 
   def minutes_to_seconds(value)
     (value.to_f * 60).round
+  end
+
+  def swift_expeditions_multiplier
+    level = user_stat&.hero_upgrade_level(:swift_expeditions).to_i
+    GameConfig.swift_expeditions_duration_multiplier(level)
+  rescue StandardError
+    1.0
   end
 
   def ensure_cooldown!(force)

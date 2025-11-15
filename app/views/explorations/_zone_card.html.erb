@@ -381,8 +381,6 @@
         <% segment_elapsed = active_clock ? active_clock[:elapsed_seconds].to_i : (segment_duration - remaining_seconds) %>
         <% segment_start_at = active_clock ? active_clock[:start_time] : (user_exploration.segment_started_at || user_exploration.started_at) %>
         <% elapsed_before_segment = [elapsed_seconds - segment_elapsed, 0].max %>
-        <% progress_ratio = total_duration.positive? ? (elapsed_seconds.to_f / total_duration) : 0.0 %>
-        <% progress_percent = (progress_ratio * 100).clamp(0.0, 100.0) %>
         <% checkpoint_url = checkpoint_user_exploration_path(user_exploration) %>
         <% segment_end_at = if active_clock && active_clock[:end_time].present?
                               active_clock[:end_time]
@@ -411,6 +409,15 @@
                'upcoming'
              end %>
         <% timeline_nodes << { label: "Finish", status: finish_status } %>
+        <% edge_count = [timeline_nodes.size - 1, 1].max %>
+        <% completed_segments = segment_entries.count { |segment| segment[:status].to_s == 'completed' } %>
+        <% completed_edges = [completed_segments, edge_count].min %>
+        <% completed_edges = edge_count if user_exploration.complete? %>
+        <% active_edge_fraction = 0.0 %>
+        <% stage_total = [segment_entries.size + 1, 1].max %>
+        <% if active_segment.present? && segment_duration.positive? && completed_edges < edge_count %>
+          <% active_edge_fraction = (segment_elapsed.to_f / segment_duration.to_f).clamp(0.0, 1.0) %>
+        <% end %>
         <div class="space-y-4">
           <div class="flex items-center justify-between">
             <p class="text-sm font-semibold text-indigo-600 flex items-center gap-2">
@@ -431,14 +438,19 @@
                  data-countdown-segment-elapsed-value="<%= segment_elapsed %>"
                  <%= %(data-countdown-end-at-value="#{segment_end_at.iso8601}") if segment_end_at.present? %>
                  data-countdown-active-encounter-value="<%= user_exploration.active_encounter? %>"
+                 data-countdown-total-edges-value="<%= edge_count %>"
+                 data-countdown-completed-edges-value="<%= completed_edges %>"
+                 data-countdown-active-edge-fraction-value="<%= active_edge_fraction %>"
                  data-user-exploration-id="<%= user_exploration.id %>">
               <%= render "explorations/segment_timeline",
                          nodes: timeline_nodes,
-                         progress_percent: progress_percent %>
+                         edge_count: edge_count,
+                         completed_edges: completed_edges,
+                         active_edge_fraction: active_edge_fraction %>
               <div class="rounded-xl border border-indigo-100 bg-white px-4 py-3 shadow-sm mt-3">
                 <div class="flex items-center justify-between text-[11px] font-semibold uppercase text-slate-500">
                   <span>Current Segment</span>
-                  <span>Stage <%= active_segment[:index].to_i + 1 %> / <%= segment_entries.size %></span>
+                  <span>Stage <%= active_segment[:index].to_i + 1 %> / <%= stage_total %></span>
                 </div>
                 <div class="mt-2 flex items-end justify-between">
                   <div>
@@ -457,7 +469,9 @@
           <% else %>
             <%= render "explorations/segment_timeline",
                        nodes: timeline_nodes,
-                       progress_percent: progress_percent %>
+                       edge_count: edge_count,
+                       completed_edges: completed_edges,
+                       active_edge_fraction: active_edge_fraction %>
             <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
               Awaiting the next stage to begin…
             </div>
@@ -583,8 +597,6 @@
       <% activation_url = activate_encounter_user_exploration_path(user_exploration) %>
       <% total_duration = user_exploration.duration_seconds %>
       <% elapsed_seconds = user_exploration.elapsed_seconds %>
-      <% progress_ratio = total_duration.positive? ? (elapsed_seconds.to_f / total_duration) : 0.0 %>
-      <% progress_percent = (progress_ratio * 100).clamp(0.0, 100.0) %>
       <% timeline_nodes = [] %>
       <% timeline_nodes << { label: "Start", status: 'completed' } %>
       <% segment_entries.each do |segment| %>
@@ -607,6 +619,11 @@
              'upcoming'
            end %>
       <% timeline_nodes << { label: "Finish", status: finish_status } %>
+      <% edge_count = [timeline_nodes.size - 1, 1].max %>
+      <% completed_segments = segment_entries.count { |segment| segment[:status].to_s == 'completed' } %>
+      <% completed_edges = [completed_segments, edge_count].min %>
+      <% completed_edges = edge_count if user_exploration.complete? %>
+      <% active_edge_fraction = 0.0 %>
       <div class="space-y-4">
         <div class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2">
           <p class="text-sm font-semibold text-amber-700 flex items-center gap-2">
@@ -622,7 +639,9 @@
 
         <%= render "explorations/segment_timeline",
                    nodes: timeline_nodes,
-                   progress_percent: progress_percent %>
+                   edge_count: edge_count,
+                   completed_edges: completed_edges,
+                   active_edge_fraction: active_edge_fraction %>
 
         <% if user_exploration.active_encounter? %>
           <div class="rounded-xl border border-indigo-300 bg-white px-3 py-3">

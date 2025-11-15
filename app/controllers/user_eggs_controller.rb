@@ -149,7 +149,8 @@ class UserEggsController < ApplicationController
       raise ActiveRecord::RecordInvalid.new(@user_egg) if @user_egg.hatched?
 
       @user_egg.update!(hatched: true)
-      pet = @user_egg.egg.random_pet
+      picker = EggPetPicker.new(egg: @user_egg.egg, user: current_user)
+      pet = picker.pick
 
       random_thought = PetThought.order("RANDOM()").first || PetThought.first
       raise ActiveRecord::RecordInvalid.new(@user_egg) unless random_thought

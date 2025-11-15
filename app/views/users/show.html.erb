@@ -1,0 +1,78 @@
+<div class="container mx-auto mt-12 max-w-4xl space-y-8">
+  <header class="text-center space-y-1">
+    <p class="text-sm text-slate-500 uppercase tracking-[0.3em]">Profile</p>
+    <h1 class="text-3xl font-bold text-white"><%= @user.email %></h1>
+    <p class="text-xs text-slate-500">Watch your level rise as your pets grow.</p>
+  </header>
+
+  <% level        = @stat.player_level %>
+  <% level_cap    = @stat.player_level_cap %>
+  <% xp_threshold = level >= level_cap ? nil : @stat.level_xp_requirement(level) %>
+  <% xp_current   = xp_threshold ? (xp_threshold - @stat.experience_to_next_level) : 0 %>
+  <% xp_percent   = xp_threshold ? ((xp_current.to_f / xp_threshold) * 100).clamp(0.0, 100.0) : 100 %>
+
+  <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+    <div class="rounded-2xl border border-indigo-400/40 bg-indigo-500/10 p-5 flex flex-col gap-3">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-semibold uppercase tracking-[0.2em] text-indigo-200">Player Level</span>
+        <span class="text-sm font-semibold text-indigo-100">Cap <%= level_cap %></span>
+      </div>
+      <p class="text-3xl font-bold text-white"><%= level %></p>
+      <% if xp_threshold %>
+        <p class="text-xs text-indigo-100 font-semibold">Next level in <%= @stat.experience_to_next_level %> XP</p>
+        <div class="w-full h-2 rounded-full bg-indigo-900/40">
+          <div class="h-full rounded-full bg-indigo-300 transition-all" style="width: <%= xp_percent %>%"></div>
+        </div>
+      <% else %>
+        <p class="text-xs text-indigo-100 font-semibold">Max level reached</p>
+      <% end %>
+    </div>
+
+    <div class="rounded-2xl border border-slate-700 bg-slate-900/70 p-5 space-y-2">
+      <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Currencies</p>
+      <div class="flex flex-wrap gap-3 text-sm text-slate-200">
+        <span class="inline-flex flex-col">
+          <span class="text-[11px] uppercase tracking-[0.2em] text-slate-500">Trophies</span>
+          <span class="text-lg font-semibold"><%= number_with_delimiter(@stat.trophies) %></span>
+        </span>
+        <span class="inline-flex flex-col">
+          <span class="text-[11px] uppercase tracking-[0.2em] text-slate-500">Glow Essence</span>
+          <span class="text-lg font-semibold"><%= number_with_delimiter(@stat.glow_essence) %></span>
+        </span>
+        <span class="inline-flex flex-col">
+          <span class="text-[11px] uppercase tracking-[0.2em] text-slate-500">Diamonds</span>
+          <span class="text-lg font-semibold"><%= number_with_delimiter(@stat.diamonds) %></span>
+        </span>
+      </div>
+    </div>
+
+    <div class="rounded-2xl border border-slate-700 bg-slate-900/70 p-5 flex flex-col gap-3">
+      <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Quick Actions</p>
+      <%= link_to "Upgrade Attributes",
+                  hero_path,
+                  class: "inline-flex items-center justify-center rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-500 transition" %>
+      <%= link_to "View Expeditions",
+                  explorations_path,
+                  class: "inline-flex items-center justify-center rounded-lg border border-slate-600 px-3 py-2 text-sm font-semibold text-slate-200 hover:border-indigo-400 transition" %>
+    </div>
+  </div>
+
+  <div class="space-y-4">
+    <h2 class="text-sm font-semibold uppercase tracking-[0.3em] text-slate-500">Core Attributes</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <% @attribute_stats.each do |entry| %>
+        <% label = entry[:label] %>
+        <% key   = entry[:key] %>
+        <% level_value = @stat.public_send(key) %>
+        <div class="rounded-xl border border-slate-700 bg-slate-900/60 p-4 flex flex-col gap-2">
+          <div class="flex items-center justify-between">
+            <span class="text-sm font-semibold text-slate-100"><%= label %></span>
+            <span class="text-xs text-slate-500 uppercase">Level</span>
+          </div>
+          <p class="text-2xl font-bold text-white"><%= level_value %></p>
+          <p class="text-[11px] text-slate-400">Upgrade via hero page</p>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

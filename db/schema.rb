@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_14_140326) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_15_151734) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -497,6 +497,11 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_14_140326) do
     t.integer "attunement_level", default: 1, null: false
     t.integer "glow_essence", default: 0, null: false
     t.integer "diamonds", default: 0, null: false
+    t.integer "player_experience", default: 0, null: false
+    t.integer "hatchers_luck_level", default: 0, null: false
+    t.integer "swift_expeditions_level", default: 0, null: false
+    t.integer "overflowing_care_boxes_level", default: 0, null: false
+    t.integer "critical_care_level", default: 0, null: false
     t.index ["user_id"], name: "index_user_stats_on_user_id"
   end
 

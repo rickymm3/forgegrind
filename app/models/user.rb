@@ -30,6 +30,7 @@ class User < ApplicationRecord
 
   STAT_DEFAULTS = {
     player_level:       1,
+    player_experience:  0,
     hp_level:           1,
     attack_level:       1,
     defense_level:      1,
@@ -43,6 +44,18 @@ class User < ApplicationRecord
 
   def admin?
     self.admin
+  end
+
+  def player_level
+    ensure_user_stat.player_level.to_i
+  end
+
+  def player_experience
+    ensure_user_stat.player_experience.to_i
+  end
+
+  def grant_player_experience!(amount)
+    ensure_user_stat.grant_player_experience!(amount)
   end
 
   def can_afford_egg?(egg)
@@ -89,12 +102,6 @@ class User < ApplicationRecord
     ensure_user_stat.send(field).to_i
   end
 
-  private
-
-  def build_default_stats
-    create_user_stat!(STAT_DEFAULTS.merge(energy_updated_at: Time.current))
-  end
-
   def ensure_user_stat
     stat = user_stat
     return stat if stat&.valid?
@@ -115,6 +122,12 @@ class User < ApplicationRecord
     stat.save! if stat.changed?
 
     stat
+  end
+
+  private
+
+  def build_default_stats
+    create_user_stat!(STAT_DEFAULTS.merge(energy_updated_at: Time.current))
   end
   
   def currency_field_for(currency)

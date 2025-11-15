@@ -246,6 +246,7 @@ class ExplorationsController < ApplicationController
           pet.save!(validate: false)
           while pet.can_level_up?
             pet.level_up!
+            current_user.grant_player_experience!(GameConfig.player_exp_for_pet_level_up)
           end
         end
 

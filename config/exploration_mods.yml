@@ -19,10 +19,26 @@ rarity_palette:
     color: "#f97316"
 
 bases:
+  glimmering_trail:
+    label: "Glimmering Trail"
+    rarity: common
+    world_name: "Starter Zone"
+    player_level_min: 1
+    default_duration: 1
+    flavor: "An illuminated path carved for first-time scouts."
+    rewards:
+      base_drop_key: "starter_zone"
+    requirements: []
+    segments:
+      - key: "trailhead_patrol"
+        label: "Trailhead Patrol"
+        duration_weight: 1
+        encounter_tags: ["starter", "scout"]
   ember_fields:
     label: "Ember Fields"
     rarity: common
     world_name: "Ember Fields"
+    player_level_min: 2
     default_duration: 9
     flavor: "Ash-swept plains with scattered pyre blooms."
     segments:
@@ -45,6 +61,7 @@ bases:
     label: "Aurora Tundra"
     rarity: uncommon
     world_name: "Aurora Tundra"
+    player_level_min: 4
     default_duration: 12
     flavor: "Iridescent ice fields under a crackling sky."
     rewards:
@@ -66,6 +83,7 @@ bases:
     label: "Verdant Canopy"
     rarity: common
     world_name: "Verdant Canopy"
+    player_level_min: 3
     default_duration: 6
     flavor: "Layered jungles pulsing with life."
     rewards:
@@ -90,10 +108,12 @@ prefixes:
     weight: 20
     label:
     rarity: common
+    player_level_min: 1
   scorching:
     weight: 8
     label: "Scorching"
     rarity: rare
+    player_level_min: 4
     duration_multiplier: 1.25
     requirements:
       - type: "ability"
@@ -112,6 +132,7 @@ prefixes:
     weight: 10
     label: "Chilling"
     rarity: uncommon
+    player_level_min: 3
     duration_multiplier: 1.15
     requirements:
       - type: "ability"
@@ -130,6 +151,7 @@ prefixes:
     weight: 6
     label: "Tempestuous"
     rarity: epic
+    player_level_min: 8
     duration_multiplier: 1.35
     requirements:
       - type: "ability"
@@ -152,6 +174,7 @@ prefixes:
     weight: 5
     label: "Toxic"
     rarity: rare
+    player_level_min: 5
     duration_multiplier: 1.2
     requirements:
       - type: "ability"
@@ -170,6 +193,7 @@ prefixes:
     weight: 3
     label: "Celestial"
     rarity: legendary
+    player_level_min: 10
     duration_multiplier: 1.5
     requirements:
       - type: "ability"
@@ -194,10 +218,12 @@ suffixes:
     weight: 18
     label:
     rarity: common
+    player_level_min: 1
   of_embers:
     weight: 9
     label: "of Embers"
     rarity: uncommon
+    player_level_min: 2
     duration_bonus: 8
     requirements:
       - type: "level_min"
@@ -215,6 +241,7 @@ suffixes:
     weight: 7
     label: "of the Hunt"
     rarity: uncommon
+    player_level_min: 3
     duration_bonus: 6
     requirements:
       - type: "pet_type"
@@ -232,6 +259,7 @@ suffixes:
     weight: 6
     label: "of Whispers"
     rarity: rare
+    player_level_min: 4
     duration_bonus: 9
     requirements:
       - type: "ability"
@@ -249,6 +277,7 @@ suffixes:
     weight: 2
     label: "of Legends"
     rarity: legendary
+    player_level_min: 8
     duration_bonus: 5
     requirements:
       - type: "species"

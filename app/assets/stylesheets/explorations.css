@@ -181,7 +181,7 @@
 .exploration-card--interactive:hover {
   border-color: rgba(129, 140, 248, 0.9);
   background: rgba(15, 23, 42, 0.9);
-  transform: translateY(-2px);
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.45);
 }
 
 .exploration-card__overlay:focus-visible {
@@ -236,8 +236,9 @@
 .exploration-card__overlay {
   position: absolute;
   inset: 0;
+  display: block;
   border-radius: inherit;
-  z-index: 2;
+  z-index: 5;
   text-decoration: none;
   color: inherit;
 }
@@ -257,7 +258,14 @@
 .exploration-card__body,
 .exploration-card__footer {
   position: relative;
-  z-index: 3;
+  z-index: 6;
+  pointer-events: none;
+}
+
+.exploration-card__party-link {
+  pointer-events: auto;
+  position: relative;
+  z-index: 7;
 }
 
 .exploration-card__body {
@@ -370,6 +378,112 @@
   font-weight: 700;
   color: #f8fafc;
   margin-left: 0.35rem;
+}
+
+.segment-timeline {
+  width: 100%;
+  padding: 0.25rem 0;
+}
+
+.segment-timeline__row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.segment-timeline__node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 3rem;
+  flex: 0 0 auto;
+}
+
+.segment-timeline__dot {
+  width: 0.85rem;
+  height: 0.85rem;
+  border-radius: 999px;
+  border: 2px solid rgba(148, 163, 184, 0.6);
+  background: rgba(148, 163, 184, 0.4);
+  box-shadow: 0 3px 8px rgba(2, 6, 23, 0.3);
+}
+
+.segment-timeline__dot--completed {
+  border-color: rgba(99, 102, 241, 0.9);
+  background: #4f46e5;
+}
+
+.segment-timeline__dot--checkpoint {
+  border-color: rgba(251, 191, 36, 0.8);
+  background: #f59e0b;
+  animation: pulseCheckpoint 1.5s infinite;
+}
+
+.segment-timeline__dot--active {
+  border-color: rgba(129, 140, 248, 0.8);
+  background: rgba(129, 140, 248, 1);
+  animation: pulseActive 1.5s infinite;
+}
+
+.segment-timeline__label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(71, 85, 105, 0.9);
+  text-align: center;
+  max-width: 5rem;
+  line-height: 1.2;
+}
+
+.segment-timeline__label--muted {
+  color: rgba(51, 65, 85, 0.85);
+}
+
+.segment-timeline__bar {
+  flex: 1 1 4rem;
+  min-width: 2.5rem;
+  height: 0.35rem;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.35);
+  overflow: hidden;
+  position: relative;
+  margin-top: 0.25rem;
+}
+
+.segment-timeline__bar-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  border-radius: inherit;
+  width: 0%;
+  transition: width 0.3s ease;
+}
+
+.segment-timeline__bar-fill--complete {
+  background: linear-gradient(90deg, #6366f1, #8b5cf6);
+}
+
+.segment-timeline__bar-fill--active {
+  background: linear-gradient(90deg, rgba(99, 102, 241, 0.4), rgba(129, 140, 248, 0.95));
+}
+
+.segment-timeline__bar-fill--idle {
+  background: rgba(148, 163, 184, 0.25);
+}
+
+@keyframes pulseCheckpoint {
+  0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.45); }
+  70% { box-shadow: 0 0 0 8px rgba(245, 158, 11, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+}
+
+@keyframes pulseActive {
+  0% { box-shadow: 0 0 0 0 rgba(129, 140, 248, 0.45); }
+  70% { box-shadow: 0 0 0 8px rgba(129, 140, 248, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(129, 140, 248, 0); }
 }
 
 .exploration-card__icon-chip {

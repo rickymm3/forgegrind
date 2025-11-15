@@ -31,7 +31,11 @@ Rails.application.routes.draw do
            path: 'hero',
            as:   'hero',
            only: [:show] do
-    post :upgrade, on: :member
+    member do
+      post :upgrade
+      post :upgrade_hero_stat
+      post :reset_hero_stats
+    end
   end
 
   get "/items", to: redirect("/inventory")

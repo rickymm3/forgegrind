@@ -1,46 +1,55 @@
 <%#
   locals:
     - nodes: array of { label:, status: }
-    - total_edges: optional integer count of edges (defaults to nodes.size - 1)
+    - edge_count: optional integer count of edges (defaults to nodes.size - 1)
     - completed_edges: optional integer count of fully completed edges
     - active_edge_fraction: optional float (0..1) representing partial progress on the current edge
 %>
 <% nodes = Array(nodes) %>
-<% total_edges = (local_assigns[:total_edges] || nodes.size - 1).to_i %>
+<% total_edges = (local_assigns[:edge_count] || local_assigns[:total_edges] || nodes.size - 1).to_i %>
 <% total_edges = 1 if total_edges <= 0 %>
 <% completed_edges = (local_assigns[:completed_edges] || 0).to_i.clamp(0, total_edges) %>
 <% active_edge_fraction = (local_assigns[:active_edge_fraction] || 0.0).to_f.clamp(0.0, 1.0) %>
-<% completed_percent = ((completed_edges.to_f / total_edges.to_f) * 100.0).clamp(0.0, 100.0) %>
-<% active_percent = ((active_edge_fraction.to_f / total_edges.to_f) * 100.0).clamp(0.0, 100.0) %>
-<% active_percent = [active_percent, 100.0 - completed_percent].min %>
-
-<div class="relative mt-2 w-full">
-  <div class="absolute top-1/2 left-0 right-0 h-0.5 -translate-y-1/2 bg-slate-200"></div>
-  <div class="absolute top-1/2 left-0 h-0.5 -translate-y-1/2 bg-indigo-400 transition-all"
-       data-countdown-target="progress"
-       style="width: <%= format('%.1f', completed_percent) %>%"></div>
-  <div class="absolute top-1/2 h-0.5 -translate-y-1/2 bg-indigo-500 transition-all"
-       data-countdown-target="activeProgress"
-       style="left: <%= format('%.1f', completed_percent) %>%; width: <%= format('%.1f', active_percent) %>%"></div>
-  <div class="relative flex w-full items-center justify-between gap-2">
-    <% nodes.each do |node| %>
+<div class="segment-timeline">
+  <div class="segment-timeline__row">
+    <% nodes.each_with_index do |node, idx| %>
       <% status = node[:status].to_s %>
       <% indicator_classes =
            case status
-           when 'completed'
-             "bg-indigo-600 border-indigo-400"
-           when 'checkpoint'
-             "bg-amber-500 border-amber-300 animate-pulse"
-           when 'active'
-             "bg-indigo-400 border-indigo-300 animate-pulse"
-           else
-             "bg-slate-300 border-slate-200"
+           when 'completed' then "segment-timeline__dot--completed"
+           when 'checkpoint' then "segment-timeline__dot--checkpoint"
+           when 'active' then "segment-timeline__dot--active"
+           else "segment-timeline__dot--upcoming"
            end %>
-      <div class="flex flex-col items-center gap-1 text-center text-[11px] leading-tight text-slate-500">
-        <span class="flex h-3.5 w-3.5 items-center justify-center rounded-full border-2 <%= indicator_classes %>"></span>
-        <span class="max-w-[5rem] font-semibold <%= status == 'completed' ? 'text-slate-700' : '' %>">
+      <div class="segment-timeline__node">
+        <span class="segment-timeline__dot <%= indicator_classes %>"></span>
+        <span class="segment-timeline__label <%= status == 'completed' ? 'segment-timeline__label--muted' : '' %>">
           <%= node[:label] %>
         </span>
+      </div>
+      <% next if idx == nodes.size - 1 %>
+      <% edge_index = idx %>
+      <% bar_percent =
+           if edge_index < completed_edges
+             100.0
+           elsif edge_index == completed_edges
+             (active_edge_fraction * 100.0).clamp(0.0, 100.0)
+           else
+             0.0
+           end %>
+      <% bar_state =
+           if bar_percent >= 99.5
+             "segment-timeline__bar-fill--complete"
+           elsif bar_percent.positive?
+             "segment-timeline__bar-fill--active"
+           else
+             "segment-timeline__bar-fill--idle"
+           end %>
+      <div class="segment-timeline__bar" aria-hidden="true">
+        <span class="segment-timeline__bar-fill <%= bar_state %>"
+              style="width: <%= format('%.2f', bar_percent) %>%"
+              data-edge-index="<%= edge_index %>"
+              data-countdown-target="barFill"></span>
       </div>
     <% end %>
   </div>

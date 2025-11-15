@@ -1,0 +1,130 @@
+<% content_for :title, "Hero Upgrades" %>
+<% content_for :main_class, "px-0 pt-4 flex flex-col" %>
+<% content_for :main_inner_class, "px-4 pb-20 flex flex-col gap-6" %>
+
+<%
+  xp_threshold = @stat.player_level_maxed? ? nil : @stat.level_xp_requirement(@stat.player_level)
+  xp_current   = xp_threshold ? (xp_threshold - @stat.experience_to_next_level) : 0
+  xp_percent   = xp_threshold ? ((xp_current.to_f / xp_threshold) * 100).clamp(0.0, 100.0) : 100
+%>
+
+<% content_for :header do %>
+  <%= render "shared/page_header",
+             eyebrow: "Ascension Track",
+             title: "Hero Upgrades",
+             subtitle: "Invest hero points earned from leveling pets to unlock account-wide perks." %>
+<% end %>
+
+<section class="space-y-4">
+  <div class="hero-header__stats">
+    <div class="hero-header__stat">
+      <p class="hero-header__label">Player Level</p>
+      <p class="hero-header__value"><%= @stat.player_level %></p>
+      <% if xp_threshold %>
+        <p class="hero-header__muted">Next level in <%= @stat.experience_to_next_level %> XP</p>
+      <% else %>
+        <p class="hero-header__muted">Max level reached</p>
+      <% end %>
+    </div>
+    <div class="hero-header__progress">
+      <p class="hero-header__label">Experience</p>
+      <div class="hero-header__bar">
+        <div class="hero-header__bar-fill" style="width: <%= xp_percent %>%"></div>
+      </div>
+      <p class="hero-header__muted">
+        <%= xp_threshold ? "#{xp_current}/#{xp_threshold} XP" : "Complete" %>
+      </p>
+    </div>
+    <div class="hero-header__stat">
+      <p class="hero-header__label">Hero Points</p>
+      <p class="hero-header__value text-2xl"><%= @hero_points_available %></p>
+      <p class="hero-header__muted">
+        <%= @hero_points_spent %> spent of <%= @stat.player_level %> earned
+      </p>
+      <p class="hero-header__muted text-[11px]">Reset cost <%= number_with_delimiter(@reset_cost) %>💎</p>
+    </div>
+    <div class="hero-header__stat">
+      <p class="hero-header__label">Currencies</p>
+      <p class="hero-header__value text-base">
+        <span class="hero-header__currency">Trophies <strong><%= number_with_delimiter(@stat.trophies) %></strong></span>
+        <span class="hero-header__currency">Glow Essence <strong><%= number_with_delimiter(@stat.glow_essence) %></strong></span>
+        <span class="hero-header__currency">Diamonds <strong><%= number_with_delimiter(@stat.diamonds) %></strong></span>
+      </p>
+      <p class="hero-header__muted">Earn more by leveling & evolving pets.</p>
+    </div>
+  </div>
+</section>
+
+<section class="hero-upgrades space-y-6">
+  <div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6 space-y-4">
+    <div class="flex flex-wrap items-center gap-4 justify-between">
+      <div>
+        <p class="text-sm font-semibold uppercase tracking-[0.3em] text-slate-400">Upgrade Summary</p>
+        <p class="text-base text-slate-200">
+          <%= pluralize(@stat.player_level, "total point") %>,
+          <%= @hero_points_spent %> spent,
+          <%= @hero_points_available %> available
+        </p>
+      </div>
+      <div class="flex items-center gap-3">
+        <%= button_to reset_hero_stats_hero_path,
+                      method: :post,
+                      data: { turbo_confirm: "Reset all hero upgrades for #{@reset_cost} diamonds?" },
+                      class: "rounded-full border border-slate-600 px-4 py-2 text-sm font-semibold text-slate-200 hover:border-rose-400 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed",
+                      disabled: @hero_points_spent.zero? || @stat.diamonds < @reset_cost do %>
+          Reset Upgrades
+          <span class="text-xs text-slate-400">(Cost <%= @reset_cost %>💎)</span>
+        <% end %>
+      </div>
+    </div>
+    <p class="text-xs text-slate-500">
+      Each player level awards +1 hero point. Spend points to improve the passive stats below.
+    </p>
+  </div>
+
+  <div class="space-y-4 debug-stats">
+    <h2 class="text-sm font-semibold uppercase tracking-[0.3em] text-slate-400">Upgrades</h2>
+
+    <% @hero_upgrades.each do |upgrade| %>
+      <% filled = upgrade[:level] %>
+      <% max    = upgrade[:max_level] %>
+      <% cost   = upgrade[:cost] %>
+      <div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-5 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div class="space-y-2">
+          <div>
+            <p class="text-base font-semibold text-white"><%= upgrade[:label] %></p>
+            <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Lv <%= filled %> / <%= max %></p>
+          </div>
+          <p class="text-sm text-slate-300"><%= upgrade[:description] %></p>
+          <% if upgrade[:effect].present? %>
+            <p class="text-xs text-slate-400"><%= upgrade[:effect] %></p>
+          <% end %>
+          <div class="hero-upgrade__levels" aria-label="<%= "#{upgrade[:label]} progress #{filled} of #{max}" %>">
+            <% max.times do |index| %>
+              <% active = index < filled %>
+              <span class="hero-upgrade__pip <%= "hero-upgrade__pip--active" if active %>"></span>
+            <% end %>
+          </div>
+          <% if cost.present? %>
+            <p class="text-xs text-slate-400">Cost: <%= cost %> hero point<%= "s" if cost > 1 %></p>
+          <% else %>
+            <p class="text-xs text-slate-400">Max level reached.</p>
+          <% end %>
+        </div>
+
+        <div class="flex items-center gap-3 self-end md:self-auto">
+          <% if cost.present? %>
+            <%= button_to "Upgrade",
+                          upgrade_hero_stat_hero_path(hero_stat: upgrade[:key]),
+                          method: :post,
+                          class: "inline-flex items-center justify-center rounded-full bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-indigo-500/30 transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-40",
+                          disabled: !upgrade[:can_upgrade],
+                          data: { turbo: true } %>
+          <% else %>
+            <span class="rounded-full border border-slate-700 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Maxed</span>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</section>

@@ -57,6 +57,7 @@ class PetEvolutionService
         )
       end
 
+      predecessor.user.grant_player_experience!(GameConfig.player_exp_for_pet_evolution)
       successor
     end
 
