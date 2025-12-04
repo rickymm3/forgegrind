@@ -1,0 +1,32 @@
+<%
+  active_collection ||= :pets
+%>
+<div class="page-toolbar page-toolbar--icons-only">
+  <% current = active_collection.to_s %>
+  <% eggs_active = current == "eggs" %>
+  <% pets_active = current == "pets" %>
+  <% toggle_base = "icon-toggle border transition" %>
+  <% active_classes = "icon-toggle--active bg-indigo-500/20 border-indigo-400/60 text-indigo-100" %>
+  <% inactive_classes = "bg-slate-900/60 border-slate-700/60 text-slate-300" %>
+  <div class="page-toolbar__segment page-toolbar__segment--icons-only">
+    <%= link_to pets_path(view: "eggs"),
+                class: [toggle_base, (eggs_active ? active_classes : inactive_classes)].compact.join(" "),
+                aria: { pressed: eggs_active, label: "Show eggs" },
+                data: { turbo_frame: "_top" } do %>
+      <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.4">
+        <path d="M12 21c4.4 0 8-3.6 8-8 0-3.4-2.2-8-8-13-5.8 5-8 9.6-8 13 0 4.4 3.6 8 8 8z" />
+      </svg>
+      <span class="sr-only">Show eggs</span>
+    <% end %>
+
+    <%= link_to pets_path(view: "active"),
+                class: [toggle_base, (pets_active ? active_classes : inactive_classes)].compact.join(" "),
+                aria: { pressed: pets_active, label: "Show pets" },
+                data: { turbo_frame: "_top" } do %>
+      <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.4">
+        <path d="M4.8 10.2c0-2.7 2.3-4.9 5.2-4.9 1.3 0 2.5.5 3.5 1.3.9-.8 2.1-1.3 3.4-1.3 2.9 0 5.2 2.2 5.2 4.9 0 4.9-8.6 9.5-8.6 9.5S4.8 15.1 4.8 10.2z" />
+      </svg>
+      <span class="sr-only">Show pets</span>
+    <% end %>
+  </div>
+</div>

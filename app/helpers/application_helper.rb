@@ -4,7 +4,7 @@ module ApplicationHelper
       {
         id: :pets,
         label: "Pets",
-        path: user_pets_path,
+        path: pets_path,
         description: "View your companions and eggs."
       },
       {
@@ -65,8 +65,12 @@ module ApplicationHelper
       { label: "Special Abilities", path: admin_special_abilities_path },
       { label: "Evolution Rules", path: admin_evolution_rules_path },
       { label: "Worlds", path: admin_worlds_path },
+      { label: "Exploration Worlds", path: admin_exploration_bases_path },
       { label: "Badges", path: admin_badges_path },
       { label: "Mods", path: admin_mods_path },
+      { label: "Affixes", path: admin_affixes_path },
+      { label: "Suffixes", path: admin_suffixes_path },
+      { label: "Encounters", path: admin_encounters_path },
       { label: "User Pets", path: admin_user_pets_path }
     ]
   end

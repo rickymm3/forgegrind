@@ -1,0 +1,93 @@
+<% exploring = pet.respond_to?(:exploring?) && pet.exploring? %>
+<% request = care_request.presence || {} %>
+<% request_need = request["need"] %>
+<% definition = PetRequestService::REQUEST_DEFINITIONS[request_need&.to_sym] %>
+<% metric_value = request_need && pet.respond_to?(request_need) ? pet.send(request_need).to_i : nil %>
+<% interaction = definition&.dig(:interaction) %>
+<% action_def = interaction ? PetCareService::ACTIONS[interaction] : nil %>
+<% care_item_counts = care_item_counts_for(current_user) %>
+<% cooling_down = request_cooldown_until.present? && request_cooldown_until.future? %>
+<% next_window = request_cooldown_until&.strftime("%l:%M %p") if cooling_down %>
+
+<div class="pet-request" id="pet-care-request-card">
+  <% if exploring %>
+    <div class="pet-request__card pet-request__card--idle">
+      <div class="pet-request__header">
+        <div class="pet-request__icon">🧭</div>
+        <div>
+          <p class="pet-request__eyebrow">Exploring</p>
+          <p class="pet-request__title">Requests paused</p>
+        </div>
+      </div>
+      <p class="pet-request__prompt">This companion is out exploring. Care requests will resume when they return.</p>
+    </div>
+  <% elsif request.present? %>
+    <div class="pet-request__card">
+      <div class="pet-request__header">
+        <div class="pet-request__icon"><%= request["icon"] || "✨" %></div>
+        <div>
+          <p class="pet-request__eyebrow">Request pending</p>
+          <p class="pet-request__title"><%= request["title"] || "Needs attention" %></p>
+        </div>
+        <% if metric_value %>
+          <div class="pet-request__meter">
+            <div class="pet-request__meter-label"><%= metric_value %>%</div>
+            <div class="pet-request__meter-bar">
+              <span style="width: <%= [[metric_value, 100].min, 0].max %>%"></span>
+            </div>
+          </div>
+        <% end %>
+      </div>
+
+      <p class="pet-request__prompt"><%= request["prompt"] || definition&.dig(:prompt) || "Your pet is asking for care." %></p>
+      <p class="pet-request__description"><%= request["description"] || definition&.dig(:description) %></p>
+
+      <% care_item_options = interaction ? CareItemResolver.new(current_user).available_for(interaction) : [] %>
+
+      <div class="pet-request__actions">
+        <%= form_with url: accept_request_pet_path(pet),
+                      method: :post,
+                      data: { turbo_stream: true },
+                      class: "pet-request__form" do %>
+          <div class="pet-request__item-select">
+            <label class="pet-request__item-label">Optional item</label>
+            <select name="care_item" class="pet-request__item-dropdown" <%= "disabled" if care_item_options.empty? %>>
+              <option value="">No extra item</option>
+              <% care_item_options.each do |entry| %>
+                <option value="<%= entry.item_type %>"><%= "#{entry.name} (#{entry.quantity}×)" %></option>
+              <% end %>
+            </select>
+            <% if care_item_options.empty? %>
+              <p class="pet-request__helper">You don't own any items for this request type.</p>
+            <% end %>
+          </div>
+
+          <%= hidden_field_tag :use_items, false %>
+          <button type="submit" class="pet-request__btn pet-request__btn--primary">Accept</button>
+        <% end %>
+
+        <%= button_to "Snooze",
+                      decline_request_pet_path(pet),
+                      method: :post,
+                      data: { turbo_stream: true },
+                      class: "pet-request__btn pet-request__btn--ghost" %>
+      </div>
+
+      <p class="pet-request__footnote">Responding now starts a short cooldown before the next request appears.</p>
+    </div>
+  <% else %>
+    <div class="pet-request__card pet-request__card--idle">
+      <div class="pet-request__header">
+        <div class="pet-request__icon">🌀</div>
+        <div>
+          <p class="pet-request__eyebrow">All calm</p>
+          <p class="pet-request__title">No active requests</p>
+        </div>
+      </div>
+      <p class="pet-request__prompt">Your companion is content. We'll queue the next request automatically.</p>
+      <% if next_window %>
+        <p class="pet-request__description">Next request window after <%= next_window %>.</p>
+      <% end %>
+    </div>
+  <% end %>
+</div>

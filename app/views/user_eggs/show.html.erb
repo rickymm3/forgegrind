@@ -1,5 +1,77 @@
-<% content_for :title, "Egg: #{@egg.name}" %>
+<% content_for :title, "Hatch #{@egg.name}" %>
+<% content_for :main_classes_override, "p-0" %>
 
-<div class="mx-auto flex min-h-screen w-full max-w-4xl flex-col gap-6 px-4 py-6">
-  <%= render "user_eggs/info_panel", user_egg: @user_egg, context: :page %>
+<div class="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-900 text-slate-50">
+  <div class="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-8">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <%= link_to "← Back to eggs", pets_path(view: "eggs"), class: "inline-flex items-center gap-2 rounded-full border border-slate-800 bg-slate-900/70 px-3 py-2 text-xs font-semibold text-slate-100 transition hover:text-white" %>
+        <div>
+          <p class="text-[11px] uppercase tracking-[0.2em] text-slate-400">Incubation</p>
+          <p class="text-lg font-semibold text-white"><%= @egg.name %> Egg</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 text-xs text-slate-300">
+        <% hatch_seconds = @egg.hatch_duration.to_i %>
+        <span class="rounded-full bg-emerald-500/10 px-3 py-1 font-semibold text-emerald-200">Hatches in <%= distance_of_time_in_words(Time.current, Time.current + hatch_seconds.seconds, include_seconds: true) %></span>
+      </div>
+    </div>
+
+    <div class="grid gap-6 lg:grid-cols-[1.6fr,1fr]">
+      <div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-5 shadow-2xl shadow-slate-950/50">
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800/70 pb-4">
+          <div>
+            <p class="text-xs uppercase tracking-wide text-slate-400">Starter hatch flow</p>
+            <p class="text-lg font-semibold text-white">Stay on the page or swap apps — timers keep running.</p>
+          </div>
+          <div class="hidden text-right text-xs text-slate-400 sm:block">
+            <p>Incubation time: <%= distance_of_time_in_words(Time.current, Time.current + hatch_seconds.seconds) %></p>
+            <% if @user_egg.hatch_started_at.present? %>
+              <p>Started <%= time_ago_in_words(@user_egg.hatch_started_at) %> ago</p>
+            <% end %>
+          </div>
+        </div>
+
+        <div class="mt-4">
+          <%= render "user_eggs/info_panel", user_egg: @user_egg, context: :page %>
+        </div>
+      </div>
+
+      <aside class="space-y-4 rounded-3xl border border-slate-800 bg-slate-900/60 p-5 shadow-xl shadow-slate-950/40">
+        <p class="text-xs uppercase tracking-wide text-slate-400">Hatch steps</p>
+        <% status = @user_egg.status %>
+        <% steps = [
+          { title: "Incubate",  body: "Start a #{distance_of_time_in_words(Time.current, Time.current + hatch_seconds.seconds, include_seconds: true)} timer and let the shell warm up.", state: :idle },
+          { title: "Glow",      body: "Watch the pulse while you check inventory or shop.", state: :in_progress },
+          { title: "Hatch",     body: "Crack it open and auto-slot your new companion.", state: :ready }
+        ] %>
+
+        <div class="space-y-3">
+          <% steps.each_with_index do |step, idx| %>
+            <% active = case status
+                        when :ready, :hatched then true
+                        when :in_progress then idx <= 1
+                        else idx.zero?
+                        end %>
+            <div class="rounded-2xl border <%= active ? 'border-emerald-500/60 bg-emerald-500/10' : 'border-slate-800 bg-slate-900/70' %> px-4 py-3">
+              <div class="flex items-center justify-between gap-2">
+                <p class="text-sm font-semibold text-white">Step <%= idx + 1 %>: <%= step[:title] %></p>
+                <% if active %>
+                  <span class="text-xs font-semibold text-emerald-200">Live</span>
+                <% else %>
+                  <span class="text-xs text-slate-400">Queued</span>
+                <% end %>
+              </div>
+              <p class="mt-1 text-sm text-slate-200"><%= step[:body] %></p>
+            </div>
+          <% end %>
+        </div>
+
+        <div class="rounded-2xl border border-slate-800 bg-slate-950/70 px-4 py-3 text-sm text-slate-200">
+          <p class="font-semibold text-white">Mobile-ready</p>
+          <p class="mt-1 text-slate-300">Sticky action buttons, large touch targets, and Turbo streams keep your progress live without full-page refreshes.</p>
+        </div>
+      </aside>
+    </div>
+  </div>
 </div>

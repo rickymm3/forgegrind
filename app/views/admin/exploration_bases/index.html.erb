@@ -1,0 +1,36 @@
+<div class="admin-header">
+  <h1>Exploration Worlds</h1>
+  <p class="admin-header__subtitle">
+    Base expedition definitions loaded from <code>config/explorations/bases.yml</code>.
+  </p>
+</div>
+
+<div class="admin-card">
+  <table class="admin-table">
+    <thead>
+      <tr>
+        <th>Key</th>
+        <th>Label</th>
+        <th>World</th>
+        <th>Tier</th>
+        <th>Tags</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @bases.each do |entry| %>
+        <% data = entry.data.with_indifferent_access %>
+        <tr>
+          <td><code><%= entry.key %></code></td>
+          <td><%= data[:label] %></td>
+          <td><%= data[:world_name] %></td>
+          <td><%= data[:tier] %></td>
+          <td><%= Array(data[:world_tags]).join(", ").presence || "—" %></td>
+          <td class="admin-table__actions">
+            <%= link_to "Edit", edit_admin_exploration_basis_path(entry.key), class: "btn btn--small" %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

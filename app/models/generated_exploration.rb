@@ -91,6 +91,14 @@ class GeneratedExploration < ApplicationRecord
     (self[:reward_config] || {}).with_indifferent_access
   end
 
+  def reward_drop_keys
+    reward_config.values.each_with_object([]) do |entry, keys|
+      config = entry.with_indifferent_access
+      keys << config[:base_drop_key] if config[:base_drop_key].present?
+      keys << config[:bonus_drop_key] if config[:bonus_drop_key].present?
+    end.compact.uniq
+  end
+
   def metadata
     (self[:metadata] || {}).with_indifferent_access
   end

@@ -17,7 +17,9 @@
       <% if @granted_chest_type.present? %>
         <div class="inline-flex items-center gap-3 rounded-xl border border-indigo-500/40 bg-indigo-500/10 px-3 py-2 text-sm text-indigo-200">
           <div class="flex items-center gap-2">
-            <img alt="<%= @granted_chest_type.name %>" class="h-8 w-8 rounded-lg bg-slate-900/60 object-contain p-1" src="<%= @granted_chest_type.icon %>">
+            <%= image_tag asset_path(@granted_chest_type.icon),
+                          alt: @granted_chest_type.name,
+                          class: "h-8 w-8 rounded-lg bg-slate-900/60 object-contain p-1" %>
             <div>
               <p class="font-semibold text-indigo-100 leading-tight"><%= @granted_chest_type.name %></p>
               <p class="text-xs text-indigo-200/80">Added to your inventory.</p>
@@ -51,7 +53,7 @@
       </p>
       <p class="text-sm text-slate-600 leading-relaxed">
         You earned
-        <span class="font-semibold text-amber-500"><%= " #{@trophy_reward} Trophies" %></span>.
+        <span class="font-semibold text-amber-500"><%= " #{@coin_reward} Coins" %></span>.
       </p>
       <% if @diamond_reward.to_i.positive? %>
         <p class="text-sm text-slate-600 leading-relaxed">
@@ -99,7 +101,9 @@
       <% if @granted_chest_type.present? %>
         <div class="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
           <div class="flex items-center gap-3">
-            <img alt="<%= @granted_chest_type.name %>" class="h-10 w-10 rounded-lg bg-slate-900/60 object-contain p-1" src="<%= @granted_chest_type.icon %>">
+            <%= image_tag asset_path(@granted_chest_type.icon),
+                          alt: @granted_chest_type.name,
+                          class: "h-10 w-10 rounded-lg bg-slate-900/60 object-contain p-1" %>
             <div>
               <p class="text-sm font-semibold text-slate-800"><%= @granted_chest_type.name %></p>
               <p class="text-xs text-slate-500">Claim it from your inventory to reveal rewards.</p>

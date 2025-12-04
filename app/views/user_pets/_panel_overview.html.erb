@@ -5,13 +5,17 @@
 <% state_badges = pet_state_badges(user_pet) %>
 <% default_ability = pet.respond_to?(:default_ability) ? pet.default_ability&.name : nil %>
 <% ability_names = user_pet.learned_abilities.limit(3).map(&:name).presence || [default_ability || "Basic Ability"] %>
+<% feeling_badge = pet_feeling_descriptor(user_pet) %>
+<% rarity_class = rarity_border_class(user_pet.rarity) %>
+<% media_style = sprite_path.present? ? "background-image: url('#{sprite_path}');" : nil %>
 
 <section class="pet-panel pet-panel--overview">
   <div class="pet-panel__card">
-    <div class="pet-panel__media">
-      <% if sprite_path.present? %>
-        <%= image_tag sprite_path, alt: pet_name, class: "pet-panel__image" %>
-      <% else %>
+    <div class="pet-panel__media <%= rarity_class %> <%= 'pet-panel__media--empty' unless sprite_path.present? %>"
+         style="<%= media_style %>"
+         role="img"
+         aria-label="<%= pet_name %> portrait">
+      <% unless sprite_path.present? %>
         <div class="pet-panel__image-placeholder">Artwork unavailable</div>
       <% end %>
     </div>
@@ -33,6 +37,13 @@
         </ul>
       <% end %>
 
+      <% if feeling_badge %>
+        <div class="pet-panel__thought-card pet-panel__thought-card--<%= feeling_badge[:tone] %>">
+          <span class="pet-panel__thought-card-label">Current Mood</span>
+          <p class="pet-panel__thought-card-text"><%= feeling_badge[:label] %></p>
+        </div>
+      <% end %>
+
       <div class="pet-panel__section">
         <span class="pet-panel__label">Abilities</span>
         <ul class="pet-panel__value-list">
@@ -52,13 +63,9 @@
   </div>
 
   <div class="pet-panel__footer">
-    <%= button_to "Details",
-                  details_panel_user_pet_path(user_pet, format: :turbo_stream),
-                  method: :get,
-                  class: "pet-panel__primary-button pet-panel__primary-button--full",
-                  form: {
-                    class: "pet-panel__footer-form",
-                    data: { turbo_frame: user_pet_panel_dom_id(user_pet) }
-                  } %>
+    <%= link_to "Details",
+                details_panel_user_pet_path(user_pet),
+                class: "pet-panel__primary-button pet-panel__primary-button--full",
+                data: { turbo_frame: user_pet_panel_dom_id(user_pet) } %>
   </div>
 </section>

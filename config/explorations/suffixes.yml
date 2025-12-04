@@ -1,0 +1,89 @@
+# Exploration suffixes extracted from exploration_mods.yml.
+suffixes:
+  none:
+    label: ""
+    rarity: common
+    player_level_min: 1
+    weight: 18
+    applies_to: ["global"]
+    duration:
+      bonus: 0
+    requirements: []
+    reward_modifiers: {}
+    checkpoint_labels: []
+
+  of_embers:
+    label: "of Embers"
+    rarity: uncommon
+    player_level_min: 2
+    weight: 9
+    applies_to: ["global"]
+    duration:
+      bonus: 0
+    requirements:
+      - type: "level_min"
+        value: 3
+        label: "Seasoned pets"
+        required: 3
+    reward_modifiers:
+      bonus_drop_key: "blazing_zone_drops"
+    checkpoint_labels:
+      - "Cinder Core"
+
+  of_the_hunt:
+    label: "of the Hunt"
+    rarity: uncommon
+    player_level_min: 3
+    weight: 7
+    applies_to: ["global"]
+    duration:
+      bonus: 0
+    requirements:
+      - type: "pet_type"
+        key: "Beast"
+        label: "Beast allies"
+        required: 2
+    reward_modifiers:
+      bonus_drop_key: "verdant_zone_drops"
+    checkpoint_labels:
+      - "Tracking Run"
+
+  of_whispers:
+    label: "of Whispers"
+    rarity: rare
+    player_level_min: 4
+    weight: 6
+    applies_to: ["global"]
+    duration:
+      bonus: 0
+    requirements:
+      - type: "ability"
+        key: "shadow"
+        label: "Shadow abilities"
+        required: 1
+    reward_modifiers:
+      bonus_drop_key: "toxic_zone_drops"
+    checkpoint_labels:
+      - "Echoing Glade"
+
+  of_legends:
+    label: "of Legends"
+    rarity: legendary
+    player_level_min: 8
+    weight: 2
+    applies_to: ["global"]
+    duration:
+      bonus: 0
+    requirements:
+      - type: "species"
+        key: "Blazewulf"
+        label: "Blazewulf companion"
+        required: 1
+      - type: "level_min"
+        value: 8
+        label: "Elite levels"
+        required: 2
+    reward_modifiers:
+      bonus_drop_key: "legendary_zone_drops"
+    checkpoint_labels:
+      - "Legendary Trial"

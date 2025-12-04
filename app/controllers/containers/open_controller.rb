@@ -29,7 +29,7 @@ module Containers
       @items = current_user.user_items.includes(:item).order("items.name ASC")
       @containers_total = @containers.sum(&:count)
       @items_total = @items.sum(&:quantity)
-      @user_stats = current_user.user_stat || current_user.create_user_stat!(User::STAT_DEFAULTS.merge(energy_updated_at: Time.current))
+      @currency_balances = helpers.currency_balances_for(current_user)
 
       respond_to do |format|
         format.turbo_stream

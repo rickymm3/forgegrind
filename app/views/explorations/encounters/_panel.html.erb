@@ -6,6 +6,7 @@
 <% history = Array(encounter_data[:history]) %>
 <% available_options = Array(current_node&.[](:options)).map { |opt| opt.with_indifferent_access } %>
 <% detail_dom_id = dom_id(user_exploration.generated_exploration || user_exploration.world, :detail) %>
+<% segment_encounter = encounter_data[:segment_index].present? %>
 
 <div id="<%= dom_id(user_exploration, :encounter_panel) %>"
      class="rounded-2xl border border-indigo-200 bg-indigo-50/30 p-5 space-y-4">
@@ -26,7 +27,7 @@
         <span class="h-1.5 w-1.5 rounded-full bg-white animate-pulse"></span>
         Decision Required
       </span>
-      <% if user_exploration.active_encounter_expires_at.present? %>
+      <% if user_exploration.active_encounter_expires_at.present? && !segment_encounter %>
         <% remaining = [user_exploration.active_encounter_expires_at - Time.current, 0].max.to_i %>
         <span class="text-[11px] font-semibold text-indigo-700/80 uppercase">
           Respond within <%= distance_of_time_in_words(remaining.seconds.from_now) %>
@@ -63,6 +64,7 @@
           <% description = encounter_text_for(user_exploration, option[:description], option: option) if option[:description].present? %>
           <% requirement_labels = encounter_requirement_labels(option) %>
           <% timer_seconds = user_exploration.option_timer_seconds(option) %>
+          <% chance_data = user_exploration.success_chance_for_option(option) %>
 
           <% if option_available %>
             <%= button_to resolve_encounter_user_exploration_path(user_exploration),
@@ -81,9 +83,14 @@
                   <% end %>
                 </div>
               <% end %>
-              <% if timer_seconds.present? %>
+              <% if timer_seconds.present? && !segment_encounter %>
                 <span class="text-[11px] font-medium text-indigo-500">
                   Resolves in <%= exploration_duration_label(timer_seconds) %>
+                </span>
+              <% end %>
+              <% if chance_data.present? %>
+                <span class="text-[11px] font-medium text-indigo-600">
+                  Success chance: <%= number_to_percentage(chance_data[:chance] * 100, precision: 0) %>
                 </span>
               <% end %>
             <% end %>

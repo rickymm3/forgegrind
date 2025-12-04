@@ -1,7 +1,6 @@
 Rails.application.routes.draw do
   root to: "home#index"
 
-  get "/adopt", to: "adopt#index"
   get "nursery", to: "nursery#index", as: :nursery
   get "home/index"
   get "profile", to: "users#show", as: :user_profile  # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
@@ -44,7 +43,8 @@ Rails.application.routes.draw do
     post :item_panel
   end
 
-  get "/store", to: "store#index"
+get "/store", to: "store#index"
+post "/store/items/:item_type/purchase", to: "store#purchase_item", as: :store_purchase_item
 
   namespace :containers do
     post :open, to: "open#create"
@@ -69,6 +69,10 @@ Rails.application.routes.draw do
     resources :user_pets, only: [:index, :show, :edit, :update]
     get "content", to: "content#index", as: :content
     resources :mods, only: [:index]
+    resources :exploration_bases, only: [:index, :edit, :update]
+    resources :affixes, only: [:index, :edit, :update]
+    resources :suffixes, only: [:index, :edit, :update]
+    resources :encounters, param: :slug, only: [:index, :edit, :update]
 
     resources :evolution_rules do
       collection do
@@ -91,7 +95,17 @@ Rails.application.routes.draw do
     end
   end
 
-  resources :pets, only: [:index, :show]
+  resources :pets, only: [:index, :show] do
+    collection do
+      get :select
+      post :assign
+    end
+    member do
+      post :accept_request
+      post :decline_request
+      post :collect_passive
+    end
+  end
 
   resources :notifications, only: [:index] do
     post :clear_all, on: :collection

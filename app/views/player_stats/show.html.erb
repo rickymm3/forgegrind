@@ -3,6 +3,11 @@
 <% content_for :main_inner_class, "px-4 pb-20 flex flex-col gap-6" %>
 
 <%
+  currencies = @currency_balances || helpers.currency_balances_for(current_user)
+  coins      = currencies.find { |c| c.name == "Coins" }
+  diamonds   = currencies.find { |c| c.name == "Diamonds" }
+  glow       = currencies.find { |c| c.name == "Glow Essence" }
+  diamond_balance = @diamond_balance || diamonds&.amount.to_i
   xp_threshold = @stat.player_level_maxed? ? nil : @stat.level_xp_requirement(@stat.player_level)
   xp_current   = xp_threshold ? (xp_threshold - @stat.experience_to_next_level) : 0
   xp_percent   = xp_threshold ? ((xp_current.to_f / xp_threshold) * 100).clamp(0.0, 100.0) : 100
@@ -46,9 +51,9 @@
     <div class="hero-header__stat">
       <p class="hero-header__label">Currencies</p>
       <p class="hero-header__value text-base">
-        <span class="hero-header__currency">Trophies <strong><%= number_with_delimiter(@stat.trophies) %></strong></span>
-        <span class="hero-header__currency">Glow Essence <strong><%= number_with_delimiter(@stat.glow_essence) %></strong></span>
-        <span class="hero-header__currency">Diamonds <strong><%= number_with_delimiter(@stat.diamonds) %></strong></span>
+        <span class="hero-header__currency">Coins <strong><%= number_with_delimiter(coins&.amount.to_i) %></strong></span>
+        <span class="hero-header__currency">Glow Essence <strong><%= number_with_delimiter(glow&.amount.to_i) %></strong></span>
+        <span class="hero-header__currency">Diamonds <strong><%= number_with_delimiter(diamonds&.amount.to_i) %></strong></span>
       </p>
       <p class="hero-header__muted">Earn more by leveling & evolving pets.</p>
     </div>
@@ -71,7 +76,7 @@
                       method: :post,
                       data: { turbo_confirm: "Reset all hero upgrades for #{@reset_cost} diamonds?" },
                       class: "rounded-full border border-slate-600 px-4 py-2 text-sm font-semibold text-slate-200 hover:border-rose-400 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed",
-                      disabled: @hero_points_spent.zero? || @stat.diamonds < @reset_cost do %>
+                      disabled: @hero_points_spent.zero? || diamond_balance < @reset_cost do %>
           Reset Upgrades
           <span class="text-xs text-slate-400">(Cost <%= @reset_cost %>💎)</span>
         <% end %>

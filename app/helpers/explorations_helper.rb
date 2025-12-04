@@ -97,6 +97,18 @@ module ExplorationsHelper
     outcome_key = (last_step[:outcome] || entry[:outcome]).presence
     outcome_label = outcome_key.present? ? outcome_key.to_s.tr('_', ' ').humanize : nil
 
+    nodes = encounter[:nodes]
+    nodes = nodes.with_indifferent_access if nodes.respond_to?(:with_indifferent_access)
+    conclusion_node_key = (last_step[:node] || outcome_key).to_s.presence
+    conclusion_text = nil
+    if conclusion_node_key.present? && nodes&.key?(conclusion_node_key)
+      node_payload = nodes[conclusion_node_key]
+      node_payload = node_payload.with_indifferent_access if node_payload.respond_to?(:with_indifferent_access)
+      if node_payload && node_payload[:text].present?
+        conclusion_text = encounter_text_for(user_exploration, node_payload[:text])
+      end
+    end
+
     rewards = entry[:rewards] || chosen_option&.[](:rewards)
     reward_summary = entry[:reward_summary].presence
     if reward_summary.blank?
@@ -121,8 +133,18 @@ module ExplorationsHelper
       reward_summary: reward_summary,
       encounter: encounter,
       option: chosen_option,
-      history: history
+      history: history,
+      conclusion_text: conclusion_text
     }.compact
+  end
+
+  def safe_offset_seconds(value)
+    return nil if value.nil?
+    return value.to_i if value.is_a?(Numeric)
+
+    str = value.to_s
+    match = str.match(/-?\d+/)
+    match ? match[0].to_i : nil
   end
 
   def encounter_text_for(user_exploration, text, option: nil)

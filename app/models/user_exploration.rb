@@ -13,7 +13,7 @@ class UserExploration < ApplicationRecord
 
   def timer_expired?
     if using_segments?
-      segment_progress_entries.all? { |entry| segment_completed_status?(entry[:status]) }
+      segment_progress_entries.all? { |entry| entry[:status].to_s == 'completed' }
     else
       Time.current >= started_at + duration_seconds.seconds
     end
@@ -165,6 +165,23 @@ class UserExploration < ApplicationRecord
     end
   end
 
+  def party_requirement_snapshot
+    Array(party_snapshot[:requirements]).map do |entry|
+      entry.respond_to?(:with_indifferent_access) ? entry.with_indifferent_access : entry
+    end
+  end
+
+  def fulfilled_party_requirements_count
+    party_requirement_snapshot.count do |entry|
+      value = entry[:fulfilled]
+      ActiveModel::Type::Boolean.new.cast(value)
+    end
+  end
+
+  def success_chance_for_option(option)
+    Encounters::ChanceCalculator.new(self, option).chance_data
+  end
+
   def party_ability_refs
     party_members.flat_map { |entry| Array(entry[:special_ability_reference]) }.compact
   end
@@ -271,6 +288,8 @@ class UserExploration < ApplicationRecord
       active_encounter_started_at: now,
       active_encounter_expires_at: expires_at
     )
+
+    auto_complete_active_encounter_if_conclusion!
   end
 
   def advance_active_encounter!(next_node:, choice_key:, expires_in: nil, outcome: nil)
@@ -293,9 +312,11 @@ class UserExploration < ApplicationRecord
       active_encounter: deep_stringify(payload),
       active_encounter_expires_at: payload[:expires_at]
     )
+
+    auto_complete_active_encounter_if_conclusion!(auto_choice: choice_key)
   end
 
-  def complete_active_encounter!(choice_key: nil, outcome: nil, status: 'completed')
+  def complete_active_encounter!(choice_key: nil, outcome: nil, status: 'completed', chance: nil, roll: nil)
     slug = active_encounter_slug
     return unless slug
 
@@ -307,7 +328,9 @@ class UserExploration < ApplicationRecord
         node: data[:node_key] || 'intro',
         choice: choice_key,
         outcome: outcome,
-        at: now
+        at: now,
+        chance: chance,
+        roll: roll
       }
 
       segment_index = data[:segment_index] || encounter_schedule_entries.find { |scheduled| scheduled[:slug] == slug && scheduled[:status].to_s == 'active' }&.dig(:segment_index)
@@ -315,6 +338,11 @@ class UserExploration < ApplicationRecord
       reward_data = nil
       if status.to_s == 'completed'
         reward_data = EncounterRewarder.award!(
+          user_exploration: self,
+          encounter_slug: slug,
+          outcome_key: outcome
+        )
+        Encounters::CareEffectApplier.apply!(
           user_exploration: self,
           encounter_slug: slug,
           outcome_key: outcome
@@ -336,6 +364,8 @@ class UserExploration < ApplicationRecord
             payload[:rewards] = reward_data[:rewards]
             payload[:reward_summary] = reward_data[:summary]
           end
+          payload[:chance] = chance if chance.present?
+          payload[:roll] = roll if roll.present?
           scheduled.merge(payload)
         else
           scheduled
@@ -354,6 +384,11 @@ class UserExploration < ApplicationRecord
   def mark_active_segment_checkpoint!(reached_at: Time.current)
     segment = active_segment_entry
     return nil unless segment
+
+    if final_leg_segment?(segment)
+      complete_final_leg!(segment, completed_at: reached_at)
+      return nil
+    end
 
     index = segment[:index].to_i
     checkpoint_entry = nil
@@ -381,6 +416,28 @@ class UserExploration < ApplicationRecord
     notify_checkpoint_reached!(checkpoint_entry, reached_at: ready_at)
 
     checkpoint_segment_entry
+  end
+
+  def final_leg_segment?(segment)
+    value = segment[:final_leg]
+    ActiveModel::Type::Boolean.new.cast(value)
+  end
+
+  def complete_final_leg!(segment, completed_at: Time.current)
+    index = segment[:index].to_i
+    updated_segments = segment_progress_entries.map do |entry|
+      if entry[:index].to_i == index
+        entry.merge(status: 'completed', completed_at: completed_at)
+      else
+        entry
+      end
+    end
+
+    update!(
+      segment_progress: stringify_entries(updated_segments),
+      current_segment_index: index,
+      segment_started_at: nil
+    )
   end
 
   def mark_encounters_ready_for_segment!(segment_index, ready_at: Time.current)
@@ -548,6 +605,24 @@ class UserExploration < ApplicationRecord
     refs_ok = required_refs.blank? || (ability_refs & required_refs).any?
     tags_ok = required_tags.blank? || (ability_tags & required_tags).any?
     refs_ok && tags_ok
+  end
+
+  def auto_complete_active_encounter_if_conclusion!(auto_choice: "auto_resolve")
+    node = active_encounter_node
+    return false unless node.present?
+
+    concluding = ActiveModel::Type::Boolean.new.cast(node[:conclusion])
+    return false unless concluding
+
+    outcome_key = node[:outcome].presence || active_encounter_data[:node_key]
+    status_value = node[:status].presence || "completed"
+
+    complete_active_encounter!(
+      choice_key: auto_choice,
+      outcome: outcome_key,
+      status: status_value
+    )
+    true
   end
 
   private

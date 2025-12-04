@@ -14,7 +14,7 @@
 <% content_for :header do %>
   <div class="mx-auto flex w-full max-w-4xl items-center justify-between gap-4 px-4">
     <div class="flex items-center gap-3">
-      <%= link_to user_pets_path,
+      <%= link_to pets_path,
                   class: "inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-800 bg-slate-900/70 text-slate-300 transition hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950",
                   aria: { label: "Back to pets" },
                   data: { turbo: false } do %>
@@ -36,10 +36,3 @@
     <%= render "user_pets/panel_overview", user_pet: user_pet %>
   </turbo-frame>
 </div>
-
-<%= render "user_pets/action_panel_frame",
-           user_pet: user_pet,
-           context: :page,
-           state: :idle,
-           needs_preview: [],
-           personality_changes: [] %>

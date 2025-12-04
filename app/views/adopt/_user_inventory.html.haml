@@ -1,18 +1,11 @@
-- stat = local_assigns[:user_stat]
-- currencies = []
-- if stat
-  - currencies << { name: "Trophies", amount: stat.trophies, dom_id: "user-currency-trophies" }
-  - currencies << { name: "Diamonds", amount: stat.diamonds, dom_id: "user-currency-diamonds" }
-  - currencies << { name: "Glow Essence", amount: stat.glow_essence, dom_id: "user-currency-glow-essence" }
-
-- currencies.reject! { |c| c[:amount].nil? }
+- currencies = local_assigns[:currencies] || helpers.currency_balances_for(current_user)
 
 - if currencies.any?
   .flex.flex-wrap.items-center.gap-3.mb-6
     - currencies.each do |currency|
       %div.bg-slate-100.border.border-slate-200.rounded-full.py-1.px-3.text-sm.font-medium.flex.items-center.space-x-2
-        %span.text-slate-500= currency[:name]
-        %span.text-slate-900{ id: currency[:dom_id] }= number_with_delimiter(currency[:amount])
+        %span.text-slate-500= currency.name
+        %span.text-slate-900{ id: currency.dom_id || currency_dom_id(currency.name) }= number_with_delimiter(currency.amount)
 
 .grid.grid-cols-2.md:grid-cols-4.xl:grid-cols-5.gap-5.mb-6
   - user_items.each do |user_item|

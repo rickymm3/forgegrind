@@ -1,0 +1,107 @@
+play:
+  bone:
+    item_type: bone
+    name: "Chewy Bone"
+    stats:
+      boredom: 12
+      mood: 4
+      hygiene: -2
+    badge: playful_pal
+    coin_buff:
+      multiplier: 0.1
+      duration_minutes: 30
+  bouncy_ball:
+    item_type: bouncy_ball
+    name: "Bouncy Ball"
+    stats:
+      boredom: 16
+      mood: 6
+      hygiene: -3
+    coin_buff:
+      multiplier: 0.15
+      duration_minutes: 45
+  pet_carnival:
+    item_type: pet_carnival_pass
+    name: "Pet Carnival"
+    stats:
+      boredom: 20
+      mood: 10
+      hunger: 10
+      hygiene: -10
+    badge: carnival_connoisseur
+    coin_buff:
+      multiplier: 0.25
+      duration_minutes: 60
+wash:
+  spa_soap:
+    item_type: spa_soap
+    name: "Spa Soap"
+    stats:
+      hygiene: 25
+      mood: 5
+  deluxe_bath:
+    item_type: deluxe_bath_kit
+    name: "Deluxe Bath Kit"
+    stats:
+      hygiene: 35
+      mood: 8
+      boredom: 5
+    badge: squeaky_clean
+feed:
+  hearty_meal:
+    item_type: hearty_meal
+    name: "Hearty Meal"
+    stats:
+      hunger: 24
+      mood: 6
+      hygiene: -4
+  gourmet_feast:
+    item_type: gourmet_feast
+    name: "Gourmet Feast"
+    stats:
+      hunger: 32
+      mood: 10
+      hygiene: -6
+    badge: well_fed
+    coin_buff:
+      multiplier: 0.1
+      duration_minutes: 30
+cuddle:
+  plush_blanket:
+    item_type: plush_blanket
+    name: "Plush Blanket"
+    stats:
+      mood: 14
+      boredom: 6
+  weighted_blanket:
+    item_type: weighted_blanket
+    name: "Weighted Blanket"
+    stats:
+      mood: 18
+      boredom: 8
+      hunger: -4
+    badge: cozy_champion
+  blanket:
+    item_type: blanket
+    name: "Cozy Blanket"
+    stats:
+      mood: 10
+      boredom: 5
+treat:
+  first_aid:
+    item_type: first_aid_kit
+    name: "First Aid Kit"
+    stats:
+      injury_level: 24
+      mood: 6
+    badge: steadfast_guardian
+  deluxe_medpack:
+    item_type: deluxe_medpack
+    name: "Deluxe Medpack"
+    stats:
+      injury_level: 32
+      mood: 10
+      boredom: 4
+    coin_buff:
+      multiplier: 0.05
+      duration_minutes: 20

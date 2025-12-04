@@ -80,7 +80,7 @@ class UserEggsController < ApplicationController
           end
         end
         format.html do
-          destination = origin == "store" ? store_path(tab: "eggs") : adopt_path
+          destination = store_path(tab: "eggs")
           redirect_to destination, alert: "You don't have the required items."
         end
       end
@@ -97,15 +97,13 @@ class UserEggsController < ApplicationController
       format.turbo_stream do
         if origin == "store"
           @eggs = Egg.enabled.includes(:currency, egg_item_costs: :item)
-          @highlighted_egg_id = egg.id
           render :create_from_store
         else
           render :create
         end
       end
       format.html do
-        destination = origin == "store" ? store_path(tab: "eggs") : adopt_path
-        redirect_to destination, notice: "You adopted a #{egg.name}!"
+        redirect_to store_path(tab: "eggs"), notice: "You adopted a #{egg.name}!"
       end
     end
   end
@@ -128,10 +126,12 @@ class UserEggsController < ApplicationController
     @user_egg = current_user.user_eggs.find(params[:id])
     context = params[:context].presence&.to_sym || :page
 
-    unless @user_egg.hatching? && @user_egg.hatch_time_remaining <= 2
+    unless @user_egg.hatching?
       head :unprocessable_entity
       return
     end
+
+    @user_egg.notify_ready_for_hatching!(force: true)
 
     respond_to do |format|
       format.turbo_stream { render :mark_ready, locals: { context: context } }
@@ -168,6 +168,8 @@ class UserEggsController < ApplicationController
         confidence:  rand(1..10),
         pet_thought: random_thought
       )
+
+      current_user.auto_assign_active_slot!(@user_pet)
     end
 
     @egg_count = current_user.user_eggs.unhatched.count

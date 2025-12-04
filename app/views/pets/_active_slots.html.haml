@@ -1,0 +1,3 @@
+.pet-slots
+  - active_slots.each_with_index do |pet, index|
+    = render "pets/active_slot", pet: pet, index: index

@@ -15,13 +15,14 @@
   { key: "feed",   label: "Feed",  emoji: "🍖" },
   { key: "treat",  label: "Treat", emoji: "💊" },
   { key: "cuddle", label: "Cuddle", emoji: "🤗" },
-  { key: "walk",   label: "Walk",  emoji: "🧭" }
+  { key: "walk",   label: "Walk",  emoji: "🧭" },
+  { key: "rainbow_fruit", label: "Rainbow Fruit", emoji: "🌈" }
 ].select { |action| PetCareService::ACTIONS.key?(action[:key]) } %>
 
 <div class="space-y-6">
   <div class="flex items-center justify-between gap-4">
     <div class="flex items-center gap-3">
-      <%= link_to user_pets_path,
+      <%= link_to pets_path,
                   class: "inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-800 bg-slate-900/70 text-slate-300 transition hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible-ring-offset-slate-950",
                   aria: { label: "Back to pets" },
                   data: { turbo: false } do %>
@@ -84,24 +85,33 @@
   </div>
 
   <div class="space-y-4">
-    <div class="flex flex-wrap gap-2">
-      <% actions_catalog.each do |action| %>
-        <% definition   = PetCareService::ACTIONS[action[:key]] %>
-        <% disabled     = exploring || sleeping %>
-        <%= button_to interact_preview_user_pet_path(user_pet),
-                      method: :post,
-                      params: { interaction_type: action[:key], context: context },
-                      form: {
-                        data: { turbo_frame: action_dom_id }
-                      },
-                      disabled: disabled,
-                      class: "inline-flex h-14 w-14 flex-col items-center justify-center gap-1 rounded-2xl border border-slate-800 bg-slate-900/70 text-sm font-semibold text-slate-200 transition hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 disabled:opacity-40 disabled:cursor-not-allowed",
-                      title: action[:label],
-                      aria: { label: action[:label] } do %>
-          <span aria-hidden="true" class="text-xl leading-none"><%= action[:emoji] %></span>
-          <span class="text-[10px] uppercase tracking-wide text-slate-400"><%= action[:label] %></span>
+    <div class="pet-care-panel pet-care-panel--compact">
+      <%= render "user_pets/action_panel_frame",
+                 user_pet: user_pet,
+                 context: context,
+                 state: :idle,
+                 needs_preview: [],
+                 personality_changes: [] %>
+
+      <div class="flex flex-wrap gap-2">
+        <% actions_catalog.each do |action| %>
+          <% definition   = PetCareService::ACTIONS[action[:key]] %>
+          <% disabled     = exploring || sleeping %>
+          <%= button_to interact_preview_user_pet_path(user_pet),
+                        method: :post,
+                        params: { interaction_type: action[:key], context: context },
+                        form: {
+                          data: { turbo_frame: action_dom_id }
+                        },
+                        disabled: disabled,
+                        class: "inline-flex h-14 w-14 flex-col items-center justify-center gap-1 rounded-2xl border border-slate-800 bg-slate-900/70 text-sm font-semibold text-slate-200 transition hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible-ring-offset-slate-950 disabled:opacity-40 disabled:cursor-not-allowed",
+                        title: action[:label],
+                        aria: { label: action[:label] } do %>
+            <span aria-hidden="true" class="text-xl leading-none"><%= action[:emoji] %></span>
+            <span class="text-[10px] uppercase tracking-wide text-slate-400"><%= action[:label] %></span>
+          <% end %>
         <% end %>
-      <% end %>
+      </div>
     </div>
 
     <details class="group rounded-2xl border border-slate-800 bg-slate-900/60 p-4 text-sm text-slate-200">

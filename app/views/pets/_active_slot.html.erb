@@ -1,0 +1,137 @@
+<% dom_id = pet_slot_dom_id(pet, index) %>
+<% if pet.present? %>
+  <% avatar_path = pet_path(pet.id) %>
+  <% avatar_data = { turbo_frame: "_top" } %>
+  <% coin_stats = passive_coin_stats_for(pet) %>
+<% else %>
+  <% avatar_path = select_pets_path(slot: index) %>
+  <% avatar_data = { turbo_frame: "pet-hub-main" } %>
+  <% coin_stats = {} %>
+<% end %>
+
+<turbo-frame id="<%= dom_id %>">
+  <div class="pet-slot">
+    <div class="pet-slot__image">
+      <%= link_to avatar_path, data: avatar_data, class: "pet-slot__avatar" do %>
+        <% if pet.present? %>
+          <% image_path = pet_profile_image_path(pet) %>
+          <%= image_tag image_path,
+                        alt: pet.name.presence || pet.pet.name,
+                        class: "pet-slot__avatar-image" %>
+        <% else %>
+          <span class="pet-slot__avatar-empty">+</span>
+        <% end %>
+      <% end %>
+    </div>
+
+    <div class="pet-slot__details">
+      <% if pet.present? %>
+        <div class="pet-slot__details-row">
+          <p class="pet-slot__name"><%= pet.name.presence || pet.pet.name %></p>
+          <p class="pet-slot__energy"><%= "#{pet.energy.to_i} / #{UserPet::MAX_ENERGY}" %></p>
+        </div>
+        <div class="pet-slot__details-row">
+          <% if (feeling = pet_feeling_descriptor(pet)) %>
+            <span class="pet-slot__chip"><%= feeling[:label] %></span>
+          <% end %>
+          <span class="pet-slot__status"><%= pet_status_label(pet) %></span>
+        </div>
+        <% if pet.pending_care_request.present? %>
+          <div class="pet-slot__details-row">
+            <span class="pet-slot__request">
+              <span class="pet-slot__request-icon"><%= pet.pending_care_request["icon"] || "✨" %></span>
+              <span><%= pet.pending_care_request["prompt"] || pet.pending_care_request["title"] || "Needs attention" %></span>
+            </span>
+          </div>
+        <% end %>
+
+        <% exp_current = pet.exp.to_i %>
+        <% exp_needed  = UserPet::EXP_PER_LEVEL %>
+        <% exp_percent = [(exp_current.to_f / exp_needed) * 100, 100].min.round %>
+        <% can_level   = pet.can_level_up? %>
+        <div class="pet-slot__xp">
+          <div class="pet-slot__xp-top">
+            <span class="pet-slot__xp-label">Lvl <%= pet.level %></span>
+            <span class="pet-slot__xp-value"><%= "#{exp_current}/#{exp_needed}" %></span>
+          </div>
+          <div class="pet-slot__xp-bar">
+            <span style="width: <%= exp_percent %>%"></span>
+          </div>
+          <% if can_level %>
+            <div class="pet-slot__xp-actions">
+              <%= button_to "Level Up",
+                            level_up_user_pet_path(pet.id),
+                            method: :post,
+                            data: { turbo_frame: "_top" },
+                            class: "pet-slot__level-up" %>
+            </div>
+          <% end %>
+        </div>
+
+        <% collect_ready = coin_stats.present? && coin_stats[:ready] %>
+        <% pending_amount = coin_stats[:pending_amount].to_i %>
+
+          <div class="pet-slot__coins"
+             data-controller="pet-coins"
+             data-pet-coins-per-second-value="<%= coin_stats[:per_second].to_f %>"
+             data-pet-coins-last-tick-at-value="<%= (pet.last_coin_tick_at || Time.current).to_f * 1000 %>"
+             data-pet-coins-cap-value="<%= coin_stats[:holding_cap].to_i %>"
+             data-pet-coins-earned-today-value="<%= coin_stats[:pending_amount].to_i %>">
+          <div class="pet-slot__coins-top">
+            <span class="pet-slot__coins-label">Coins</span>
+            <% if coin_stats.present? %>
+              <span class="pet-slot__coins-rate"><%= "#{coin_stats[:per_second]} / sec" %></span>
+            <% end %>
+          </div>
+          <% if coin_stats.present? %>
+            <div class="pet-slot__coins-bar">
+              <span data-pet-coins-target="bar" style="width: <%= coin_stats[:progress_percent] %>%"></span>
+            </div>
+            <div class="pet-slot__coins-meta">
+              <span data-pet-coins-target="readyText" class="<%= 'pet-slot__coins-ready' if collect_ready %>">
+                <% if collect_ready %>
+                  Ready: +<%= pending_amount %> coins
+                <% else %>
+                  Building up…
+                <% end %>
+              </span>
+              <span>Cap: <%= coin_stats[:holding_cap] %></span>
+            </div>
+            <div class="pet-slot__coins-meta">
+              <span data-pet-coins-target="collectedText">Holding: <%= coin_stats[:pending_amount] %>/<%= coin_stats[:holding_cap] %></span>
+              <span>Multiplier: <%= coin_stats[:multiplier] %>×</span>
+            </div>
+          <% end %>
+        </div>
+
+        <div class="pet-slot__actions">
+          <%= link_to "Unequip",
+                      select_pets_path(slot: index),
+                      class: "pet-slot__action",
+                      data: { turbo_frame: "pet-hub-main" } %>
+          <div data-pet-coins-target="collectWrapper" class="<%= 'disabled' unless collect_ready %>">
+            <%= button_to "Collect",
+                          collect_passive_pet_path(pet.id),
+                          method: :post,
+                          data: { turbo_stream: true },
+                          class: "pet-slot__collect",
+                          data: { pet_coins_target: "collectButton" } %>
+          </div>
+        </div>
+      <% else %>
+        <div class="pet-slot__details-row">
+          <p class="pet-slot__name">Empty Slot</p>
+        </div>
+        <div class="pet-slot__details-row">
+          <span class="pet-slot__status">Tap to assign a pet</span>
+        </div>
+        <div class="pet-slot__actions">
+          <%= link_to "Equip",
+                      select_pets_path(slot: index),
+                      class: "pet-slot__action",
+                      data: { turbo_frame: "pet-hub-main" } %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</turbo-frame>

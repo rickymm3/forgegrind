@@ -56,6 +56,7 @@ class ExplorationGeneratorTest < ActiveSupport::TestCase
       {
         label: "Test Base",
         world_name: @world.name,
+        world_key: "test_world",
         default_duration: 600,
         requirements: [],
         rewards: {}

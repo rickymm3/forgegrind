@@ -4,6 +4,8 @@ class User < ApplicationRecord
   devise :database_authenticatable, :registerable,
          :recoverable, :rememberable, :validatable
   has_one :user_stat, dependent: :destroy
+  has_many :user_currencies, dependent: :destroy
+  has_many :currencies, through: :user_currencies
   has_many :user_eggs, dependent: :destroy
   has_many :user_pets, dependent: :destroy
   has_many :user_explorations, dependent: :destroy
@@ -21,9 +23,10 @@ class User < ApplicationRecord
 
   after_create :build_default_stats
   after_create :give_starter_egg
+  after_create :initialize_currency_wallets
 
-  CURRENCY_FIELDS = {
-    "Trophies" => :trophies,
+  LEGACY_CURRENCY_FIELDS = {
+    "Coins" => :trophies,
     "Diamonds" => :diamonds,
     "Glow Essence" => :glow_essence
   }.freeze
@@ -36,11 +39,9 @@ class User < ApplicationRecord
     defense_level:      1,
     luck_level:         1,
     attunement_level:   1,
-    energy:             0,
-    trophies:           0,
-    glow_essence:       0,
-    diamonds:           0
+    energy:             0
   }.freeze
+  ACTIVE_PET_SLOT_COUNT = 3
 
   def admin?
     self.admin
@@ -59,13 +60,11 @@ class User < ApplicationRecord
   end
 
   def can_afford_egg?(egg)
-    stat = ensure_user_stat
     enough_currency = if egg.currency && egg.cost_amount.to_i.positive?
-                         currency_field = currency_field_for(egg.currency)
-                         currency_field && stat.send(currency_field).to_i >= egg.cost_amount
-                       else
-                         true
-                       end
+                        currency_balance(egg.currency) >= egg.cost_amount
+                      else
+                        true
+                      end
 
     enough_currency && egg.egg_item_costs.all? do |cost|
       user_items.joins(:item).where(items: { id: cost.item_id }).sum(:quantity) >= cost.quantity
@@ -85,21 +84,13 @@ class User < ApplicationRecord
   def spend_currency_for_egg!(egg)
     return unless egg.currency && egg.cost_amount.to_i.positive?
 
-    stat = ensure_user_stat
-    currency_field = currency_field_for(egg.currency)
-    raise ActiveRecord::Rollback, "Unsupported currency" unless currency_field
-
-    current_amount = stat.send(currency_field).to_i
-    raise ActiveRecord::Rollback, "Not enough #{egg.currency.name}" if current_amount < egg.cost_amount
-
-    stat.update!(currency_field => current_amount - egg.cost_amount)
+    debit_currency!(egg.currency, egg.cost_amount)
   end
 
   def currency_balance(currency)
-    field = currency_field_for(currency)
-    return 0 unless field
-
-    ensure_user_stat.send(field).to_i
+    currency_wallet_for(currency)&.balance.to_i
+  rescue ActiveRecord::RecordNotFound
+    0
   end
 
   def ensure_user_stat
@@ -124,18 +115,95 @@ class User < ApplicationRecord
     stat
   end
 
+  def active_pet_slots
+    slots = Array.new(ACTIVE_PET_SLOT_COUNT)
+    user_pets.where.not(active_slot: nil).each do |pet|
+      next if pet.active_slot.nil?
+      index = pet.active_slot.to_i
+      next unless index.between?(0, ACTIVE_PET_SLOT_COUNT - 1)
+
+      slots[index] = pet
+    end
+    slots
+  end
+
+  def first_available_pet_slot
+    used = user_pets.where.not(active_slot: nil).pluck(:active_slot).compact
+    (0...ACTIVE_PET_SLOT_COUNT).detect { |idx| !used.include?(idx) }
+  end
+
+  def assign_pet_to_slot!(slot, user_pet)
+    slot = slot.to_i
+    raise ArgumentError, "Invalid slot" unless slot.between?(0, ACTIVE_PET_SLOT_COUNT - 1)
+
+    UserPet.transaction do
+      user_pets.where(active_slot: slot).update_all(active_slot: nil, equipped: false)
+      if user_pet
+        raise ActiveRecord::RecordNotFound unless user_pet.user_id == id
+        user_pet.update!(active_slot: slot)
+      end
+    end
+  end
+
+  def clear_pet_slot!(slot)
+    assign_pet_to_slot!(slot, nil)
+  end
+
+  def auto_assign_active_slot!(user_pet)
+    slot = first_available_pet_slot
+    if slot.nil?
+      user_pet.update!(active_slot: nil)
+    else
+      assign_pet_to_slot!(slot, user_pet)
+    end
+  end
+
+  def currency_wallet_for(currency, create: true)
+    currency = Currency.lookup(currency)
+    raise ActiveRecord::RecordNotFound, "Currency not found" unless currency
+
+    wallet = user_currencies.find_by(currency_id: currency.id)
+    if wallet.nil? && create
+      wallet = user_currencies.create!(currency: currency, balance: legacy_currency_balance(currency))
+    end
+    wallet
+  end
+
+  def legacy_currency_balance(currency)
+    field = LEGACY_CURRENCY_FIELDS[currency.name]
+    return 0 unless field
+
+    ensure_user_stat.public_send(field).to_i
+  rescue StandardError
+    0
+  end
+
+  def ensure_currency_wallets!(currencies)
+    Array(currencies).each do |currency|
+      currency_wallet_for(currency)
+    end
+  end
+
+  def credit_currency!(currency, amount)
+    wallet = currency_wallet_for(currency)
+    wallet&.credit!(amount)
+  end
+
+  def debit_currency!(currency, amount)
+    wallet = currency_wallet_for(currency)
+    wallet&.debit!(amount)
+  end
+  
   private
 
   def build_default_stats
     create_user_stat!(STAT_DEFAULTS.merge(energy_updated_at: Time.current))
   end
-  
-  def currency_field_for(currency)
-    return unless currency
 
-    CURRENCY_FIELDS[currency.name]
+  def initialize_currency_wallets
+    ensure_currency_wallets!(Currency.all)
   end
-  
+
   def give_starter_egg
     starter = Egg.find_by(name: "Starter Egg")
     return unless starter

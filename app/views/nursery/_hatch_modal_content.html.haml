@@ -4,7 +4,7 @@
     = image_tag("pets/#{pet.name.parameterize}.png", class: "w-40 h-40")
     %h1.text-xl.font-bold.text-green-700
       You hatched #{pet.name}!
-    = link_to "Close", user_pets_path(collection: "eggs"), class: "text-blue-600 underline mt-4"
+    = link_to "Close", pets_path(view: "eggs"), class: "text-blue-600 underline mt-4"
   - else
     %meta{content: "3;url=#{user_eggs_hatch_path(user_pet, reveal: true)}", "http-equiv" => "refresh"}/
     = image_tag("eggs/#{egg.name.parameterize}.png", class: "w-40 h-40 animate-pulse")

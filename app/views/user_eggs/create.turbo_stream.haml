@@ -1,21 +1,25 @@
 - relevant_item_ids = EggItemCost.distinct.pluck(:item_id)
 - user_items = current_user.user_items.includes(:item).where(item_id: relevant_item_ids)
 - eggs = Egg.enabled.includes(:currency, egg_item_costs: :item)
-- stat = current_user.user_stat&.reload
+- currencies = helpers.currency_balances_for(current_user)
 - highlighted_id = @egg&.id
 
-- if stat
-  = turbo_stream.update "user-currency-trophies" do
-    = number_with_delimiter(stat.trophies)
-  = turbo_stream.update "user-currency-diamonds" do
-    = number_with_delimiter(stat.diamonds)
-  = turbo_stream.update "user-currency-glow-essence" do
-    = number_with_delimiter(stat.glow_essence)
+- coins = currencies.find { |c| c.name == "Coins" }
+- diamonds = currencies.find { |c| c.name == "Diamonds" }
+- glow = currencies.find { |c| c.name == "Glow Essence" }
+
+- if currencies.any?
+  = turbo_stream.update(coins&.dom_id || currency_dom_id("Coins")) do
+    = number_with_delimiter(coins&.amount.to_i)
+  = turbo_stream.update(diamonds&.dom_id || currency_dom_id("Diamonds")) do
+    = number_with_delimiter(diamonds&.amount.to_i)
+  = turbo_stream.update(glow&.dom_id || currency_dom_id("Glow Essence")) do
+    = number_with_delimiter(glow&.amount.to_i)
 
 = turbo_stream.replace "currency_balances", partial: "shared/currency_badges", locals: { currencies: currency_balances_for(current_user) }
 
 = turbo_stream.update "user-inventory" do
-  = render "adopt/user_inventory", user_items: user_items, user_stat: stat
+  = render "adopt/user_inventory", user_items: user_items, currencies: currencies
 
 - user_items.each do |user_item|
   = turbo_stream.update "user-item-quantity-#{user_item.item_id}" do

@@ -6,13 +6,20 @@
 <% energy_cost ||= nil %>
 <% needs_preview ||= [] %>
 <% personality_changes ||= [] %>
+<% needs_snapshot ||= [] %>
 <% preview_energy_before ||= user_pet.energy.to_f %>
 <% preview_energy_after ||= user_pet.energy.to_f %>
 <% preview_xp_before ||= user_pet.exp.to_i %>
 <% preview_xp_after ||= user_pet.exp.to_i %>
 <% preview_xp_gain ||= 0 %>
+<% context_key = context.respond_to?(:to_sym) ? context.to_sym : nil %>
+<% frame_classes = [] %>
+<% frame_classes << "pet-care-alerts__panel" if context_key == :detail_alert %>
+<% use_item = defined?(use_item) ? use_item : nil %>
+<% care_item_options = defined?(care_item_options) ? care_item_options : [] %>
+<% autoclose = context_key == :detail_alert %>
 
-<turbo-frame id="<%= action_panel_dom_id(user_pet) %>">
+<turbo-frame id="<%= action_panel_dom_id(user_pet) %>" class="<%= frame_classes.join(' ') %>">
   <%= render "user_pets/action_panel",
              user_pet: user_pet,
              context: context,
@@ -22,10 +29,14 @@
              interaction: interaction,
              energy_cost: energy_cost,
              needs_preview: needs_preview,
-             personality_changes: personality_changes,
+              personality_changes: personality_changes,
+             needs_snapshot: needs_snapshot,
              preview_energy_before: preview_energy_before,
              preview_energy_after: preview_energy_after,
              preview_xp_before: preview_xp_before,
              preview_xp_after: preview_xp_after,
-             preview_xp_gain: preview_xp_gain %>
+             preview_xp_gain: preview_xp_gain,
+             use_item: use_item,
+             care_item_options: care_item_options,
+             autoclose: autoclose %>
 </turbo-frame>

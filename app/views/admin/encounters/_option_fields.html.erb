@@ -1,0 +1,114 @@
+<div class="rounded-lg border border-slate-700/70 bg-slate-800/80 p-3 space-y-3" data-option data-removable>
+  <div class="flex items-center justify-between">
+    <div>
+      <p class="text-xs font-semibold text-slate-300 uppercase tracking-wide">Branch</p>
+      <p class="text-sm text-slate-200"><%= option[:label].presence || option[:key].presence || "New decision" %></p>
+    </div>
+    <button type="button"
+            class="text-xs text-slate-400 hover:text-red-400"
+            data-action="encounter-builder#removeBlock">
+      Remove
+    </button>
+  </div>
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+    <div>
+      <label class="form-label">Option key</label>
+      <%= text_field_tag "encounter[nodes][#{node_index}][options][#{option_index}][key]",
+                         option[:key],
+                         class: "form-input" %>
+    </div>
+    <div>
+      <label class="form-label">Button label</label>
+      <%= text_field_tag "encounter[nodes][#{node_index}][options][#{option_index}][label]",
+                         option[:label],
+                         class: "form-input",
+                         placeholder: "e.g. Knock on the door" %>
+    </div>
+    <div>
+      <label class="form-label">Ability requirement (refs)</label>
+      <%= text_field_tag "encounter[nodes][#{node_index}][options][#{option_index}][requires_special_abilities]",
+                         option[:requires_special_abilities],
+                         class: "form-input",
+                         placeholder: "ember_guardian, healing_breeze" %>
+    </div>
+    <div>
+      <label class="form-label">Ability tags</label>
+      <%= text_field_tag "encounter[nodes][#{node_index}][options][#{option_index}][requires_special_ability_tags]",
+                         option[:requires_special_ability_tags],
+                         class: "form-input",
+                         placeholder: "fire, support" %>
+    </div>
+    <div>
+      <label class="form-label">Timer (seconds)</label>
+      <%= number_field_tag "encounter[nodes][#{node_index}][options][#{option_index}][timer_seconds]",
+                           option[:timer_seconds],
+                           class: "form-input" %>
+    </div>
+    <div>
+      <label class="form-label">Success chance (0-1)</label>
+      <%= number_field_tag "encounter[nodes][#{node_index}][options][#{option_index}][success_chance]",
+                           option[:success_chance],
+                           step: 0.01,
+                           class: "form-input" %>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+    <div>
+      <label class="form-label">On success → event</label>
+      <%= select_tag "encounter[nodes][#{node_index}][options][#{option_index}][next_node]",
+                     options_for_select([["— End Encounter —", ""]], option[:next_node]),
+                     class: "form-input",
+                     data: {
+                       encounter_builder_target: "eventSelect",
+                       selected_value: option[:next_node]
+                     } %>
+    </div>
+    <div>
+      <label class="form-label">Success outcome ID</label>
+      <%= text_field_tag "encounter[nodes][#{node_index}][options][#{option_index}][outcome]",
+                         option[:outcome],
+                         class: "form-input" %>
+    </div>
+    <div>
+      <label class="form-label">Success status</label>
+      <%= text_field_tag "encounter[nodes][#{node_index}][options][#{option_index}][status]",
+                         option[:status],
+                         class: "form-input",
+                         placeholder: "completed" %>
+    </div>
+    <div>
+      <label class="form-label">Failure status</label>
+      <%= text_field_tag "encounter[nodes][#{node_index}][options][#{option_index}][failure_status]",
+                         option[:failure_status],
+                         class: "form-input",
+                         placeholder: "failed" %>
+    </div>
+    <div>
+      <label class="form-label">On failure → event</label>
+      <%= select_tag "encounter[nodes][#{node_index}][options][#{option_index}][failure_next_node]",
+                     options_for_select([["— End Encounter —", ""]], option[:failure_next_node]),
+                     include_blank: true,
+                     class: "form-input",
+                     data: {
+                       encounter_builder_target: "eventSelect",
+                       selected_value: option[:failure_next_node]
+                     } %>
+    </div>
+    <div>
+      <label class="form-label">Failure outcome ID</label>
+      <%= text_field_tag "encounter[nodes][#{node_index}][options][#{option_index}][failure_outcome]",
+                         option[:failure_outcome],
+                         class: "form-input" %>
+    </div>
+  </div>
+
+  <div>
+    <label class="form-label">Player-facing description</label>
+    <%= text_area_tag "encounter[nodes][#{node_index}][options][#{option_index}][description]",
+                      option[:description],
+                      class: "form-textarea",
+                      rows: 2,
+                      placeholder: "Optional flavor text for this choice" %>
+  </div>
+</div>

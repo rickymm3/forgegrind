@@ -28,9 +28,6 @@ application.register("modal", ModalController)
 import SleepController from "./sleep_controller"
 application.register("sleep", SleepController)
 
-import PetDetailController from "./pet_detail_controller"
-application.register("pet-detail", PetDetailController)
-
 import PetListController from "./pet_list_controller"
 application.register("pet-list", PetListController)
 
@@ -48,6 +45,9 @@ application.register("action-panel", ActionPanelController)
 
 import ToastController from "./toast_controller"
 application.register("toast", ToastController)
+
+import PetCoinsController from "./pet_coins_controller"
+application.register("pet-coins", PetCoinsController)
 
 
 import PartySelectorController from "./party_selector_controller"
@@ -82,3 +82,12 @@ application.register("badge-builder", BadgeBuilderController)
 
 import TabbarController from "./tabbar_controller"
 application.register("tabbar", TabbarController)
+
+import CareAlertsController from "./care_alerts_controller"
+application.register("care-alerts", CareAlertsController)
+
+import EncounterBuilderController from "./encounter_builder_controller"
+application.register("encounter-builder", EncounterBuilderController)
+
+import PetDetailController from "./pet_detail_controller"
+application.register("pet-detail", PetDetailController)

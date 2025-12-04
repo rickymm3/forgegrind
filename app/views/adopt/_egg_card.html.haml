@@ -26,11 +26,6 @@
         %p Hatch Time
         %p.font-semibold.text-slate-600= distance_of_time_in_words(Time.current, egg.hatch_duration.seconds.from_now)
 
-    - if highlight
-      .bg-emerald-50.border.border-emerald-200.rounded-xl.px-4.py-3.flex.items-center.gap-3.text-emerald-700.text-sm.shadow-inner
-        %span.text-base.leading-none ✓
-        %span= "#{egg.name} added to your nursery!"
-
     %details.bg-slate-50.rounded-xl.p-4.transition
       %summary.cursor-pointer.text-sm.font-semibold.text-slate-700.flex.items-center.justify-between
         %span Requirements & Rewards
@@ -53,27 +48,18 @@
         - else
           %p No items required.
 
-    - if highlight
-      .bg-emerald-50.border.border-emerald-200.rounded-xl.px-4.py-3.flex.items-center.gap-3.text-emerald-700.text-sm.shadow-inner
-        %span.text-base.leading-none ✓
-        %span= "#{egg.name} added to your nursery!"
-      = link_to "OK",
-                adopt_path,
-                data: { turbo_frame: "_top" },
-                class: "w-full inline-flex justify-center items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-400"
-    - else
-      = form_with url: user_eggs_path,
-                  method: :post,
-                  data: { controller: "loading-button", action: "turbo:submit-start->loading-button#start turbo:submit-end->loading-button#stop" },
-                  class: "mt-auto" do |f|
-        = hidden_field_tag :egg_id, egg.id
+    = form_with url: user_eggs_path,
+                method: :post,
+                data: { controller: "loading-button", action: "turbo:submit-start->loading-button#start turbo:submit-end->loading-button#stop" },
+                class: "mt-auto" do |f|
+      = hidden_field_tag :egg_id, egg.id
 
-        - button_text     = can_afford ? "Adopt" : "Unavailable"
-        - button_disabled = !can_afford
-        - button_classes = can_afford ? "w-full py-3 rounded-xl text-sm font-semibold transition flex items-center justify-center gap-2 bg-indigo-600 text-white hover:bg-indigo-700" : "w-full py-3 rounded-xl text-sm font-semibold transition bg-slate-200 text-slate-400 cursor-not-allowed"
+      - button_text     = can_afford ? "Adopt" : "Unavailable"
+      - button_disabled = !can_afford
+      - button_classes = can_afford ? "w-full py-3 rounded-xl text-sm font-semibold transition flex items-center justify-center gap-2 bg-indigo-600 text-white hover:bg-indigo-700" : "w-full py-3 rounded-xl text-sm font-semibold transition bg-slate-200 text-slate-400 cursor-not-allowed"
 
-        = f.button type: :submit,
-                  class: button_classes,
-                  disabled: button_disabled,
-                  data: { "loading-button-target": "button" } do
-          %span= button_text
+      = f.button type: :submit,
+                class: button_classes,
+                disabled: button_disabled,
+                data: { "loading-button-target": "button" } do
+        %span= button_text

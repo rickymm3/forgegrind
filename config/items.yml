@@ -50,6 +50,13 @@ soap:
   target_type: pet
   rarity: rare
 
+rainbow_fruit:
+  name: "Rainbow Fruit"
+  description: "A riot of flavors that restores every need at once, though the bitter aftertaste sours mood slightly."
+  usable: true
+  target_type: pet
+  rarity: rare
+
 whistle:
   name: "Whistle"
   description: "A whistle that grabs your pet's attention instantly."
@@ -150,3 +157,33 @@ celestial_stone:
   name: "Celestial Stone"
   description: "Starlight flickers within - perfect for pets attuned to the cosmos."
   rarity: epic
+
+trail_ration_bundle:
+  name: "Trail Ration Bundle"
+  description: "Packed snacks and tonics that help pets recover after long patrols."
+  rarity: common
+
+lantern_core:
+  name: "Lantern Core"
+  description: "A refurbished glowstone heart for Glimmering Trail beacons."
+  rarity: rare
+
+meadow_sunpetal_tonic:
+  name: "Sunpetal Tonic"
+  description: "A bright, floral draught that revives weary explorers."
+  rarity: uncommon
+
+breezeharp_string:
+  name: "Breezeharp String"
+  description: "Harmonic filament tuned to Whispering Meadow's constant breeze."
+  rarity: rare
+
+twilight_courier_badge:
+  name: "Twilight Courier Badge"
+  description: "A stamped sigil granted to couriers who keep the Glimmering Trail alight."
+  rarity: uncommon
+
+mistral_reed_flute:
+  name: "Mistral Reed Flute"
+  description: "A meadow-crafted flute that carries wind-sprite melodies."
+  rarity: rare

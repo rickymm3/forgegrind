@@ -1,0 +1,189 @@
+<div class="admin-header">
+  <h1><%= @world.name %></h1>
+  <p class="admin-header__subtitle">Exploration zone overview.</p>
+</div>
+
+<% related_links = [
+     { label: "Edit zone", path: edit_admin_world_path(@world), icon: "✎" },
+     { label: "View mods", path: admin_mods_path }
+   ] %>
+<%= admin_related_links(related_links) %>
+
+<div class="grid grid-cols-1 gap-6 lg:grid-cols-2 mt-6">
+  <div class="rounded-3xl border border-slate-200 bg-white p-5 space-y-3">
+    <h2 class="text-lg font-semibold text-slate-900">Core Stats</h2>
+    <dl class="text-sm text-slate-700 space-y-2">
+      <div>
+        <dt class="font-semibold">Duration</dt>
+        <dd><%= "#{@world.duration}s" %></dd>
+      </div>
+      <div>
+        <dt class="font-semibold">Reward Item</dt>
+        <dd><%= @world.reward_item_type %></dd>
+      </div>
+      <div>
+        <dt class="font-semibold">Diamond Reward</dt>
+        <dd><%= @world.diamond_reward %></dd>
+      </div>
+      <div>
+        <dt class="font-semibold">Enabled</dt>
+        <dd><%= @world.enabled? ? "Yes" : "No" %></dd>
+      </div>
+      <div>
+        <dt class="font-semibold">Upgraded On Clear</dt>
+        <dd><%= @world.upgraded_on_clear? ? "Yes" : "No" %></dd>
+      </div>
+      <div>
+        <dt class="font-semibold">Drop Table Override</dt>
+        <dd><%= @world.drop_table_override_key.presence || "—" %></dd>
+      </div>
+      <div>
+        <dt class="font-semibold">Upgrade Drop Override</td>
+        <dd><%= @world.upgrade_drop_table_override_key.presence || "—" %></dd>
+      </div>
+    </dl>
+  </div>
+
+  <div class="rounded-3xl border border-slate-200 bg-white p-5 space-y-3">
+    <h2 class="text-lg font-semibold text-slate-900">Rotation & Usage</h2>
+    <dl class="text-sm text-slate-700 space-y-2">
+      <div>
+        <dt class="font-semibold">Rotation Active</dt>
+        <dd><%= @world.rotation_active? ? "Yes" : "No" %></dd>
+      </div>
+      <div>
+        <dt class="font-semibold">Rotation Weight</dt>
+        <dd><%= @world.rotation_weight %></dd>
+      </div>
+      <div>
+        <dt class="font-semibold">Rotation Starts</dt>
+        <dd><%= @world.rotation_starts_at&.to_s || "—" %></dd>
+      </div>
+      <div>
+        <dt class="font-semibold">Rotation Ends</dt>
+        <dd><%= @world.rotation_ends_at&.to_s || "—" %></dd>
+      </div>
+      <div>
+        <dt class="font-semibold">Active Runs</dt>
+        <dd><%= @world_metrics[:active].to_i %></dd>
+      </div>
+      <div>
+        <dt class="font-semibold">Completed Total</dt>
+        <dd><%= @world_metrics[:completed].to_i %></dd>
+      </div>
+      <div>
+        <dt class="font-semibold">Last Completion</dt>
+        <dd>
+          <% if @world_metrics[:last_completed_at].present? %>
+            <%= time_ago_in_words(@world_metrics[:last_completed_at]) %> ago
+          <% else %>
+            —
+          <% end %>
+        </dd>
+      </div>
+    </dl>
+  </div>
+</div>
+
+<div class="grid grid-cols-1 gap-6 lg:grid-cols-2 mt-6">
+  <div class="rounded-3xl border border-slate-200 bg-white p-5 space-y-3">
+    <h2 class="text-lg font-semibold text-slate-900">Traits</h2>
+    <% if Array(@world.special_traits).any? %>
+      <ul class="text-sm text-slate-700 flex flex-wrap gap-2">
+        <% @world.special_traits.each do |trait| %>
+          <li class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold"><%= trait %></li>
+        <% end %>
+      </ul>
+    <% else %>
+      <p class="text-sm text-slate-500">None</p>
+    <% end %>
+
+    <h3 class="text-sm font-semibold text-slate-600 mt-4">Required Abilities</h3>
+    <% if Array(@world.required_pet_abilities).any? %>
+      <ul class="text-sm text-slate-700 flex flex-wrap gap-2">
+        <% @world.required_pet_abilities.each do |ability| %>
+          <li class="inline-flex items-center rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700"><%= ability %></li>
+        <% end %>
+      </ul>
+    <% else %>
+      <p class="text-sm text-slate-500">None</p>
+    <% end %>
+  </div>
+
+  <div class="rounded-3xl border border-slate-200 bg-white p-5 space-y-3">
+    <h2 class="text-lg font-semibold text-slate-900">Upgrade Path</h2>
+    <h3 class="text-sm font-semibold text-slate-600">Trait Keys</h3>
+    <% if Array(@world.upgrade_trait_keys).any? %>
+      <ul class="text-sm text-slate-700 flex flex-wrap gap-2">
+        <% @world.upgrade_trait_keys.each do |trait| %>
+          <li class="inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700"><%= trait %></li>
+        <% end %>
+      </ul>
+    <% else %>
+      <p class="text-sm text-slate-500">None</p>
+    <% end %>
+
+    <h3 class="text-sm font-semibold text-slate-600 mt-4">Required Abilities</h3>
+    <% if Array(@world.upgrade_required_pet_abilities).any? %>
+      <ul class="text-sm text-slate-700 flex flex-wrap gap-2">
+        <% @world.upgrade_required_pet_abilities.each do |ability| %>
+          <li class="inline-flex items-center rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700"><%= ability %></li>
+        <% end %>
+      </ul>
+    <% else %>
+      <p class="text-sm text-slate-500">None</p>
+    <% end %>
+  </div>
+</div>
+
+<% base = (@base_config || {}).with_indifferent_access %>
+<div class="grid grid-cols-1 gap-6 mt-6">
+  <div class="rounded-3xl border border-slate-200 bg-white p-5 space-y-3">
+    <h2 class="text-lg font-semibold text-slate-900">Base Configuration</h2>
+    <% if base.present? %>
+      <dl class="text-sm text-slate-700 space-y-2">
+        <div>
+          <dt class="font-semibold">Tier</dt>
+          <dd><%= base[:tier].presence || "—" %></dd>
+        </div>
+        <div>
+          <dt class="font-semibold">Base World Key</dt>
+          <dd><%= base[:world_key].presence || "—" %></dd>
+        </div>
+        <div>
+          <dt class="font-semibold">Player Level Minimum</dt>
+          <dd><%= base[:player_level_min] %></dd>
+        </div>
+        <div>
+          <dt class="font-semibold">Default Duration (minutes)</dt>
+          <dd><%= base[:default_duration] %></dd>
+        </div>
+        <div>
+          <dt class="font-semibold">World Tags</dt>
+          <dd><%= Array(base[:world_tags]).join(", ").presence || "—" %></dd>
+        </div>
+        <div>
+          <dt class="font-semibold">Reward Drop Key</dt>
+          <dd><%= base.dig(:rewards, :base_drop_key).presence || "—" %></dd>
+        </div>
+      </dl>
+      <h3 class="text-sm font-semibold text-slate-600 mt-4">Checkpoint Labels</h3>
+      <% if Array(base[:checkpoint_labels]).any? %>
+        <ul class="text-sm text-slate-700 flex flex-wrap gap-2">
+          <% base[:checkpoint_labels].each do |label| %>
+            <li class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold"><%= label %></li>
+          <% end %>
+        </ul>
+      <% else %>
+        <p class="text-sm text-slate-500">None specified</p>
+      <% end %>
+    <% else %>
+      <p class="text-sm text-slate-500">No matching base configuration found. Ensure the YAML entry exists.</p>
+    <% end %>
+  </div>
+</div>
+
+<div class="flex items-center justify-end gap-3 mt-6">
+  <%= link_to "Back", admin_worlds_path, class: "text-sm font-semibold text-slate-600 hover:text-slate-800" %>
+  <%= link_to "Edit Zone", edit_admin_world_path(@world), class: "inline-flex items-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500" %>
+</div>

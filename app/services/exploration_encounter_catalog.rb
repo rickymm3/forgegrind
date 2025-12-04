@@ -6,8 +6,16 @@ class ExplorationEncounterCatalog
   BONUS_ENCOUNTER_CHANCE = 0.45
   MAX_ENCOUNTER_CHANCE   = 0.9
 
+  DEFAULT_WEIGHT_TIERS = {
+    "common" => 1.0,
+    "uncommon" => 0.85,
+    "rare" => 0.6,
+    "ultra_rare" => 0.35,
+    "legendary" => 0.2
+  }.freeze
+
   class << self
-    def schedule_for(world:, duration:, ability_refs: [], ability_tags: [], count: nil, seed: nil, requirements: [], fulfilled_ids: [], segments: nil)
+    def schedule_for(world:, duration:, ability_refs: [], ability_tags: [], count: nil, seed: nil, requirements: [], fulfilled_ids: [], segments: nil, base_key: nil, prefix_key: nil, suffix_key: nil)
       profile = world_profile(world)
       count ||= profile.fetch("default_encounter_count", 0).to_i
       count = 0 if count.negative?
@@ -17,7 +25,14 @@ class ExplorationEncounterCatalog
       requirements = Array(requirements)
       fulfilled_ids = Array(fulfilled_ids).map(&:to_s)
 
-      candidates = encounters_for(world: world, ability_refs: ability_refs, ability_tags: ability_tags)
+      candidates = encounters_for(
+        world: world,
+        ability_refs: ability_refs,
+        ability_tags: ability_tags,
+        world_key: base_key,
+        prefix_key: prefix_key,
+        suffix_key: suffix_key
+      )
       return [] if candidates.empty?
 
       requirement_context = build_requirement_context(requirements, fulfilled_ids)
@@ -58,13 +73,17 @@ class ExplorationEncounterCatalog
       end
     end
 
-    def encounters_for(world:, ability_refs: [], ability_tags: [])
+    def encounters_for(world:, ability_refs: [], ability_tags: [], world_key: nil, prefix_key: nil, suffix_key: nil)
       ability_refs = normalize_array(ability_refs)
       ability_tags = normalize_array(ability_tags)
-      tags = world_tags(world)
-      slug = world_slug(world)
+      prefix_key = normalize_component_key(prefix_key)
+      suffix_key = normalize_component_key(suffix_key)
+      world_context = build_world_context(world, world_key)
 
-      encountered = base_encounters(tags) + world_specific_encounters(slug)
+      encountered = normalized_encounters.select do |encounter|
+        association_match?(encounter, world_context, prefix_key: prefix_key, suffix_key: suffix_key)
+      end
+
       unique_by_slug(encountered).select do |encounter|
         requirements_met?(requirements_from(encounter), ability_refs, ability_tags)
       end
@@ -84,6 +103,8 @@ class ExplorationEncounterCatalog
     def reload!
       @encounters = nil
       @world_profiles = nil
+      @normalized_encounters = nil
+      @tier_weight_map = nil
     end
 
     private
@@ -92,21 +113,67 @@ class ExplorationEncounterCatalog
       @encounters ||= load_yaml(ENCOUNTERS_PATH)
     end
 
-    def world_profiles
-      @world_profiles ||= load_yaml(WORLD_PROFILES_PATH)
-    end
-
-    def base_encounters(tags)
-      global = Array(encounters.fetch("global", []))
-      tag_set = normalize_array(tags)
-      global.select do |encounter|
-        encounter_tags = normalize_array(encounter["world_tags"])
-        encounter_tags.blank? || (encounter_tags & tag_set).any?
+    def normalized_encounters
+      @normalized_encounters ||= begin
+        data = encounters
+        if data["encounters"]
+          build_new_schema_encounters(data)
+        else
+          build_legacy_encounters(data)
+        end
       end
     end
 
-    def world_specific_encounters(slug)
-      Array(encounters.dig("worlds", slug))
+    def build_new_schema_encounters(data)
+      Array(data["encounters"]).map do |entry|
+        normalized = deep_dup(entry)
+        normalized["associations"] = normalize_associations(normalized["associations"])
+        normalized["base_weight"] = determine_weight(normalized)
+        normalized["requirement_tags"] = normalize_array(normalized["requirement_tags"])
+        normalized["world_tags"] = normalize_array(normalized["world_tags"]) + association_world_tags(normalized)
+        normalized["world_tags"].uniq!
+        normalized
+      end
+    end
+
+    def build_legacy_encounters(data)
+      entries = []
+      Array(data["global"]).each do |entry|
+        normalized = deep_dup(entry)
+        normalized["associations"] = [
+          {
+            "world_tags" => normalize_array(entry["world_tags"])
+          }
+        ]
+        normalized["base_weight"] = determine_weight(normalized, entry["base_weight"])
+        normalized["world_tags"] = normalize_array(entry["world_tags"])
+        entries << normalized
+      end
+
+      worlds = data["worlds"] || {}
+      worlds.each do |slug, encounter_list|
+        Array(encounter_list).each do |encounter|
+          normalized = deep_dup(encounter)
+          normalized["associations"] = [
+            { "world_keys" => [slug.to_s] }
+          ]
+          normalized["base_weight"] = determine_weight(normalized, encounter["base_weight"])
+          normalized["world_tags"] = normalize_array(encounter["world_tags"])
+          entries << normalized
+        end
+      end
+
+      entries
+    end
+
+    def association_world_tags(entry)
+      Array(entry["associations"]).flat_map do |assoc|
+        normalize_array(assoc["world_tags"])
+      end
+    end
+
+    def world_profiles
+      @world_profiles ||= load_yaml(WORLD_PROFILES_PATH)
     end
 
     def build_requirement_context(requirements, fulfilled_ids)
@@ -132,15 +199,19 @@ class ExplorationEncounterCatalog
     end
 
     def build_weighted_pool(candidates, context)
-      candidates.map do |encounter|
+      candidates.filter_map do |encounter|
         base_weight = encounter.fetch("base_weight", 1.0).to_f
         base_weight = 0.01 if base_weight <= 0
+
+        next unless requirement_gates_pass?(encounter, context)
 
         tags = normalize_array(encounter["requirement_tags"])
         multiplier = if tags.any?
                        fulfilled_matches = (tags & context[:fulfilled_tags]).size
                        partial_matches = (tags & context[:all_tags]).size
-                       1.0 + fulfilled_matches * 0.5 + partial_matches * 0.25
+                       bonus = fulfilled_matches * 1.0 + partial_matches * 0.2
+                       bonus += 1.5 if fulfilled_matches.positive? && fulfilled_matches == tags.size
+                       1.0 + bonus
                      else
                        1.0 + context[:fulfilled_ratio] * 0.25
                      end
@@ -428,12 +499,105 @@ class ExplorationEncounterCatalog
       Array(value).map(&:to_s).reject(&:blank?)
     end
 
+    def normalize_associations(entries)
+      Array(entries).map do |assoc|
+        hash = assoc.respond_to?(:with_indifferent_access) ? assoc.with_indifferent_access : assoc
+        {
+          "world_keys" => normalize_array(hash[:world_keys] || hash[:worlds]),
+          "world_tags" => normalize_array(hash[:world_tags] || hash[:tags]),
+          "affix_keys" => normalize_array(hash[:affix_keys] || hash[:affixes]),
+          "suffix_keys" => normalize_array(hash[:suffix_keys] || hash[:suffixes])
+        }
+      end
+    end
+
+    def build_world_context(world, explicit_key)
+      slug = world_slug(world)
+      context_keys = []
+      context_keys << sanitize_world_key(explicit_key) if explicit_key.present?
+      context_keys << slug
+      context_keys << slug.tr('-', '_')
+      context_keys << slug.tr('-', '')
+      if world.respond_to?(:name)
+        context_keys << world.name.to_s.parameterize(separator: '_')
+        context_keys << world.name.to_s.parameterize(separator: '-')
+      end
+      context_keys << "global"
+      {
+        slug: slug,
+        keys: context_keys.compact.map(&:to_s).reject(&:blank?).uniq,
+        tags: world_tags(world)
+      }
+    end
+
+    def association_match?(encounter, world_context, prefix_key:, suffix_key:)
+      associations = Array(encounter["associations"])
+      return true if associations.empty?
+
+      associations.any? do |assoc|
+        next unless association_world_match?(assoc, world_context)
+        next if assoc["affix_keys"].present? && !assoc["affix_keys"].include?(prefix_key)
+        next if assoc["suffix_keys"].present? && !assoc["suffix_keys"].include?(suffix_key)
+        true
+      end
+    end
+
+    def association_world_match?(assoc, world_context)
+      keys = Array(assoc["world_keys"])
+      tags = Array(assoc["world_tags"])
+
+      key_match = keys.blank? || keys.include?("global") || (keys & world_context[:keys]).any?
+      tag_match = tags.blank? || (tags & world_context[:tags]).any?
+      key_match && tag_match
+    end
+
     def world_slug(world)
       case world
       when World
         world.exploration_slug
       else
         world.to_s.parameterize(separator: '-')
+      end
+    end
+
+    def requirement_gates_pass?(encounter, context)
+      required = normalize_array(encounter["requires_requirement_tags"])
+      return true if required.blank?
+
+      fulfilled = context[:fulfilled_tags]
+      (required - fulfilled).empty?
+    end
+
+    def sanitize_world_key(value)
+      return if value.blank?
+      value.to_s
+    end
+
+    def normalize_component_key(key)
+      value = key.to_s
+      return nil if value.blank? || value == "none"
+      value
+    end
+
+    def determine_weight(entry, fallback = nil)
+      weight = entry["base_weight"]
+      weight = fallback if weight.blank?
+      if weight.present? && weight.to_f.positive?
+        return weight.to_f
+      end
+
+      tier = entry["weight_tier"] || entry["weight"]
+      tier_weight_map[tier.to_s] || tier_weight_map["common"]
+    end
+
+    def tier_weight_map
+      @tier_weight_map ||= begin
+        configured = encounters["weights"] || {}
+        defaults = DEFAULT_WEIGHT_TIERS.dup
+        configured.each do |key, value|
+          defaults[key.to_s] = value.to_f if value.present?
+        end
+        defaults
       end
     end
 

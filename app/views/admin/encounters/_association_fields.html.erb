@@ -1,0 +1,40 @@
+<% association ||= Admin::EncounterBuilder.blank_association %>
+<div class="rounded-xl border border-slate-700/70 bg-slate-900/60 p-4 space-y-3" data-association data-removable data-association-index="<%= association_index %>">
+  <div class="flex items-center justify-between">
+    <p class="text-xs font-semibold tracking-wide text-slate-400 uppercase">Association</p>
+    <button type="button"
+            class="text-xs text-slate-400 hover:text-red-400"
+            data-action="encounter-builder#removeBlock">
+      Remove
+    </button>
+  </div>
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+    <div>
+      <label class="form-label">Worlds</label>
+      <%= select_tag "encounter[associations][#{association_index}][world_keys][]",
+                     options_for_select(world_options, association[:world_keys]),
+                     multiple: true,
+                     class: "form-input",
+                     size: 4 %>
+    </div>
+    <div>
+      <label class="form-label">Affixes</label>
+      <%= select_tag "encounter[associations][#{association_index}][affix_keys][]",
+                     options_for_select(affix_options, association[:affix_keys]),
+                     multiple: true,
+                     class: "form-input",
+                     size: 4 %>
+    </div>
+    <div>
+      <label class="form-label">Suffixes</label>
+      <%= select_tag "encounter[associations][#{association_index}][suffix_keys][]",
+                     options_for_select(suffix_options, association[:suffix_keys]),
+                     multiple: true,
+                     class: "form-input",
+                     size: 4 %>
+    </div>
+  </div>
+  <p class="text-xs text-slate-500">
+    Leave a column empty to match any value (e.g., world + any affix).
+  </p>
+</div>

@@ -6,21 +6,28 @@ class UserExplorationsController < ApplicationController
     generated = @user_exploration.generated_exploration
     @world = @user_exploration.world
 
-    reward_config = ExplorationRewards.for(@world)
+    drop_keys = generated&.reward_drop_keys || []
+    reward_summary = ExplorationRewards.for_drop_keys(drop_keys, fallback_world: @world)
     outcome = ExplorationOutcome.evaluate(world: @world, user_pets: @user_exploration.user_pets)
 
-    @reward = adjusted_reward(reward_config.exp, outcome.reward_multiplier)
-    @diamond_reward = adjusted_reward(reward_config.diamonds, outcome.diamond_multiplier)
-    @trophy_reward = rand(50..100)
+    @reward = adjusted_reward(reward_summary.exp, outcome.reward_multiplier)
+    @diamond_reward = adjusted_reward(reward_summary.diamonds, outcome.diamond_multiplier)
+    @coin_reward = 0
 
     @user_pets = @user_exploration.user_pets.to_a
     apply_experience_and_needs!(@user_pets, @user_exploration.duration_seconds, outcome.need_penalty_multiplier)
     @user_pets.each { |pet| pet.ensure_sleep_state! }
 
-    stat = current_user.user_stat || current_user.create_user_stat!(User::STAT_DEFAULTS.merge(energy_updated_at: Time.current))
-    stat.increment!(:trophies, @trophy_reward)
-    stat.increment!(:diamonds, @diamond_reward) if @diamond_reward.positive?
-    @user_stats = stat.reload
+    diamonds_currency = Currency.find_by_key(:diamonds)
+
+    if @diamond_reward.positive?
+      if diamonds_currency
+        current_user.credit_currency!(diamonds_currency, @diamond_reward)
+      else
+        Rails.logger.warn("[Explorations] Diamonds currency missing, reward not granted.")
+      end
+    end
+    @currency_balances = helpers.currency_balances_for(current_user)
 
     reward_result = Explorations::ExplorationCompletionRewarder.call(user: current_user, world: @world)
     @granted_chest_type = reward_result[:chest_type]
@@ -111,7 +118,11 @@ class UserExplorationsController < ApplicationController
       head :unprocessable_entity and return
     end
 
-    expires_in = @user_exploration.available_encounter_timer_seconds(entry)
+    expires_in = if entry[:segment_index].present?
+                   nil
+                 else
+                   @user_exploration.available_encounter_timer_seconds(entry)
+                 end
     @user_exploration.activate_encounter!(entry, expires_in: expires_in)
     @user_exploration.reload
 
@@ -140,50 +151,73 @@ class UserExplorationsController < ApplicationController
       head :unprocessable_entity and return
     end
 
-    next_node = option[:next_node].presence
-    outcome = option[:outcome]
+    success_config = option[:success].is_a?(Hash) ? option[:success].with_indifferent_access : {}
+    failure_config = option[:failure].is_a?(Hash) ? option[:failure].with_indifferent_access : {}
+
+    success_next_node = success_config[:next_node].presence || option[:next_node].presence
+    failure_next_node = failure_config[:next_node].presence || option[:failure_next_node].presence
+    default_outcome = option[:outcome]
+    success_outcome = success_config[:outcome].presence || default_outcome
+    failure_outcome = failure_config[:outcome].presence || option[:failure_outcome].presence || "#{option[:key]}_failed"
+    success_status = success_config[:status].presence || option[:status].presence || "completed"
+    failure_status = failure_config[:status].presence || option[:failure_status].presence || "failed"
     expires_in = @user_exploration.option_timer_seconds(option)
-    completion_status = option[:status].presence || "completed"
+    chance_data = @user_exploration.success_chance_for_option(option)
+    chance_value = chance_data&.[](:chance)
+    roll_value = chance_value.present? ? rand : nil
+    success = chance_value.nil? ? true : roll_value <= chance_value
+
+    target_next_node = success ? success_next_node : failure_next_node
+    target_outcome = success ? success_outcome : failure_outcome
+    target_status = success ? success_status : failure_status
 
     respond_to do |format|
       format.turbo_stream do
-        if next_node
+        if target_next_node.present?
           @user_exploration.advance_active_encounter!(
-            next_node: next_node,
+            next_node: target_next_node,
             choice_key: choice_key,
             expires_in: expires_in,
-            outcome: outcome
+            outcome: target_outcome
           )
           @user_exploration.reload
           render turbo_stream: [zone_card_stream_for(@user_exploration, state: :checkpoint), nav_tabbar_stream]
         else
           @user_exploration.complete_active_encounter!(
             choice_key: choice_key,
-            outcome: outcome,
-            status: completion_status
+            outcome: target_outcome,
+            status: target_status,
+            chance: chance_value,
+            roll: roll_value
           )
           @user_exploration.reload
           render turbo_stream: [zone_card_stream_for(@user_exploration, state: :checkpoint), nav_tabbar_stream]
         end
       end
       format.html do
-        if next_node
-          notice = "Encounter progressed."
-        else
-          notice = "Encounter resolved."
-        end
-        if next_node
+        notice =
+          if target_next_node.present?
+            "Encounter progressed."
+          elsif success
+            "Encounter resolved."
+          else
+            "Encounter failed."
+          end
+
+        if target_next_node.present?
           @user_exploration.advance_active_encounter!(
-            next_node: next_node,
+            next_node: target_next_node,
             choice_key: choice_key,
             expires_in: expires_in,
-            outcome: outcome
+            outcome: target_outcome
           )
         else
           @user_exploration.complete_active_encounter!(
             choice_key: choice_key,
-            outcome: outcome,
-            status: completion_status
+            outcome: target_outcome,
+            status: target_status,
+            chance: chance_value,
+            roll: roll_value
           )
         end
         @user_exploration.reload
@@ -198,8 +232,6 @@ class UserExplorationsController < ApplicationController
 
   def completion_notice
     base = "Exploration complete! Each pet gained #{@reward} EXP."
-    trophy_text = " You earned #{@trophy_reward} Trophies."
-    base += trophy_text
     return base unless @diamond_reward.to_i.positive?
 
     "#{base} You earned #{@diamond_reward} Diamonds."

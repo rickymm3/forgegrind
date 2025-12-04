@@ -10,6 +10,10 @@
   <% xp_threshold = level >= level_cap ? nil : @stat.level_xp_requirement(level) %>
   <% xp_current   = xp_threshold ? (xp_threshold - @stat.experience_to_next_level) : 0 %>
   <% xp_percent   = xp_threshold ? ((xp_current.to_f / xp_threshold) * 100).clamp(0.0, 100.0) : 100 %>
+  <% currencies = @currency_balances || helpers.currency_balances_for(@user) %>
+  <% coins    = currencies.find { |c| c.name == "Coins" } %>
+  <% diamonds = currencies.find { |c| c.name == "Diamonds" } %>
+  <% glow     = currencies.find { |c| c.name == "Glow Essence" } %>
 
   <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
     <div class="rounded-2xl border border-indigo-400/40 bg-indigo-500/10 p-5 flex flex-col gap-3">
@@ -32,16 +36,16 @@
       <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Currencies</p>
       <div class="flex flex-wrap gap-3 text-sm text-slate-200">
         <span class="inline-flex flex-col">
-          <span class="text-[11px] uppercase tracking-[0.2em] text-slate-500">Trophies</span>
-          <span class="text-lg font-semibold"><%= number_with_delimiter(@stat.trophies) %></span>
+          <span class="text-[11px] uppercase tracking-[0.2em] text-slate-500">Coins</span>
+          <span class="text-lg font-semibold"><%= number_with_delimiter(coins&.amount.to_i) %></span>
         </span>
         <span class="inline-flex flex-col">
           <span class="text-[11px] uppercase tracking-[0.2em] text-slate-500">Glow Essence</span>
-          <span class="text-lg font-semibold"><%= number_with_delimiter(@stat.glow_essence) %></span>
+          <span class="text-lg font-semibold"><%= number_with_delimiter(glow&.amount.to_i) %></span>
         </span>
         <span class="inline-flex flex-col">
           <span class="text-[11px] uppercase tracking-[0.2em] text-slate-500">Diamonds</span>
-          <span class="text-lg font-semibold"><%= number_with_delimiter(@stat.diamonds) %></span>
+          <span class="text-lg font-semibold"><%= number_with_delimiter(diamonds&.amount.to_i) %></span>
         </span>
       </div>
     </div>

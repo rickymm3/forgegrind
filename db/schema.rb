@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_15_151734) do
+ActiveRecord::Schema[8.0].define(version: 2025_12_04_100000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -133,6 +133,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_15_151734) do
     t.string "symbol"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["name"], name: "index_currencies_on_name", unique: true
   end
 
   create_table "effects", force: :cascade do |t|
@@ -262,6 +263,18 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_15_151734) do
     t.index ["key"], name: "index_loot_tables_on_key", unique: true
   end
 
+  create_table "pet_camp_interactions", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "user_pet_id", null: false
+    t.integer "event_type", default: 0, null: false
+    t.integer "reward_type", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["created_at"], name: "index_pet_camp_interactions_on_created_at"
+    t.index ["user_id"], name: "index_pet_camp_interactions_on_user_id"
+    t.index ["user_pet_id"], name: "index_pet_camp_interactions_on_user_pet_id"
+  end
+
   create_table "pet_thoughts", force: :cascade do |t|
     t.string "thought"
     t.float "playfulness_mod"
@@ -349,6 +362,17 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_15_151734) do
     t.index ["chest_type_id"], name: "index_user_containers_on_chest_type_id"
     t.index ["user_id", "chest_type_id"], name: "index_user_containers_on_user_id_and_chest_type_id", unique: true
     t.index ["user_id"], name: "index_user_containers_on_user_id"
+  end
+
+  create_table "user_currencies", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "currency_id", null: false
+    t.bigint "balance", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["currency_id"], name: "index_user_currencies_on_currency_id"
+    t.index ["user_id", "currency_id"], name: "index_user_currencies_on_user_id_and_currency_id", unique: true
+    t.index ["user_id"], name: "index_user_currencies_on_user_id"
   end
 
   create_table "user_eggs", force: :cascade do |t|
@@ -446,7 +470,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_15_151734) do
     t.integer "temperament"
     t.integer "curiosity"
     t.integer "confidence"
-    t.bigint "pet_thought_id", null: false
+    t.bigint "pet_thought_id"
     t.datetime "last_interacted_at"
     t.integer "level", default: 1, null: false
     t.integer "exp", default: 0, null: false
@@ -471,6 +495,20 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_15_151734) do
     t.bigint "predecessor_user_pet_id"
     t.bigint "successor_user_pet_id"
     t.jsonb "care_trackers", default: {}, null: false
+    t.integer "bond_xp", default: 0, null: false
+    t.datetime "camp_last_interaction_at"
+    t.datetime "camp_cooldown_ends_at"
+    t.integer "camp_state", default: 0, null: false
+    t.datetime "thought_expires_at"
+    t.boolean "thought_suppressed", default: false, null: false
+    t.integer "active_slot"
+    t.jsonb "care_request", default: {}, null: false
+    t.datetime "care_request_cooldown_until"
+    t.datetime "last_coin_tick_at"
+    t.integer "coin_earned_today", default: 0, null: false
+    t.integer "coin_daily_cap", default: 500, null: false
+    t.decimal "coin_buff_multiplier", precision: 5, scale: 2, default: "0.0", null: false
+    t.datetime "coin_buff_expires_at"
     t.index ["egg_id"], name: "index_user_pets_on_egg_id"
     t.index ["held_user_item_id"], name: "index_user_pets_on_held_user_item_id"
     t.index ["pet_id"], name: "index_user_pets_on_pet_id"
@@ -479,6 +517,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_15_151734) do
     t.index ["rarity_id"], name: "index_user_pets_on_rarity_id"
     t.index ["retired_at"], name: "index_user_pets_on_retired_at"
     t.index ["successor_user_pet_id"], name: "index_user_pets_on_successor_user_pet_id"
+    t.index ["thought_expires_at"], name: "index_user_pets_on_thought_expires_at"
+    t.index ["user_id", "active_slot"], name: "index_user_pets_on_user_id_and_active_slot", unique: true, where: "(active_slot IS NOT NULL)"
     t.index ["user_id"], name: "index_user_pets_on_user_id"
   end
 
@@ -594,12 +634,16 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_15_151734) do
   add_foreign_key "generated_explorations", "worlds"
   add_foreign_key "loot_entries", "items"
   add_foreign_key "loot_entries", "loot_tables"
+  add_foreign_key "pet_camp_interactions", "user_pets"
+  add_foreign_key "pet_camp_interactions", "users"
   add_foreign_key "pets", "abilities", column: "default_ability_id"
   add_foreign_key "pets", "eggs"
   add_foreign_key "pets", "rarities"
   add_foreign_key "pets", "special_abilities"
   add_foreign_key "user_containers", "chest_types"
   add_foreign_key "user_containers", "users"
+  add_foreign_key "user_currencies", "currencies"
+  add_foreign_key "user_currencies", "users"
   add_foreign_key "user_eggs", "eggs"
   add_foreign_key "user_eggs", "users"
   add_foreign_key "user_explorations", "generated_explorations"

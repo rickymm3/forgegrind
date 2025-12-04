@@ -7,10 +7,3 @@
   <turbo-frame id="<%= info_dom_id %>">
     <%= render "user_pets/info_body", user_pet: user_pet, context: context, action_dom_id: action_dom_id %>
   </turbo-frame>
-
-  <%= render "user_pets/action_panel_frame",
-             user_pet: user_pet,
-             context: context,
-             state: :idle,
-             needs_preview: [],
-             personality_changes: [] %>

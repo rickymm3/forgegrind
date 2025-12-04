@@ -5,8 +5,8 @@
 
     .flex.items-center.space-x-6
       / Main Game Navigation (always shown)
-      = link_to "Pets", user_pets_path, class: "text-sm text-blue-600 hover:underline"
-      = link_to "Adopt", adopt_path, class: "text-sm text-blue-600 hover:underline"
+      = link_to "Pets", pets_path, class: "text-sm text-blue-600 hover:underline"
+      = link_to "Store", store_path(tab: "eggs"), class: "text-sm text-blue-600 hover:underline"
       = link_to "Explore", explorations_path, class: "text-sm text-blue-600 hover:underline"
       = link_to "Inventory", inventory_path, class: "text-sm text-blue-600 hover:underline"
       = link_to "Hero", hero_path, class: "text-sm text-blue-600 hover:underline"

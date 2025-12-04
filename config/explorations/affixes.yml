@@ -1,0 +1,136 @@
+# Exploration prefixes (affixes) extracted from exploration_mods.yml.
+affixes:
+  none:
+    label: ""
+    rarity: common
+    player_level_min: 1
+    weight: 20
+    applies_to: ["global"]
+    duration:
+      multiplier: 1.0
+    requirements: []
+    reward_modifiers: {}
+    checkpoint_labels: []
+
+  scorching:
+    label: "Scorching"
+    rarity: rare
+    player_level_min: 4
+    weight: 8
+    applies_to: ["global"]
+    duration:
+      multiplier: 0.6
+    requirements:
+      - type: "ability"
+        key: "fire"
+        label: "Fire abilities"
+        required: 1
+      - type: "pet_type"
+        key: "Beast"
+        label: "Beast allies"
+        required: 1
+    reward_modifiers:
+      bonus_drop_key: "blazing_zone_drops"
+      requires_full_match: true
+    checkpoint_labels:
+      - "Heatwave Surge"
+
+  chilling:
+    label: "Chilling"
+    rarity: uncommon
+    player_level_min: 3
+    weight: 10
+    applies_to: ["global"]
+    duration:
+      multiplier: 0.55
+    requirements:
+      - type: "ability"
+        key: "ice"
+        label: "Ice abilities"
+        required: 1
+      - type: "pet_type"
+        key: "Support"
+        label: "Support companions"
+        required: 1
+    reward_modifiers:
+      bonus_drop_key: "frostborn_supplies"
+      requires_full_match: true
+    checkpoint_labels:
+      - "Ice Gale"
+
+  tempestuous:
+    label: "Tempestuous"
+    rarity: epic
+    player_level_min: 8
+    weight: 6
+    applies_to: ["global"]
+    duration:
+      multiplier: 0.65
+    requirements:
+      - type: "ability"
+        key: "wind"
+        label: "Wind abilities"
+        required: 1
+      - type: "pet_type"
+        key: "Air"
+        label: "Air-aligned pets"
+        required: 1
+      - type: "level_min"
+        value: 5
+        label: "High level companions"
+        required: 2
+    reward_modifiers:
+      bonus_drop_key: "stormfront_cache"
+      requires_full_match: true
+    checkpoint_labels:
+      - "Stormfront"
+
+  toxic:
+    label: "Toxic"
+    rarity: rare
+    player_level_min: 5
+    weight: 5
+    applies_to: ["global"]
+    duration:
+      multiplier: 0.6
+    requirements:
+      - type: "ability"
+        key: "poison"
+        label: "Poison abilities"
+        required: 1
+      - type: "pet_type"
+        key: "Beast"
+        label: "Beast companions"
+        required: 1
+    reward_modifiers:
+      bonus_drop_key: "toxic_omen_drops"
+      requires_full_match: true
+    checkpoint_labels:
+      - "Blighted Swale"
+
+  celestial:
+    label: "Celestial"
+    rarity: legendary
+    player_level_min: 10
+    weight: 3
+    applies_to: ["global"]
+    duration:
+      multiplier: 0.7
+    requirements:
+      - type: "ability"
+        key: "light"
+        label: "Radiant abilities"
+        required: 1
+      - type: "pet_type"
+        key: "Mythic"
+        label: "Mythic companions"
+        required: 1
+      - type: "level_min"
+        value: 8
+        label: "Radiant veterans"
+        required: 1
+    reward_modifiers:
+      bonus_drop_key: "celestial_echoes"
+      requires_full_match: true
+    checkpoint_labels:
+      - "Stellar Gate"

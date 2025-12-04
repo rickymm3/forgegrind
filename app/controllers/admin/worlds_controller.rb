@@ -3,9 +3,14 @@ class Admin::WorldsController < Admin::BaseController
 
   def index
     @worlds = World.order(:name)
+    @world_metrics = world_metrics_for(@worlds)
+    @base_configs = base_config_map(@worlds)
   end
 
-  def show; end
+  def show
+    @world_metrics = world_metrics_for([@world])[@world.id] || {}
+    @base_config = base_config_for(@world)
+  end
 
   def new
     @world = World.new(duration: 600, reward_item_type: "gold")
@@ -39,6 +44,37 @@ class Admin::WorldsController < Admin::BaseController
 
   def set_world
     @world = World.find(params[:id])
+  end
+
+  def base_config_map(worlds)
+    worlds.each_with_object({}) do |world, memo|
+      memo[world.id] = base_config_for(world)
+    end
+  end
+
+  def base_config_for(world)
+    configs = ExplorationModLibrary.base_mods.with_indifferent_access
+    configs[world.exploration_slug] ||
+      configs.values.find do |config|
+        config[:world_name].to_s.casecmp(world.name.to_s).zero?
+      end
+  end
+
+  def world_metrics_for(worlds)
+    ids = worlds.map(&:id)
+    return {} if ids.empty?
+
+    active_counts = UserExploration.where(world_id: ids, completed_at: nil).group(:world_id).count
+    completed_counts = UserExploration.where(world_id: ids).where.not(completed_at: nil).group(:world_id).count
+    last_completed = UserExploration.where(world_id: ids).where.not(completed_at: nil).group(:world_id).maximum(:completed_at)
+
+    ids.each_with_object({}) do |world_id, memo|
+      memo[world_id] = {
+        active: active_counts[world_id].to_i,
+        completed: completed_counts[world_id].to_i,
+        last_completed_at: last_completed[world_id]
+      }
+    end
   end
 
   def world_params

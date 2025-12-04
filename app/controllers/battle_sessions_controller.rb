@@ -55,7 +55,10 @@ class BattleSessionsController < ApplicationController
       return head :unprocessable_entity
     end
 
-    current_user.user_stat.increment!(:trophies, result.trophies) if result.status == :won
+    if result.status == :won
+      coins_currency = Currency.find_by_key(:coins)
+      current_user.credit_currency!(coins_currency, result.trophies) if coins_currency
+    end
 
     @battle_session.destroy
 
@@ -156,7 +159,8 @@ class BattleSessionsController < ApplicationController
     return head :unprocessable_entity unless result[:status] == :won
 
     # award trophies for this wave
-    current_user.user_stat.increment!(:trophies, result[:trophies])
+    coins_currency = Currency.find_by_key(:coins)
+    current_user.credit_currency!(coins_currency, result[:trophies]) if coins_currency
 
     next_index = @battle_session.current_enemy_index + 1
 

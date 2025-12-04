@@ -1,4 +1,16 @@
-<%= turbo_stream.replace "currency_balances", partial: "shared/currency_badges", locals: { currencies: currency_balances_for(current_user) } %>
+<% currencies = currency_balances_for(current_user) %>
+<% coins = currencies.find { |c| c.name == "Coins" } %>
+<% diamonds = currencies.find { |c| c.name == "Diamonds" } %>
+
+<%= turbo_stream.update(coins&.dom_id || currency_dom_id("Coins")) do %>
+  <%= number_with_delimiter(coins&.amount.to_i) %>
+<% end %>
+
+<%= turbo_stream.update(diamonds&.dom_id || currency_dom_id("Diamonds")) do %>
+  <%= number_with_delimiter(diamonds&.amount.to_i) %>
+<% end %>
+
+<%= turbo_stream.replace "currency_balances", partial: "shared/currency_badges", locals: { currencies: currencies } %>
 
 <%= turbo_stream.replace "store-eggs-carousel" do %>
   <%= render "store/eggs_carousel", eggs: @eggs, highlighted_egg_id: @highlighted_egg_id %>

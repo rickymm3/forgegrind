@@ -1,0 +1,100 @@
+# Defines core exploration worlds broken out from the legacy exploration_mods.yml.
+# Tier indicates the relative "level" of the world (1-10 progression).
+bases:
+  glimmering_trail:
+    tier: 1
+    label: "Glimmering Trail"
+    world_name: "Starter Zone"
+    world_key: starter_zone
+    world_tags: ["starter", "forest"]
+    player_level_min: 1
+    default_duration: 1
+    flavor: "An illuminated path carved for first-time scouts."
+    checkpoint_labels:
+      - "Trailhead Patrol"
+      - "Final Descent"
+    rewards:
+      base_drop_key: "starter_zone"
+    requirements:
+      - type: "pet_type"
+        key: "Beast"
+        label: "Beast companions"
+        required: 1
+
+  ember_fields:
+    tier: 2
+    label: "Ember Fields"
+    world_name: "Ember Fields"
+    world_key: ember_fields
+    world_tags: ["fire", "wilds"]
+    player_level_min: 2
+    default_duration: 1
+    flavor: "Ash-swept plains with scattered pyre blooms."
+    checkpoint_labels:
+      - "Scouting the Ridge"
+      - "Pyre Crossing"
+      - "Ember Heart"
+    rewards:
+      base_drop_key: "starter_zone"
+    requirements:
+      - type: "ability"
+        key: "fire"
+        label: "Fire-aligned abilities"
+        required: 1
+
+  verdant_canopy:
+    tier: 3
+    label: "Verdant Canopy"
+    world_name: "Verdant Canopy"
+    world_key: verdant_canopy
+    world_tags: ["forest", "verdant"]
+    player_level_min: 3
+    default_duration: 1
+    flavor: "Layered jungles pulsing with life."
+    checkpoint_labels:
+      - "Canopy Approach"
+      - "Heartwood Crossing"
+    rewards:
+      base_drop_key: "forest"
+    requirements:
+      - type: "pet_type"
+        key: "Grass"
+        label: "Grass-aligned companions"
+        required: 1
+
+  aurora_tundra:
+    tier: 4
+    label: "Aurora Tundra"
+    world_name: "Aurora Tundra"
+    world_key: aurora_tundra
+    world_tags: ["ice", "tundra"]
+    player_level_min: 4
+    default_duration: 1
+    flavor: "Iridescent ice fields under a crackling sky."
+    checkpoint_labels:
+      - "Frozen Marches"
+      - "Aurora Watch"
+      - "Glacial Depths"
+    rewards:
+      base_drop_key: "forest"
+    requirements:
+      - type: "ability"
+        key: "ice"
+        label: "Frost attunements"
+        required: 1
+
+  whispering_meadow:
+    tier: 1
+    label: "Whispering Meadow"
+    world_name: "Whispering Meadow"
+    world_key: whispering_meadow
+    world_tags: ["starter", "meadow"]
+    player_level_min: 1
+    default_duration: 1
+    flavor: "Open fields with gentle breezes and no major hazards."
+    checkpoint_range: 2
+    segments_enabled: false
+    checkpoint_labels: []
+    rewards:
+      base_drop_key: "starter_zone"
+    requirements: []

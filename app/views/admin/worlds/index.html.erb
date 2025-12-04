@@ -1,0 +1,59 @@
+<div class="admin-header">
+  <h1>Exploration Worlds</h1>
+  <p class="admin-header__subtitle">
+    Manage runtime zones stored in the database. Base config information is pulled from <code>config/explorations/bases.yml</code>.
+  </p>
+  <div class="admin-header__actions">
+    <%= link_to "New Zone", new_admin_world_path, class: "btn btn--primary" %>
+  </div>
+</div>
+
+<div class="admin-card">
+  <table class="admin-table">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Duration</th>
+        <th>Base Tier</th>
+        <th>Base Tags</th>
+        <th>Active Runs</th>
+        <th>Completed</th>
+        <th>Last Completion</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @worlds.each do |world| %>
+        <% metrics = @world_metrics[world.id] || {} %>
+        <% base = (@base_configs[world.id] || {}).with_indifferent_access %>
+        <tr>
+          <td>
+            <div class="font-semibold text-slate-900"><%= world.name %></div>
+            <div class="text-xs text-slate-500"><%= world.enabled? ? "Enabled" : "Disabled" %></div>
+          </td>
+          <td><%= "#{world.duration}s" %></td>
+          <td><%= base[:tier].presence || "—" %></td>
+          <td><%= Array(base[:world_tags]).join(", ").presence || "—" %></td>
+          <td><%= metrics[:active].to_i %></td>
+          <td><%= metrics[:completed].to_i %></td>
+          <td>
+            <% if metrics[:last_completed_at].present? %>
+              <%= time_ago_in_words(metrics[:last_completed_at]) %> ago
+            <% else %>
+              —
+            <% end %>
+          </td>
+          <td class="admin-table__actions">
+            <%= link_to "View", admin_world_path(world), class: "btn btn--small" %>
+            <%= link_to "Edit", edit_admin_world_path(world), class: "btn btn--small" %>
+            <%= link_to "Delete",
+                        admin_world_path(world),
+                        method: :delete,
+                        data: { turbo_confirm: "Delete #{world.name}?" },
+                        class: "btn btn--small btn--danger" %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

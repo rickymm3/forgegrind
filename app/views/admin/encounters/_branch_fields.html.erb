@@ -1,0 +1,30 @@
+<% options = Array(node[:options]) %>
+<div class="rounded-xl border border-slate-700/70 bg-slate-900/50 p-4 space-y-4" data-branch="<%= node_index %>">
+  <div class="flex items-center justify-between">
+    <div>
+      <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide">Branch Mapping</p>
+      <p class="text-lg font-semibold text-white"><%= node[:label].presence || node[:key] || "Event" %></p>
+    </div>
+    <button type="button"
+            class="btn btn--small btn--primary"
+            data-action="encounter-builder#addOption"
+            data-node-index="<%= node_index %>">
+      Add Branch
+    </button>
+  </div>
+
+  <div class="space-y-3" data-option-list="<%= node_index %>">
+    <% options.each_with_index do |option, option_index| %>
+      <%= render "admin/encounters/option_fields",
+                 option: option,
+                 node_index: node_index,
+                 option_index: option_index %>
+      <% end %>
+      <% if options.empty? %>
+        <%= render "admin/encounters/option_fields",
+                   option: Admin::EncounterBuilder.blank_option,
+                   node_index: node_index,
+                   option_index: 0 %>
+      <% end %>
+  </div>
+</div>

@@ -4,6 +4,7 @@ class PlayerStatsController < ApplicationController
   # GET /player_stats
   def show
     @stat = current_user.ensure_user_stat
+    @currency_balances = helpers.currency_balances_for(current_user)
     @stats = [
       { label: 'HP',          key: 'hp',         level: @stat.hp_level },
       { label: 'Attack',      key: 'attack',     level: @stat.attack_level },
@@ -15,6 +16,7 @@ class PlayerStatsController < ApplicationController
     @hero_points_available = @stat.available_hero_points
     @hero_points_spent     = @stat.spent_hero_points
     @reset_cost            = hero_reset_cost(@stat.player_level)
+    @diamond_balance       = current_user.currency_balance(:diamonds)
     @hero_upgrades = hero_upgrade_definitions.map do |definition|
       key   = definition[:key].to_s
       level = @stat.hero_upgrade_level(key)
@@ -37,17 +39,21 @@ class PlayerStatsController < ApplicationController
     stat_key = "#{params[:stat]}_level"
     current_level = @stat.public_send(stat_key)
     cost = GameConfig.cost_for_level(current_level)
+    coins_currency = Currency.find_by_key(:coins)
+    unless coins_currency
+      redirect_to player_stats_path, alert: "Coins currency not configured."
+      return
+    end
+    coin_balance = current_user.currency_balance(coins_currency)
 
-    if @stat.trophies < cost
-      redirect_to player_stats_path, alert: "Not enough trophies (need #{cost})."
+    if coin_balance < cost
+      redirect_to player_stats_path, alert: "Not enough coins (need #{cost})."
       return
     end
 
     @stat.transaction do
-      @stat.update!(
-        trophies:    @stat.trophies - cost,
-        stat_key    => current_level + 1
-      )
+      current_user.debit_currency!(coins_currency, cost)
+      @stat.update!(stat_key => current_level + 1)
     end
 
     redirect_to hero_path,
@@ -70,14 +76,20 @@ class PlayerStatsController < ApplicationController
   def reset_hero_stats
     @stat = current_user.ensure_user_stat
     cost = hero_reset_cost(@stat.player_level)
+    diamonds_currency = Currency.find_by_key(:diamonds)
+    unless diamonds_currency
+      redirect_to hero_path, alert: "Diamonds currency not configured."
+      return
+    end
+    diamond_balance = current_user.currency_balance(diamonds_currency)
 
-    if @stat.diamonds < cost
+    if diamond_balance < cost
       redirect_to hero_path, alert: "Need #{cost} diamonds to reset hero upgrades."
       return
     end
 
     @stat.transaction do
-      @stat.update!(diamonds: @stat.diamonds - cost)
+      current_user.debit_currency!(diamonds_currency, cost)
       @stat.reset_hero_stats!
     end
 

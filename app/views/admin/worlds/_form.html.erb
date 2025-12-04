@@ -1,0 +1,115 @@
+<%= form_with model: [:admin, @world], local: true, class: "space-y-8" do |f| %>
+  <% if @world.errors.any? %>
+    <div class="rounded-2xl border border-rose-200 bg-rose-50 p-4">
+      <h2 class="font-semibold text-rose-800"><%= pluralize(@world.errors.count, "error") %> prevented saving:</h2>
+      <ul class="list-disc pl-5 text-sm text-rose-700">
+        <% @world.errors.full_messages.each do |msg| %>
+          <li><%= msg %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+    <div class="space-y-4">
+      <h2 class="text-lg font-semibold text-slate-900">Core</h2>
+      <div class="field">
+        <%= f.label :name, class: "block text-sm font-semibold text-slate-600" %>
+        <%= f.text_field :name, class: "mt-1 w-full rounded-lg border border-slate-200 px-3 py-2" %>
+      </div>
+      <div class="field">
+        <%= f.label :duration, "Duration (seconds)", class: "block text-sm font-semibold text-slate-600" %>
+        <%= f.number_field :duration, class: "mt-1 w-full rounded-lg border border-slate-200 px-3 py-2" %>
+      </div>
+      <div class="field">
+        <%= f.label :reward_item_type, class: "block text-sm font-semibold text-slate-600" %>
+        <%= f.text_field :reward_item_type, class: "mt-1 w-full rounded-lg border border-slate-200 px-3 py-2" %>
+      </div>
+      <div class="field">
+        <%= f.label :diamond_reward, class: "block text-sm font-semibold text-slate-600" %>
+        <%= f.number_field :diamond_reward, min: 0, class: "mt-1 w-full rounded-lg border border-slate-200 px-3 py-2" %>
+      </div>
+      <div class="flex items-center gap-3">
+        <%= f.check_box :enabled, class: "rounded border-slate-300" %>
+        <%= f.label :enabled, class: "text-sm font-semibold text-slate-600" %>
+      </div>
+      <div class="flex items-center gap-3">
+        <%= f.check_box :upgraded_on_clear, class: "rounded border-slate-300" %>
+        <%= f.label :upgraded_on_clear, class: "text-sm font-semibold text-slate-600" %>
+      </div>
+    </div>
+
+    <div class="space-y-4">
+      <h2 class="text-lg font-semibold text-slate-900">Rotation</h2>
+      <div class="field">
+        <%= f.label :rotation_active, class: "block text-sm font-semibold text-slate-600" %>
+        <%= f.check_box :rotation_active, class: "rounded border-slate-300" %>
+      </div>
+      <div class="field">
+        <%= f.label :rotation_weight, class: "block text-sm font-semibold text-slate-600" %>
+        <%= f.number_field :rotation_weight, min: 1, class: "mt-1 w-full rounded-lg border border-slate-200 px-3 py-2" %>
+      </div>
+      <div class="grid grid-cols-1 gap-3">
+        <div class="field">
+          <%= f.label :rotation_starts_at, class: "block text-sm font-semibold text-slate-600" %>
+          <%= f.datetime_field :rotation_starts_at, class: "mt-1 w-full rounded-lg border border-slate-200 px-3 py-2" %>
+        </div>
+        <div class="field">
+          <%= f.label :rotation_ends_at, class: "block text-sm font-semibold text-slate-600" %>
+          <%= f.datetime_field :rotation_ends_at, class: "mt-1 w-full rounded-lg border border-slate-200 px-3 py-2" %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+    <div class="space-y-4">
+      <h2 class="text-lg font-semibold text-slate-900">Traits & Requirements</h2>
+      <div class="field">
+        <label class="block text-sm font-semibold text-slate-600">Special Traits (one per line)</label>
+        <%= text_area_tag "world[special_traits_input]",
+                          Array(@world.special_traits).join("\n"),
+                          rows: 4,
+                          class: "mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm" %>
+      </div>
+      <div class="field">
+        <label class="block text-sm font-semibold text-slate-600">Required Pet Abilities</label>
+        <%= text_area_tag "world[required_pet_abilities_input]",
+                          Array(@world.required_pet_abilities).join("\n"),
+                          rows: 4,
+                          class: "mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm" %>
+      </div>
+      <div class="field">
+        <%= f.label :drop_table_override_key, class: "block text-sm font-semibold text-slate-600" %>
+        <%= f.text_field :drop_table_override_key, class: "mt-1 w-full rounded-lg border border-slate-200 px-3 py-2" %>
+      </div>
+    </div>
+
+    <div class="space-y-4">
+      <h2 class="text-lg font-semibold text-slate-900">Upgrade Path</h2>
+      <div class="field">
+        <label class="block text-sm font-semibold text-slate-600">Upgrade Trait Keys</label>
+        <%= text_area_tag "world[upgrade_trait_keys_input]",
+                          Array(@world.upgrade_trait_keys).join("\n"),
+                          rows: 4,
+                          class: "mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm" %>
+      </div>
+      <div class="field">
+        <label class="block text-sm font-semibold text-slate-600">Upgrade Required Abilities</label>
+        <%= text_area_tag "world[upgrade_required_pet_abilities_input]",
+                          Array(@world.upgrade_required_pet_abilities).join("\n"),
+                          rows: 4,
+                          class: "mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm" %>
+      </div>
+      <div class="field">
+        <%= f.label :upgrade_drop_table_override_key, class: "block text-sm font-semibold text-slate-600" %>
+        <%= f.text_field :upgrade_drop_table_override_key, class: "mt-1 w-full rounded-lg border border-slate-200 px-3 py-2" %>
+      </div>
+    </div>
+  </div>
+
+  <div class="flex items-center justify-end gap-3">
+    <%= link_to "Cancel", (@world.persisted? ? admin_world_path(@world) : admin_worlds_path), class: "text-sm font-semibold text-slate-600 hover:text-slate-800" %>
+    <%= f.submit "Save Zone", class: "inline-flex items-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700" %>
+  </div>
+<% end %>

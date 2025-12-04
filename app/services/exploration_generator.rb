@@ -9,6 +9,18 @@ class ExplorationGenerator
     "legendary" => 5,
     "mythic" => 6
   }.freeze
+  FINAL_LEG_RATIO = 0.15
+  FINAL_LEG_MIN_SECONDS = 45
+  FINAL_LEG_MAX_RATIO = 0.35
+  SEGMENT_OPTIONAL_KEYS = %i[
+    allow_encounters
+    encounters_enabled
+    encounter_tags
+    encounter_slugs
+    requirement_tags
+    encounter_probability_multiplier
+    final_leg
+  ].freeze
 
   class CooldownNotElapsedError < StandardError
     attr_reader :remaining_seconds
@@ -70,8 +82,14 @@ class ExplorationGenerator
   def create_generated_exploration(slot_index:)
     player_level = user.player_level
     base_key, base_config = ExplorationModLibrary.sample_base(player_level: player_level)
-    raw_prefix_key, prefix_config = ExplorationModLibrary.sample_prefix(player_level: player_level)
-    raw_suffix_key, suffix_config = ExplorationModLibrary.sample_suffix(player_level: player_level)
+    base_config = (base_config || {}).with_indifferent_access
+    world_key = base_config[:world_key].presence || base_key
+    world_key = world_key.to_s.presence
+
+    raw_prefix_key, prefix_config = ExplorationModLibrary.sample_prefix(player_level: player_level, world_key: world_key)
+    prefix_config = (prefix_config || {}).with_indifferent_access
+    raw_suffix_key, suffix_config = ExplorationModLibrary.sample_suffix(player_level: player_level, world_key: world_key)
+    suffix_config = (suffix_config || {}).with_indifferent_access
 
     prefix_key = normalize_component_key(raw_prefix_key)
     suffix_key = normalize_component_key(raw_suffix_key)
@@ -214,6 +232,17 @@ class ExplorationGenerator
     encounter_tags.concat(Array(suffix_config[:encounter_tags])) if suffix_config
     encounter_tags.concat(Array(combination_config[:encounter_tags])) if combination_config
     encounter_tags = encounter_tags.flatten.compact.uniq
+    component_labels = {
+      base: base_config&.dig(:label),
+      prefix: prefix_config&.dig(:label),
+      suffix: suffix_config&.dig(:label)
+    }.compact
+    world_info = {
+      key: base_config[:world_key] || base_key,
+      name: base_config[:world_name],
+      tier: base_config[:tier],
+      tags: base_config[:world_tags]
+    }.compact
 
     {
       flavor: flavor_fragments,
@@ -226,6 +255,8 @@ class ExplorationGenerator
         prefix: prefix_key,
         suffix: suffix_key
       },
+      component_labels: component_labels,
+      world: world_info,
       combination_key: combination_key,
       encounter_tags: encounter_tags
     }.compact
@@ -234,6 +265,14 @@ class ExplorationGenerator
   def build_segment_definitions(total_duration_seconds, base_config, prefix_config, suffix_config, combination_config = nil)
     total_duration_seconds = total_duration_seconds.to_i
     total_duration_seconds = 1 if total_duration_seconds <= 0
+    final_leg_seconds = compute_final_leg_duration(total_duration_seconds)
+    pre_checkpoint_duration = total_duration_seconds - final_leg_seconds
+    pre_checkpoint_duration = total_duration_seconds if final_leg_seconds <= 0
+    pre_checkpoint_duration = [pre_checkpoint_duration, 1].max
+
+    if segments_generation_disabled?(base_config, prefix_config, suffix_config, combination_config)
+      return []
+    end
 
     templates = gather_segment_templates(
       [base_config, 'base'],
@@ -244,21 +283,22 @@ class ExplorationGenerator
 
     if templates.blank?
       count = compute_default_segment_count(base_config, prefix_config, suffix_config)
-      durations = split_duration(total_duration_seconds, count)
+      durations = split_duration(pre_checkpoint_duration, count)
+      labels = select_checkpoint_labels(count, base_config, prefix_config, suffix_config, combination_config)
       templates = durations.each_with_index.map do |duration, index|
         {
           key: "segment_#{index + 1}",
-          label: default_segment_label(index),
+          label: labels[index],
           duration_seconds: duration,
           source: 'generated'
         }
       end
     else
-      templates = normalize_segment_templates(templates, total_duration_seconds)
+      templates = normalize_segment_templates(templates, pre_checkpoint_duration)
     end
 
     cumulative = 0
-    templates.each_with_index.map do |template, index|
+    entries = templates.each_with_index.map do |template, index|
       segment = template.deep_dup.with_indifferent_access
       segment = segment.except(
         :duration_minutes,
@@ -284,6 +324,24 @@ class ExplorationGenerator
         checkpoint_offset_seconds: cumulative
       ).with_indifferent_access
     end
+
+    if final_leg_seconds.positive?
+      final_index = entries.size
+      cumulative += final_leg_seconds
+      entries << {
+        key: "final_leg",
+        label: final_leg_label_for(base_config),
+        index: final_index,
+        duration_seconds: final_leg_seconds,
+        checkpoint_offset_seconds: cumulative,
+        allow_encounters: false,
+        encounters_enabled: false,
+        final_leg: true,
+        source: 'final_leg'
+      }.with_indifferent_access
+    end
+
+    entries
   end
 
   def gather_segment_templates(*config_pairs)
@@ -298,6 +356,26 @@ class ExplorationGenerator
         )
       end
     end
+  end
+
+  def compute_final_leg_duration(total_seconds)
+    total_seconds = total_seconds.to_i
+    return 0 if total_seconds <= 0
+
+    adaptive_min = [FINAL_LEG_MIN_SECONDS, (total_seconds / 4.0).floor].min
+    adaptive_min = 1 if adaptive_min < 1
+
+    ratio_duration = (total_seconds * FINAL_LEG_RATIO).round
+    capped_ratio = [(total_seconds * FINAL_LEG_MAX_RATIO).round, total_seconds - adaptive_min].min
+    duration = [[ratio_duration, adaptive_min].max, capped_ratio].min
+    duration = adaptive_min if duration <= 0
+    duration = 1 if duration < 1
+    duration
+  end
+
+  def final_leg_label_for(base_config)
+    base_name = base_config&.dig(:world_name)
+    base_name.present? ? "Final approach to #{base_name}" : "Final Approach"
   end
 
   def normalize_segment_templates(templates, total_duration_seconds)
@@ -384,8 +462,7 @@ class ExplorationGenerator
   end
 
   def compute_default_segment_count(base_config, prefix_config, suffix_config)
-    count = fetch_integer(base_config, :segment_count)
-    count = 2 if count <= 0
+    count = determine_base_segment_count(base_config)
 
     modifiers = [
       fetch_integer(prefix_config, :segment_count_bonus, :additional_segments),
@@ -403,8 +480,48 @@ class ExplorationGenerator
     end
 
     count = 2 if count <= 0
-    count = count.clamp(2, 6)
+    [count, 1].max
+  end
+
+  def determine_base_segment_count(base_config)
+    range = parse_checkpoint_range(base_config)
+    return rand(range[:min]..range[:max]) if range
+
+    count = fetch_integer(base_config, :segment_count, :checkpoint_count)
+    count = Array(base_config[:checkpoint_labels]).size if count <= 0 && base_config[:checkpoint_labels].present?
+    count = 2 if count <= 0
     count
+  end
+
+  def parse_checkpoint_range(config)
+    value = config[:checkpoint_range] || config['checkpoint_range']
+    return nil if value.blank?
+
+    case value
+    when Hash
+      min = value[:min] || value['min']
+      max = value[:max] || value['max']
+      return nil if min.blank? && max.blank?
+      min = min.to_i
+      max = (max || min).to_i
+      normalize_range(min, max)
+    when Array
+      values = value.map(&:to_i).reject { |num| num <= 0 }
+      return nil if values.size < 2
+      min = values.min
+      max = values.max
+      normalize_range(min, max)
+    else
+      number = value.to_i
+      return nil if number <= 0
+      normalize_range(number, number)
+    end
+  end
+
+  def normalize_range(min, max)
+    min = 1 if min <= 0
+    max = min if max < min
+    { min: min, max: max }
   end
 
   def split_duration(total_duration_seconds, segment_count)
@@ -421,8 +538,38 @@ class ExplorationGenerator
     end
   end
 
+  def select_checkpoint_labels(count, *configs)
+    pool = gather_checkpoint_label_pool(*configs)
+    return Array.new(count) { |index| default_segment_label(index) } if pool.blank?
+
+    unique = pool.uniq
+    shuffled = unique.shuffle
+
+    Array.new(count) do |index|
+      if shuffled.empty?
+        default_segment_label(index)
+      else
+        shuffled.shift
+      end
+    end
+  end
+
+  def gather_checkpoint_label_pool(*configs)
+    configs.compact.flat_map do |config|
+      values = config[:checkpoint_labels] || config['checkpoint_labels']
+      Array(values)
+    end.map(&:to_s).reject(&:blank?)
+  end
+
   def default_segment_label(index)
     "Checkpoint #{index + 1}"
+  end
+
+  def segments_generation_disabled?(*configs)
+    configs.compact.any? do |config|
+      value = config.is_a?(Hash) ? (config[:segments_enabled].nil? ? config["segments_enabled"] : config[:segments_enabled]) : nil
+      value == false
+    end
   end
 
   def stringify_segments(segments)

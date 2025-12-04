@@ -1,0 +1,43 @@
+<div class="admin-header">
+  <h1>Exploration Encounters</h1>
+  <p class="admin-header__subtitle">Manage encounter definitions stored in <code>config/explorations/encounters.yml</code>.</p>
+</div>
+
+<div class="admin-card">
+  <table class="admin-table">
+    <thead>
+      <tr>
+        <th>Slug</th>
+        <th>Title</th>
+        <th>Weight</th>
+        <th>Associations</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @encounters.each do |entry| %>
+        <% data = entry.data.with_indifferent_access %>
+        <tr>
+          <td><code><%= entry.slug %></code></td>
+          <td><%= data[:title].presence || entry.slug.humanize %></td>
+          <td><%= data[:weight_tier].presence || data[:base_weight] || "—" %></td>
+          <td>
+            <% assoc = Array(data[:associations]) %>
+            <% summary = assoc.map do |a| 
+              tags = Array(a[:world_tags]).presence && "tags: #{Array(a[:world_tags]).join('/')}"
+              worlds = Array(a[:world_keys]).presence && "worlds: #{Array(a[:world_keys]).join('/')}"
+              mods = []
+              mods << tags if tags.present?
+              mods << worlds if worlds.present?
+              mods.join(" • ")
+            end.reject(&:blank?).join("; ") %>
+            <%= summary.presence || "Global" %>
+          </td>
+          <td class="admin-table__actions">
+            <%= link_to "Edit", edit_admin_encounter_path(entry.slug), class: "btn btn--small" %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

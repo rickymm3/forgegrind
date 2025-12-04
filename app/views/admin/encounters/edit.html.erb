@@ -1,0 +1,137 @@
+<% content_for :page_title, "Edit Encounter · #{@form_data[:slug]}" %>
+
+<div class="admin-header">
+  <h1>Edit Encounter</h1>
+  <p class="admin-header__subtitle">
+    Managing <code><%= @form_data[:slug] %></code> from <code>config/explorations/encounters.yml</code>.
+  </p>
+</div>
+
+<%= form_with url: admin_encounter_path(@form_data[:slug]),
+              method: :put,
+              class: "admin-form",
+              data: { controller: "encounter-builder" } do %>
+<div class="admin-card">
+  <h2>Encounter Metadata</h2>
+  <div class="form-grid">
+      <div class="form-field">
+        <label class="form-label">Slug</label>
+        <input type="text" class="form-input bg-slate-900/40" value="<%= @form_data[:slug] %>" disabled>
+      </div>
+      <div class="form-field">
+        <label class="form-label">Title</label>
+        <%= text_field_tag "encounter[title]", @form_data[:title], class: "form-input" %>
+      </div>
+      <div class="form-field">
+        <label class="form-label">Summary</label>
+        <%= text_field_tag "encounter[summary]", @form_data[:summary], class: "form-input" %>
+      </div>
+      <div class="form-field">
+        <label class="form-label">Weight Tier</label>
+        <%= text_field_tag "encounter[weight_tier]", @form_data[:weight_tier], class: "form-input" %>
+      </div>
+      <div class="form-field">
+        <label class="form-label">Tags (comma separated)</label>
+        <%= text_field_tag "encounter[tags]", @form_data[:tags], class: "form-input" %>
+      </div>
+      <div class="form-field">
+        <label class="form-label">Requirement Tags</label>
+        <%= text_field_tag "encounter[requirement_tags]", @form_data[:requirement_tags], class: "form-input" %>
+      </div>
+    </div>
+</div>
+
+<div class="admin-card">
+    <div class="admin-card__header">
+      <h2>Associations</h2>
+      <button type="button"
+              class="btn btn--primary btn--small"
+              data-action="encounter-builder#addAssociation">
+        Add Association
+      </button>
+    </div>
+    <div class="admin-stack" data-encounter-builder-target="associationsContainer">
+      <% associations = @form_data[:associations].presence || [Admin::EncounterBuilder.blank_association] %>
+      <% associations.each_with_index do |association, association_index| %>
+        <%= render "admin/encounters/association_fields",
+                   association: association,
+                   association_index: association_index,
+                   world_options: @world_options,
+                   affix_options: @affix_options,
+                   suffix_options: @suffix_options %>
+      <% end %>
+    </div>
+    <template data-encounter-builder-target="associationTemplate">
+      <%= render "admin/encounters/association_fields",
+                 association: Admin::EncounterBuilder.blank_association,
+                 association_index: "__ASSOC_INDEX__",
+                 world_options: @world_options,
+                 affix_options: @affix_options,
+                 suffix_options: @suffix_options %>
+    </template>
+</div>
+
+<div class="admin-card">
+  <div class="admin-card__header">
+    <div>
+      <h2>Event Library</h2>
+      <p class="text-sm text-slate-400">List every scene or checkpoint in this encounter before wiring them up.</p>
+    </div>
+    <button type="button"
+            class="btn btn--primary btn--small"
+            data-action="encounter-builder#addNode">
+      Add Event
+    </button>
+  </div>
+  <div class="admin-stack" data-encounter-builder-target="nodesContainer">
+    <% events = @form_data[:nodes].presence || [Admin::EncounterBuilder.blank_node] %>
+    <% events.each_with_index do |node, node_index| %>
+      <%= render "admin/encounters/node_fields",
+                 node: node,
+                 node_index: node_index %>
+    <% end %>
+  </div>
+  <template data-encounter-builder-target="nodeTemplate">
+      <%= render "admin/encounters/node_fields",
+                 node: Admin::EncounterBuilder.blank_node,
+                 node_index: "__NODE_INDEX__" %>
+    </template>
+  </div>
+
+<div class="admin-card">
+  <h2>Branching Flow</h2>
+  <p class="admin-card__help">Define how each event leads to the next. Pick required abilities, success/failure routing, and statuses.</p>
+  <div class="admin-stack" data-encounter-builder-target="branchesContainer">
+    <% events.each_with_index do |node, node_index| %>
+      <%= render "admin/encounters/branch_fields",
+                 node: node,
+                 node_index: node_index %>
+    <% end %>
+  </div>
+  <template data-encounter-builder-target="branchTemplate">
+    <%= render "admin/encounters/branch_fields",
+               node: Admin::EncounterBuilder.blank_node,
+               node_index: "__NODE_INDEX__" %>
+  </template>
+  <template data-encounter-builder-target="optionTemplate">
+    <%= render "admin/encounters/option_fields",
+               option: Admin::EncounterBuilder.blank_option,
+               node_index: "__NODE_INDEX__",
+               option_index: "__OPTION_INDEX__" %>
+  </template>
+</div>
+
+<div class="admin-card">
+  <h2>Rewards YAML</h2>
+  <p class="admin-card__help">Configure loot and care effects per outcome.</p>
+  <%= text_area_tag "encounter[rewards_yaml]",
+                    @form_data[:rewards_yaml],
+                    class: "form-textarea font-mono",
+                    rows: 10 %>
+</div>
+
+<div class="form-actions">
+  <%= link_to "Cancel", admin_encounters_path, class: "btn btn--secondary" %>
+  <%= submit_tag "Save Encounter", class: "btn btn--primary" %>
+</div>
+<% end %>

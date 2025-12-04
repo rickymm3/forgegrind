@@ -2,17 +2,15 @@
 <% content_for :main_class, "px-0 pt-4 flex flex-col" %>
 <% content_for :main_inner_class, "px-4 flex flex-col h-full" %>
 
-<% header_body = render("user_pets/hub_header_body",
-                        active_collection: @active_collection,
-                        pet_count: @user_pets.size,
-                        egg_count: @user_eggs.size) %>
+<% header_actions = render("user_pets/hub_header_actions",
+                           active_collection: @active_collection) %>
 
 <% content_for :header do %>
   <%= render "shared/page_header",
              eyebrow: "Collection",
              title: "Pets & Eggs",
              subtitle: "Swap between companions and eggs to manage your squad.",
-             body: header_body %>
+             right: header_actions %>
 <% end %>
 
 <% pets_active = @active_collection == "pets" %>
@@ -21,6 +19,19 @@
 <div class="pet-hub flex-1">
 
   <div class="mx-auto w-full max-w-4xl flex-1 px-4 pb-28 pt-6">
+    <div class="pet-hub__stats">
+      <div class="pet-hub__stat">
+        <p class="pet-hub__stat-label">Pets</p>
+        <p class="pet-hub__stat-value"><%= @user_pets.size %></p>
+        <p class="pet-hub__stat-meta"><%= pluralize(@user_pets.size, "pet") %> owned</p>
+      </div>
+      <div class="pet-hub__stat">
+        <p class="pet-hub__stat-label">Eggs</p>
+        <p class="pet-hub__stat-value"><%= @user_eggs.size %></p>
+        <p class="pet-hub__stat-meta"><%= pluralize(@user_eggs.size, "egg") %> incubating</p>
+      </div>
+    </div>
+
     <% if pets_active %>
       <section class="space-y-6">
         <% if @user_pets.any? %>
@@ -30,6 +41,7 @@
               <% sprite_path = pet_sprite_path(user_pet.pet) %>
               <% badge_text = "Lvl #{user_pet.level}" %>
               <% state_badges = pet_state_badges(user_pet) %>
+              <% feeling_badge = pet_feeling_descriptor(user_pet) %>
               <%= link_to user_pet_path(user_pet),
                           class: "group relative block aspect-[3/4] overflow-hidden rounded-3xl border border-slate-800 bg-slate-900/60 shadow-inner shadow-slate-950/40 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950",
                           data: { turbo_prefetch: false },
@@ -58,6 +70,13 @@
                 <span class="absolute top-2 right-2 inline-flex items-center rounded-full bg-slate-950/85 px-2 py-1 text-[11px] font-semibold text-indigo-200 drop-shadow-md" aria-label="Level <%= user_pet.level %>">
                   <%= badge_text %>
                 </span>
+                <% if feeling_badge %>
+                  <div class="pointer-events-none absolute inset-x-2 bottom-2">
+                    <span class="inline-flex w-full items-center justify-center rounded-2xl px-2 py-1 text-[11px] font-semibold leading-snug shadow-lg shadow-slate-950/30 <%= feeling_badge[:card_class] %>">
+                      <%= feeling_badge[:label] %>
+                    </span>
+                  </div>
+                <% end %>
               <% end %>
             <% end %>
           </div>
@@ -66,7 +85,7 @@
             <p class="text-base font-semibold text-slate-100">No pets yet</p>
             <p class="mt-2 text-sm">Open eggs to hatch your first companion.</p>
             <%= link_to "Visit the Store",
-                        adopt_path,
+                        store_path(tab: "eggs"),
                         class: "mt-4 inline-flex items-center gap-2 rounded-full bg-indigo-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950" %>
           </div>
         <% end %>
@@ -88,7 +107,7 @@
             <p class="text-base font-semibold text-slate-100">No eggs in incubation</p>
             <p class="mt-2 text-sm">Pick up a new egg from the store to start hatching.</p>
             <%= link_to "Browse Store",
-                        adopt_path,
+                        store_path(tab: "eggs"),
                         class: "mt-4 inline-flex items-center gap-2 rounded-full bg-indigo-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950" %>
           </div>
         <% end %>

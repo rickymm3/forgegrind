@@ -1,0 +1,27 @@
+<div class="space-y-4">
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <div>
+      <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Egg Nursery</p>
+      <p class="text-sm text-slate-300">Incubate and hatch your eggs here.</p>
+    </div>
+    <%= link_to "Browse Eggs",
+                store_path(tab: "eggs"),
+                class: "inline-flex items-center gap-2 rounded-full border border-indigo-500/40 bg-indigo-500/10 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-indigo-100 transition hover:bg-indigo-500/20" %>
+  </div>
+
+  <% if user_eggs.any? %>
+    <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+      <% user_eggs.each do |user_egg| %>
+        <%= render "user_eggs/inventory_card", user_egg: user_egg %>
+      <% end %>
+    </div>
+  <% else %>
+    <div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-8 text-center text-slate-300">
+      <h3 class="text-lg font-semibold text-slate-100">No eggs yet</h3>
+      <p class="mt-2 text-sm">Pick up an egg to start incubating.</p>
+      <%= link_to "Visit Eggs Store",
+                  store_path(tab: "eggs"),
+                  class: "mt-4 inline-flex items-center justify-center gap-2 rounded-full bg-indigo-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950" %>
+    </div>
+  <% end %>
+</div>

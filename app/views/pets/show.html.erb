@@ -1,0 +1,44 @@
+<% content_for :title, (@pet.name.presence || @pet.pet.name) %>
+<% content_for :head do %>
+  <%= stylesheet_link_tag "pets", "data-turbo-track": "reload" %>
+<% end %>
+<% content_for :main_classes_override, "app-shell__main pet-detail-shell" %>
+<% content_for :main_inner_classes_override, "pet-detail__inner" %>
+
+<% display_name = @pet.name.presence || @pet.pet.name %>
+<% sprite_path = pet_profile_image_path(@pet) %>
+<% status_label = pet_status_label(@pet) %>
+<% feeling = pet_feeling_descriptor(@pet) %>
+
+<div class="pet-detail" data-controller="pet-detail" data-action="click->pet-detail#showOverlay">
+  <div class="pet-detail__media">
+    <% if sprite_path.present? %>
+      <%= image_tag sprite_path, alt: display_name, class: "pet-detail__image" %>
+    <% else %>
+      <div class="pet-detail__image-placeholder"><%= display_name %></div>
+    <% end %>
+  </div>
+
+  <div class="pet-detail__overlay" data-pet-detail-target="overlay">
+    <div class="pet-detail__overlay-top">
+      <div class="pet-detail__info">
+        <p class="pet-detail__name"><%= display_name %></p>
+        <p class="pet-detail__meta">Energy: <%= @pet.energy.to_i %> / <%= UserPet::MAX_ENERGY %></p>
+        <p class="pet-detail__meta"><%= status_label %></p>
+        <p class="pet-detail__thought"><%= feeling ? feeling[:label] : "Feeling calm." %></p>
+      </div>
+      <button class="pet-detail__toggle" type="button" data-action="click->pet-detail#toggleOverlay">Hide UI</button>
+    </div>
+
+    <div class="pet-detail__overlay-bottom">
+      <turbo-frame id="pet-care-request">
+        <%= render "pets/care_alerts",
+                   pet: @pet,
+                   care_request: @care_request,
+                   request_cooldown_until: @pet.care_request_cooldown_until %>
+      </turbo-frame>
+    </div>
+  </div>
+
+  <button class="pet-detail__flip" type="button" data-action="click->pet-detail#showOverlay">↺</button>
+</div>

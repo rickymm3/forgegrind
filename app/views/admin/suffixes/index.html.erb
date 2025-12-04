@@ -1,0 +1,34 @@
+<div class="admin-header">
+  <h1>Exploration Suffixes</h1>
+  <p class="admin-header__subtitle">Loaded from <code>config/explorations/suffixes.yml</code>.</p>
+</div>
+
+<div class="admin-card">
+  <table class="admin-table">
+    <thead>
+      <tr>
+        <th>Key</th>
+        <th>Label</th>
+        <th>Rarity</th>
+        <th>Weight</th>
+        <th>Level</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @suffixes.each do |entry| %>
+        <% data = entry.data.with_indifferent_access %>
+        <tr>
+          <td><code><%= entry.key %></code></td>
+          <td><%= data[:label] %></td>
+          <td><%= data[:rarity].to_s.titleize %></td>
+          <td><%= data[:weight] %></td>
+          <td><%= data[:player_level_min] %></td>
+          <td class="admin-table__actions">
+            <%= link_to "Edit", edit_admin_suffix_path(entry.key), class: "btn btn--small" %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

@@ -9,6 +9,11 @@
                     else
                       0.0
                     end %>
+<% if state == :idle %>
+  <%# Status card already covers incubation instructions when idle; skip redundant action panel %>
+  <% return %>
+<% end %>
+
 <% if context == :page %>
   <% wrapper_classes = ["mt-6"] %>
 <% else %>
@@ -18,26 +23,6 @@
 <div class="<%= wrapper_classes.join(' ') %>">
   <div class="pointer-events-auto mx-auto max-w-3xl rounded-3xl border border-slate-800 bg-slate-950/95 p-5 shadow-2xl shadow-slate-950/50">
     <% case state %>
-    <% when :idle %>
-      <div class="space-y-4">
-        <div class="space-y-1">
-          <p class="text-sm font-semibold text-slate-100">Start incubation?</p>
-          <p class="text-sm text-slate-300">
-            Begin the hatching process to warm the egg. Once the timer completes you'll be able to open it.
-          </p>
-        </div>
-        <div class="flex flex-wrap items-center gap-3">
-          <%= button_to "Begin Incubation",
-                        incubate_user_egg_path(user_egg),
-                        method: :post,
-                        params: { context: context },
-                        class: "inline-flex items-center gap-2 rounded-full bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950" %>
-          <span class="text-xs text-slate-400">
-            Incubation takes <%= distance_of_time_in_words(Time.current, Time.current + total_seconds.seconds) %>.
-          </span>
-        </div>
-      </div>
-
     <% when :in_progress %>
       <div class="space-y-5" data-controller="countdown"
            data-countdown-seconds-value="<%= remaining %>"
@@ -81,7 +66,7 @@
                         params: { context: context },
                         class: "inline-flex items-center gap-2 rounded-full bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950" %>
           <%= link_to "Not yet",
-                      user_pets_path(collection: "eggs"),
+                      pets_path(view: "eggs"),
                       class: "inline-flex items-center justify-center rounded-full border border-slate-700/70 bg-slate-900/60 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:text-white" %>
         </div>
       </div>
@@ -94,10 +79,10 @@
         </div>
         <div class="flex flex-wrap items-center gap-3">
           <%= link_to "View Pets",
-                      user_pets_path,
+                      pets_path,
                       class: "inline-flex items-center gap-2 rounded-full bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950" %>
           <%= link_to "Back to Eggs",
-                      user_pets_path(collection: "eggs"),
+                      pets_path(view: "eggs"),
                       class: "inline-flex items-center justify-center rounded-full border border-slate-700/70 bg-slate-900/60 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:text-white" %>
         </div>
       </div>
@@ -113,7 +98,7 @@
                         user_pet_path(new_user_pet),
                         class: "inline-flex items-center gap-2 rounded-full bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 focus-visible:ring-offset-2 focus-visible:ring-offset-indigo-900" %>
             <%= link_to "Back to Eggs",
-                        user_pets_path(collection: "eggs"),
+                        pets_path(view: "eggs"),
                         class: "inline-flex items-center justify-center rounded-full border border-white/40 bg-white/10 px-4 py-2 text-sm font-semibold text-white/90 transition hover:bg-white/20" %>
           </div>
         <% end %>
@@ -144,7 +129,7 @@
       <div class="space-y-4 text-sm text-slate-200">
         <p>Unable to display egg actions right now.</p>
         <%= link_to "Back to eggs",
-                    user_pets_path(collection: "eggs"),
+                    pets_path(view: "eggs"),
                     class: "inline-flex items-center justify-center rounded-full border border-slate-700/70 bg-slate-900/60 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:text-white" %>
       </div>
     <% end %>

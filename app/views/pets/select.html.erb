@@ -1,0 +1,62 @@
+<turbo-frame id="pet-hub-main" class="pet-hub-main-frame">
+  <div class="pet-selector">
+    <div class="pet-selector__bar">
+      <div>
+        <p class="pet-selector__eyebrow">Slot <%= @slot_index + 1 %></p>
+        <p class="pet-selector__label">Choose a companion</p>
+      </div>
+      <%= button_to "Confirm",
+                    assign_pets_path,
+                    method: :post,
+                    params: { slot: @slot_index, user_pet_id: @preview_pet&.id, clear_slot: (@empty_selection ? "1" : "0") },
+                    class: "pet-selector__confirm",
+                    disabled: !@selection_ready %>
+    </div>
+
+    <div class="pet-selector__preview">
+      <%= render "pets/slot_preview", slot_index: @slot_index, user_pet: @preview_pet %>
+    </div>
+
+    <div class="pet-selector__storage">
+      <div class="pet-selector__storage-header">
+        <p>Storage</p>
+        <%= link_to "Clear Slot",
+                    select_pets_path(slot: @slot_index, selected_pet_id: "none"),
+                    class: "pet-selector__clear",
+                    data: { turbo_frame: "pet-hub-main" } %>
+      </div>
+      <div class="pet-selector__grid">
+        <%= link_to select_pets_path(slot: @slot_index, selected_pet_id: "none"),
+                    class: [
+                      "pet-selector__bubble",
+                      "pet-selector__bubble--empty",
+                      ("pet-selector__bubble--selected" if @empty_selection)
+                    ].compact.join(" "),
+                    data: { turbo_frame: "pet-hub-main" } do %>
+          <span class="pet-selector__empty-icon">+</span>
+          <span class="pet-selector__name">Empty Slot</span>
+        <% end %>
+        <% @storage_pets.each do |pet| %>
+          <% selected = @selected_pet&.id == pet.id %>
+          <%= link_to select_pets_path(slot: @slot_index, selected_pet_id: pet.id),
+                      class: ["pet-selector__bubble", ("pet-selector__bubble--selected" if selected)].compact.join(" "),
+                      data: { turbo_frame: "pet-hub-main" } do %>
+            <% image_path = pet_profile_image_path(pet) %>
+            <span class="pet-selector__level">Lv <%= pet.level %></span>
+            <%= image_tag image_path,
+                          alt: pet.name.presence || pet.pet.name,
+                          class: "pet-selector__image" %>
+            <span class="pet-selector__name"><%= pet.name.presence || pet.pet.name %></span>
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+
+    <div class="pet-selector__footer">
+      <%= link_to "Cancel",
+                  pets_path,
+                  class: "pet-selector__cancel",
+                  data: { turbo_frame: "pet-hub-main" } %>
+    </div>
+  </div>
+</turbo-frame>

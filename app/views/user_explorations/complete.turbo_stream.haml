@@ -1,4 +1,7 @@
 - detail_dom_id = dom_id(@generated_snapshot || @world, :detail)
+- currencies = @currency_balances || helpers.currency_balances_for(current_user)
+- coins = currencies.find { |c| c.name == "Coins" }
+- diamonds = currencies.find { |c| c.name == "Diamonds" }
 
 = turbo_stream.update detail_dom_id do
   = render partial: "user_explorations/complete"
@@ -11,8 +14,10 @@
            selected_generated: @generated_explorations.first,
            slot_entries: @slot_entries
 
-= turbo_stream.update "user-currency-trophies" do
-  = number_with_delimiter(@user_stats.trophies)
+= turbo_stream.replace "currency_balances", partial: "shared/currency_badges", locals: { currencies: currencies }
 
-= turbo_stream.update "user-currency-diamonds" do
-  = number_with_delimiter(@user_stats.diamonds)
+= turbo_stream.update(coins&.dom_id || currency_dom_id("Coins")) do
+  = number_with_delimiter(coins&.amount.to_i)
+
+= turbo_stream.update(diamonds&.dom_id || currency_dom_id("Diamonds")) do
+  = number_with_delimiter(diamonds&.amount.to_i)

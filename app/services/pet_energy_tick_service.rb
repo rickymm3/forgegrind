@@ -20,22 +20,23 @@ class PetEnergyTickService
   end
 
   def apply_ticks!(tick_count)
-    tick_count.to_i.times do
-      apply_single_tick
-    end
+    ticks = tick_count.to_i
+    return if ticks <= 0
+
+    apply_single_tick(ticks)
   end
 
   private
 
   attr_reader :user_pet
 
-  def apply_single_tick
+  def apply_single_tick(ticks)
     # Needs decay is handled by catch_up_needs! before invoking this service.
-    update_trackers
+    update_trackers(ticks)
     update_badges
   end
 
-  def update_trackers
+  def update_trackers(ticks)
     trackers = user_pet.care_trackers.deep_dup
 
     NEED_KEYS.each do |need|
@@ -43,7 +44,8 @@ class PetEnergyTickService
       next unless tracker_key
 
       base_value = trackers.fetch(tracker_key.to_s, 50).to_i
-      trackers[tracker_key.to_s] = clamp_tracker(base_value + tracker_delta_for(need))
+      delta = tracker_delta_for(need) * ticks
+      trackers[tracker_key.to_s] = clamp_tracker(base_value + delta)
     end
 
     user_pet.update_column(:care_trackers, trackers)

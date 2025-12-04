@@ -1,0 +1,17 @@
+combinations:
+  "scorching+ember_fields+of_legends":
+    rarity: mythic
+    label_override: "Scorching Ember Heart of Legends"
+    flavor_append: "Only those who master flame and legend may survive this gauntlet."
+    encounter_tags: ["legendary", "ember-core", "mythic"]
+    segments:
+      - key: "legendary_trial"
+        label: "Trial of Ascendant Flame"
+        duration_weight: 1
+        encounter_tags: ["legendary", "trial", "flame"]
+
+  "celestial+aurora_tundra":
+    rarity: legendary
+    flavor_append: "Celestial auroras ripple with ancient guardians."
+    encounter_tags: ["radiant", "ancient"]
+    duration_multiplier: 1.2

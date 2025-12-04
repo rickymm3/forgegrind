@@ -1,3 +1,10 @@
+<% currency_balances = @currency_balances || helpers.currency_balances_for(current_user) %>
+<% diamonds = currency_balances.find { |c| c.name == "Diamonds" } %>
+
+<%= turbo_stream.replace "currency_balances",
+                         partial: "shared/currency_badges",
+                         locals: { currencies: currency_balances } %>
+
 <%= turbo_stream.replace "inventory-containers-grid",
                          partial: "inventories/containers_grid",
                          locals: { containers: @containers } %>
@@ -24,6 +31,6 @@
                          partial: "containers/reveal",
                          locals: { payload: @rewards_payload, container_lookup: @container_lookup } %>
 
-<%= turbo_stream.update "user-currency-diamonds" do %>
-  <%= number_with_delimiter(@user_stats.diamonds) %>
+<%= turbo_stream.update diamonds&.dom_id || currency_dom_id("Diamonds") do %>
+  <%= number_with_delimiter(diamonds&.amount.to_i) %>
 <% end %>

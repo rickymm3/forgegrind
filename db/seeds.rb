@@ -16,8 +16,9 @@ celestial = PetType.find_or_create_by!(name: "Celestial")
 beast     = PetType.find_or_create_by!(name: "Beast")
 
 # === Currencies (legacy) ===
-trophies = Currency.find_or_create_by!(name: "Trophies", symbol: "🏆")
+coins = Currency.find_or_create_by!(name: "Coins", symbol: "🪙")
 diamonds = Currency.find_or_create_by!(name: "Diamonds", symbol: "💎")
+glow_essence = Currency.find_or_create_by!(name: "Glow Essence", symbol: "✨")
 
 # === Rarities ===
 rarity_definitions = [
@@ -179,16 +180,11 @@ forest.pet_types = [grass]
 
 # === Eggs ===
 starter_egg = Egg.find_or_create_by!(name: "Starter Egg") do |e|
-  e.currency       = trophies
+  e.currency       = coins
   e.cost_amount    = 10
-  e.hatch_duration = 5
+  e.hatch_duration = 15
 end
-
-forest_egg = Egg.find_or_create_by!(name: "Forest Egg") do |e|
-  e.currency       = trophies
-  e.cost_amount    = 50
-  e.hatch_duration = 600
-end
+starter_egg.update!(hatch_duration: 15) unless starter_egg.hatch_duration == 15
 
 nature_egg = Egg.find_or_create_by!(name: "Nature Egg") do |e|
   e.currency       = diamonds
@@ -197,22 +193,8 @@ nature_egg = Egg.find_or_create_by!(name: "Nature Egg") do |e|
 end
 nature_egg.update!(currency: diamonds, cost_amount: 200, hatch_duration: 900)
 
-lupin_evolution_egg = Egg.find_or_create_by!(name: "Lupin Evolution Forms") do |e|
-  e.currency       = diamonds
-  e.cost_amount    = 0
-  e.hatch_duration = 0
-  e.enabled        = false
-end
-
 # Map Pets -> Special Abilities (optional if pets not yet seeded)
 PetSpecialAbilityCatalog.backfill_pets!
-lupin_evolution_egg.update!(enabled: false)
-
-sapling_egg = Egg.find_or_create_by!(name: "Sapling Egg") do |e|
-  e.currency       = trophies
-  e.cost_amount    = 100
-  e.hatch_duration = 900
-end
 
 # === Loot Tables & Containers ===
 pet_care_loot_tables = {
@@ -369,44 +351,40 @@ if meadow_zone
   ZoneChestDrop.create!(world: meadow_zone, chest_type: pet_care_box_lvl2, weight: 60)
 end
 
-# === Sapling Pets ===
-sapling_pets = [
-  { name: "Sprig",    rarity: uncommon,  power: 3, pet_types: [water],
-    hp: 12, atk:  6, def:  5, sp_atk:  7, sp_def:  5, speed:  6 },
-  { name: "Twigster", rarity: uncommon,  power: 3, pet_types: [water],
-    hp: 11, atk:  7, def:  6, sp_atk:  6, sp_def:  5, speed:  7 },
-  { name: "Barkling", rarity: rare,      power: 5, pet_types: [fire, beast],
-    hp: 20, atk:  8, def:  8, sp_atk:  4, sp_def:  6, speed:  4 },
-  { name: "Verdant",  rarity: legendary, power: 9, pet_types: [electric],
-    hp: 25, atk:  5, def: 10, sp_atk: 15, sp_def: 15, speed:  5 }
-]
-
-sapling_pets.each do |attrs|
-  pet = sapling_egg.pets.find_or_initialize_by(name: attrs[:name])
-  pet.assign_attributes(
-    rarity:   attrs[:rarity],
-    power:    attrs[:power],
-    hp:       attrs[:hp],
-    atk:      attrs[:atk],
-    def:      attrs[:def],
-    sp_atk:   attrs[:sp_atk],
-    sp_def:   attrs[:sp_def],
-    speed:    attrs[:speed]
-  )
-  pet.save!
-  pet.pet_types = attrs[:pet_types]
-end
-
 # === Starter Pets ===
 starter_pets = [
-  { name: "Cat",   rarity: common,   power: 1, pet_types: [fire, beast],
-    hp: 10, atk:  5, def:  5, sp_atk:  2, sp_def:  3, speed:  7 },
-  { name: "Dog",   rarity: common,   power: 1, pet_types: [fire, beast],
-    hp: 10, atk:  6, def:  5, sp_atk:  3, sp_def:  3, speed:  6 },
-  { name: "Mouse", rarity: common,   power: 1, pet_types: [electric],
-    hp:  8, atk:  4, def:  4, sp_atk:  3, sp_def:  2, speed: 10 },
-  { name: "Fish",  rarity: common,   power: 1, pet_types: [water],
-    hp:  7, atk:  3, def:  3, sp_atk:  5, sp_def:  6, speed:  5 }
+  {
+    name: "Houndlet",
+    rarity: common,
+    power: 2,
+    pet_types: [beast, spirit],
+    description: "A mossy-coated guardian pup that chirps when excited. Houndlet is fiercely loyal and quick to defend new trainers venturing out for the first time.",
+    hp: 22, atk: 7, def: 7, sp_atk: 6, sp_def: 7, speed: 9
+  },
+  {
+    name: "Kittian",
+    rarity: common,
+    power: 2,
+    pet_types: [beast, wind],
+    description: "A meadow cat whose tail ends in floating leaves. Kittian stalks breezes and darts through tall grass, energizing any party with its playful pounces.",
+    hp: 20, atk: 6, def: 6, sp_atk: 8, sp_def: 6, speed: 12
+  },
+  {
+    name: "Nibblin",
+    rarity: common,
+    power: 2,
+    pet_types: [beast, shadow],
+    description: "A dusk-warren critter that hoards shiny pebbles. Nibblin loves hide-and-seek, slipping between roots before reappearing with a triumphant squeak.",
+    hp: 18, atk: 8, def: 5, sp_atk: 7, sp_def: 6, speed: 11
+  },
+  {
+    name: "Fawndrel",
+    rarity: common,
+    power: 2,
+    pet_types: [beast, grass],
+    description: "A gentle fawn with budding antlers that glow softly at night. Fawndrel hums to seedlings and inspires patience as new tamers learn the ropes.",
+    hp: 24, atk: 5, def: 8, sp_atk: 6, sp_def: 8, speed: 8
+  }
 ]
 
 starter_pets.each do |attrs|
@@ -414,34 +392,7 @@ starter_pets.each do |attrs|
   pet.assign_attributes(
     rarity:   attrs[:rarity],
     power:    attrs[:power],
-    hp:       attrs[:hp],
-    atk:      attrs[:atk],
-    def:      attrs[:def],
-    sp_atk:   attrs[:sp_atk],
-    sp_def:   attrs[:sp_def],
-    speed:    attrs[:speed]
-  )
-  pet.save!
-  pet.pet_types = attrs[:pet_types]
-end
-
-# === Forest Pets ===
-forest_pets = [
-  { name: "Deer",  rarity: common,    power: 2, pet_types: [water, beast],
-    hp: 20, atk:  7, def:  6, sp_atk:  3, sp_def:  4, speed:  6 },
-  { name: "Owl",   rarity: uncommon,  power: 3, pet_types: [electric],
-    hp: 15, atk:  5, def:  5, sp_atk:  8, sp_def:  5, speed:  8 },
-  { name: "Bear",  rarity: rare,      power: 5, pet_types: [fire, beast],
-    hp: 30, atk: 10, def: 10, sp_atk:  2, sp_def:  3, speed:  4 },
-  { name: "Dryad", rarity: legendary, power:10, pet_types: [grass],
-    hp: 18, atk:  4, def:  6, sp_atk: 12, sp_def: 10, speed:  5 }
-]
-
-forest_pets.each do |attrs|
-  pet = forest_egg.pets.find_or_initialize_by(name: attrs[:name])
-  pet.assign_attributes(
-    rarity:   attrs[:rarity],
-    power:    attrs[:power],
+    description: attrs[:description],
     hp:       attrs[:hp],
     atk:      attrs[:atk],
     def:      attrs[:def],
@@ -455,6 +406,22 @@ end
 
 # === Nature Egg – Lupin lineage ===
 nature_pet_data = [
+  {
+    name: "Glimmerfin",
+    rarity: common,
+    power: 2,
+    pet_types: [water, spirit],
+    description: "A curious river dweller whose scales shimmer with bioluminescent freckles. Glimmerfin hums softly to soothe anxious trainers and splashes whenever it senses hidden coves.",
+    hp: 19, atk: 5, def: 6, sp_atk: 9, sp_def: 7, speed: 10
+  },
+  {
+    name: "Noctwing",
+    rarity: common,
+    power: 2,
+    pet_types: [shadow, wind],
+    description: "A midnight roost companion that glides without a sound. Noctwing maps the night sky with sweeping loops, guiding wanderers by the faint glow on its wingtips.",
+    hp: 18, atk: 7, def: 5, sp_atk: 7, sp_def: 6, speed: 13
+  },
   {
     name: "Lupin",
     rarity: common,
@@ -512,6 +479,14 @@ nature_pet_data = [
     hp: 24, atk: 12, def: 9, sp_atk: 14, sp_def: 12, speed: 12
   },
   {
+    name: "Verdant",
+    rarity: legendary,
+    power: 8,
+    pet_types: [grass, spirit, celestial],
+    description: "A radiant guardian deer whose antlers bloom with living vines. Verdant carries the dawn’s first light in its mane and calms even the fiercest storms with a single breath.",
+    hp: 32, atk: 11, def: 13, sp_atk: 16, sp_def: 17, speed: 11
+  },
+  {
     name: "Pyrolune",
     rarity: legendary,
     power: 9,
@@ -545,9 +520,11 @@ nature_pet_data = [
   }
 ]
 
+nature_base_names = %w[Glimmerfin Noctwing Lupin Verdant]
+
 nature_pets = nature_pet_data.each_with_object({}) do |attrs, memo|
-  target_egg = attrs[:name] == "Lupin" ? nature_egg : lupin_evolution_egg
-  pet = target_egg.pets.find_or_initialize_by(name: attrs[:name])
+  pet = Pet.find_or_initialize_by(name: attrs[:name])
+  pet.egg = nature_base_names.include?(attrs[:name]) ? nature_egg : nil
   pet.assign_attributes(
     rarity:      attrs[:rarity],
     power:       attrs[:power],
@@ -736,10 +713,6 @@ end
 
 # === Egg Item Costs ===
 EggItemCost.find_or_create_by!(egg: starter_egg, item: starter_item) { |eic| eic.quantity = 1 }
-EggItemCost.find_or_create_by!(egg: forest_egg,  item: wooden_stick) { |eic| eic.quantity = 1 }
-EggItemCost.find_or_create_by!(egg: sapling_egg, item: starter_item) { |eic| eic.quantity = 1 }
-EggItemCost.find_or_create_by!(egg: sapling_egg, item: wooden_stick) { |eic| eic.quantity = 1 }
-EggItemCost.find_or_create_by!(egg: nature_egg, item: treat) { |eic| eic.quantity = 2 }
 
 # === Retroactive type associations ===
 Pet.find_each do |pet|

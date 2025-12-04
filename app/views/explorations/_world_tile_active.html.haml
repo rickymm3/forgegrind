@@ -1,6 +1,12 @@
 - interactive_classes = (card_classes + ["exploration-card--interactive"]).join(" ")
 - flavor = metadata["flavor"] || metadata[:flavor]
 - overlay_label = "View exploration #{generated&.name || slot_label}"
+- reroll_cooldown_seconds ||= 0
+- reroll_available_at ||= nil
+- rescout_allowed = user_exploration.blank? || user_exploration.complete?
+- world_info = metadata["world"] || metadata[:world] || {}
+- world_tier = world_info["tier"] || world_info[:tier]
+- component_labels = metadata["component_labels"] || metadata[:component_labels] || {}
 
 %article{ class: interactive_classes }
   = link_to zone_explorations_path(id: generated.id),
@@ -23,6 +29,12 @@
             %svg.exploration-icon{ viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", 'stroke-width': "1.6" }
               %path{ d: "M12 3l2.5 6.5L21 10l-5 4.5L17.5 21 12 17.5 6.5 21 8 14.5 3 10l6.5-.5L12 3z", 'stroke-linecap': "round", 'stroke-linejoin': "round" }
           = rarity_label
+      - if world_tier.present?
+        %span.exploration-tag.exploration-tag--tier
+          %span.exploration-tag__icon{ aria: { hidden: true } }
+            %svg.exploration-icon{ viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", 'stroke-width': "1.6" }
+              %path{ d: "M12 4l3 6 6 .5-4.5 4 1.5 6-5-3.5-5 3.5 1.5-6-4.5-4 6-.5z", 'stroke-linecap': "round", 'stroke-linejoin': "round" }
+          Tier #{world_tier}
 
   .exploration-card__body
     %h3.exploration-card__title= generated.name
@@ -31,6 +43,16 @@
         %svg.exploration-icon{ viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", 'stroke-width': "1.5" }
           %path{ d: "M3 12h3m12 0h3M12 3v3m0 12v3", 'stroke-linecap': "round", 'stroke-linejoin': "round" }
         %span= world&.name
+    - component_order = [:prefix, :suffix]
+    - visible_components = component_order.each_with_object([]) do |part, memo|
+      - label = component_labels[part] || component_labels[part.to_s]
+      - memo << [part, label] if label.present?
+    - if visible_components.any?
+      .exploration-card__components
+        - visible_components.each do |part, label|
+          %span{ class: "exploration-component-chip exploration-component-chip--#{part}" }
+            %span.exploration-component-chip__label= part.to_s.humanize
+            %span.exploration-component-chip__value= label
     - unless user_exploration.present?
       - if flavor.present?
         %p.exploration-card__message= Array(flavor).compact.first
@@ -65,5 +87,40 @@
             = exploration_duration_label(segment_status[:remaining_seconds])
       - else
         %span.exploration-card__status-muted Exploration underway
+      - if user_exploration.complete? && generated.present? && rescout_allowed
+        - rescout_disabled = reroll_cooldown_seconds.to_i.positive?
+        - rescout_note = nil
+        - if rescout_disabled
+          - available_time = reroll_available_at || (Time.current + reroll_cooldown_seconds.to_i.seconds)
+          - rescout_note = "Available in #{distance_of_time_in_words(Time.current, available_time)}"
+        .exploration-card__actions
+          = button_to "Rescout",
+                      reroll_exploration_path(generated),
+                      method: :post,
+                      class: "exploration-card__action-btn",
+                      disabled: rescout_disabled,
+                      form: { class: "exploration-card__action-form", data: { turbo_confirm: "Replace this expedition?", turbo_frame: "_top" } }
+          - if rescout_note.present?
+            %span.exploration-card__action-note= rescout_note
+    - elsif rescout_allowed
+      - rescout_disabled = reroll_cooldown_seconds.to_i.positive?
+      - rescout_wait_text = nil
+      - if rescout_disabled
+        - if reroll_available_at.present?
+          - rescout_wait_text = "Rescout available in #{distance_of_time_in_words(Time.current, reroll_available_at)}"
+        - elsif reroll_cooldown_seconds.to_i.positive?
+          - rescout_wait_text = "Rescout available in #{exploration_duration_label(reroll_cooldown_seconds)}"
+      .exploration-card__actions
+        %span.exploration-card__status-muted Party required to begin
+        - if generated.present?
+          = button_to "Rescout",
+                      reroll_exploration_path(generated),
+                      method: :post,
+                      class: "exploration-card__action-btn",
+                      disabled: rescout_disabled,
+                      form: { class: "exploration-card__action-form", data: { turbo_confirm: "Replace this expedition?", turbo_frame: "_top" } }
+          - if rescout_wait_text.present?
+            %span.exploration-card__action-note= rescout_wait_text
     - else
-      %span.exploration-card__status-muted Party required to begin
+      .exploration-card__actions
+        %span.exploration-card__status-muted Rescout available after expedition ends

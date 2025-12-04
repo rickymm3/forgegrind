@@ -1,10 +1,16 @@
 <%
-  stat        ||= current_user.user_stat
+  currencies  ||= helpers.currency_balances_for(current_user)
   tabs        ||= {}
   active_tab  ||= nil
   condensed   ||= false
   toolbar_cls = ["page-toolbar"]
   toolbar_cls << "page-toolbar--stacked" unless condensed
+  coins_currency    = Currency.find_by_key(:coins)
+  diamonds_currency = Currency.find_by_key(:diamonds)
+  coins    = currencies.find { |c| coins_currency && c.currency_id == coins_currency.id } || currencies.find { |c| c.name == "Coins" }
+  diamonds = currencies.find { |c| diamonds_currency && c.currency_id == diamonds_currency.id } || currencies.find { |c| c.name == "Diamonds" }
+  coins_amount    = coins&.amount || current_user.currency_balance(coins_currency)
+  diamonds_amount = diamonds&.amount || current_user.currency_balance(diamonds_currency)
 %>
 <div class="<%= toolbar_cls.join(" ") %>">
   <nav class="page-toolbar__tabs">
@@ -18,13 +24,13 @@
   </nav>
 
   <div class="page-toolbar__stats">
+    <div class="stat-chip stat-chip--amber">
+      <span class="stat-chip__label">Coins</span>
+      <span class="stat-chip__value" id="<%= coins&.dom_id || currency_dom_id('Coins') %>"><%= number_with_delimiter(coins_amount.to_i) %></span>
+    </div>
     <div class="stat-chip stat-chip--indigo">
       <span class="stat-chip__label">Diamonds</span>
-      <span class="stat-chip__value"><%= number_with_delimiter(stat&.diamonds || 0) %></span>
-    </div>
-    <div class="stat-chip stat-chip--amber">
-      <span class="stat-chip__label">Trophies</span>
-      <span class="stat-chip__value"><%= number_with_delimiter(stat&.trophies || 0) %></span>
+      <span class="stat-chip__value" id="<%= diamonds&.dom_id || currency_dom_id('Diamonds') %>"><%= number_with_delimiter(diamonds_amount.to_i) %></span>
     </div>
   </div>
 </div>

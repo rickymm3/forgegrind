@@ -1,0 +1,71 @@
+<div class="admin-header">
+  <h1>Edit Affix</h1>
+  <p class="admin-header__subtitle">
+    Adjust <code><%= @entry.key %></code> from <code>config/explorations/affixes.yml</code>.
+  </p>
+</div>
+
+<div class="admin-card">
+  <% data = @entry.data.with_indifferent_access %>
+  <%= form_with url: admin_affix_path(@entry.key), method: :put, class: "admin-form" do |f| %>
+    <div class="form-grid">
+      <div class="form-field">
+        <%= f.label :label, class: "form-label" %>
+        <%= f.text_field :label, value: data[:label], class: "form-input" %>
+      </div>
+      <div class="form-field">
+        <%= f.label :rarity, class: "form-label" %>
+        <%= f.text_field :rarity, value: data[:rarity], class: "form-input" %>
+      </div>
+      <div class="form-field">
+        <%= f.label :weight, class: "form-label" %>
+        <%= f.number_field :weight, value: data[:weight], class: "form-input", min: 0 %>
+      </div>
+    </div>
+
+    <div class="form-grid">
+      <div class="form-field">
+        <%= f.label :player_level_min, class: "form-label" %>
+        <%= f.number_field :player_level_min, value: data[:player_level_min], class: "form-input", min: 1 %>
+      </div>
+      <div class="form-field">
+        <%= f.label :duration_multiplier, class: "form-label" %>
+        <%= f.number_field :duration_multiplier, step: 0.01, value: data.dig(:duration, :multiplier), class: "form-input" %>
+      </div>
+      <div class="form-field">
+        <%= f.label :duration_bonus, "Duration Bonus (minutes)", class: "form-label" %>
+        <%= f.number_field :duration_bonus, value: data.dig(:duration, :bonus), class: "form-input" %>
+      </div>
+    </div>
+
+    <div class="form-field">
+      <%= f.label :applies_to_text, "Applies To (one per line)", class: "form-label" %>
+      <%= f.text_area :applies_to_text, value: Array(data[:applies_to]).join("\n"), class: "form-textarea", rows: 3 %>
+    </div>
+
+    <div class="form-field">
+      <%= f.label :flavor, class: "form-label" %>
+      <%= f.text_area :flavor, value: data[:flavor], class: "form-textarea", rows: 2 %>
+    </div>
+
+    <div class="form-grid">
+      <div class="form-field">
+        <%= f.label :checkpoint_labels_text, "Checkpoint Labels", class: "form-label" %>
+        <%= f.text_area :checkpoint_labels_text, value: Array(data[:checkpoint_labels]).join("\n"), class: "form-textarea", rows: 3 %>
+      </div>
+      <div class="form-field">
+        <%= f.label :requirements_yaml, "Requirements (YAML)", class: "form-label" %>
+        <%= f.text_area :requirements_yaml, value: (data[:requirements].presence && data[:requirements].to_yaml), class: "form-textarea font-mono", rows: 6 %>
+      </div>
+      <div class="form-field">
+        <%= f.label :reward_modifiers_yaml, "Reward Modifiers (YAML)", class: "form-label" %>
+        <%= f.text_area :reward_modifiers_yaml, value: (data[:reward_modifiers].presence && data[:reward_modifiers].to_yaml), class: "form-textarea font-mono", rows: 6 %>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <%= link_to "Cancel", admin_affixes_path, class: "btn btn--secondary" %>
+      <%= f.submit "Save Affix", class: "btn btn--primary" %>
+    </div>
+  <% end %>
+</div>

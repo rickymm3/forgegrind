@@ -1,70 +1,654 @@
-# config/explorations/encounters.yml
+# Defines encounter templates shared across worlds. Each encounter chooses a
+# weight tier (mapped below) and a set of associations describing when it can
+# appear. Associations can target world keys (base identifiers), world tags,
+# and/or specific affix/suffix keys. Multiple associations act as OR rules.
+weights:
+  common: 1.0
+  uncommon: 0.85
+  rare: 0.6
+  ultra_rare: 0.35
+  legendary: 0.2
 
-# Global encounters are evaluated for every world. They can include world_tags to
-# narrow eligibility, ability requirements, and distinct options.
-global:
+encounters:
+  - slug: meadow_safe_skies
+    title: "Safe Skies Patrol"
+    summary: "Local scouts request help keeping the skies clear."
+    weight_tier: common
+    tags: ["starter", "patrol"]
+    requirement_tags:
+      - base
+      - "type:pet_type"
+    associations:
+      - world_keys: ["glimmering_trail", "starter_zone"]
+        world_tags: ["starter", "forest"]
+      - world_keys: ["whispering_meadow"]
+    rewards:
+      outcomes:
+        patrol_completed:
+          drop_keys:
+            - "encounter_meadow_safe_skies_patrol_completed"
+        patrol_observed:
+          drop_keys:
+            - "encounter_meadow_safe_skies_patrol_observed"
+        training_success:
+          drop_keys:
+            - "encounter_meadow_safe_skies_training_success"
+    nodes:
+      intro:
+        text: "Scout captains greet your party near the trailhead. Bright-winged flyers dart overhead."
+        options:
+          - key: assist
+            label: "Assist with the patrol"
+            next_node: patrol_completed
+            outcome: patrol_completed
+          - key: train
+            label: "Train the rookies"
+            next_node: training
+          - key: watch
+            label: "Observe quietly"
+            next_node: patrol_observed
+            outcome: patrol_observed
+      training:
+        text: "You guide the rookies through tight formation drills."
+        options:
+          - key: final_drill
+            label: "Lead one final drill"
+            success_chance: 0.75
+            next_node: training_success
+            outcome: training_success
+            failure_next_node: patrol_observed
+            failure_outcome: patrol_observed
+      patrol_completed:
+        conclusion: true
+        outcome: patrol_completed
+        text: "Your party sweeps the skies clean, earning nods from the veteran scouts."
+        status: completed
+      patrol_observed:
+        conclusion: true
+        outcome: patrol_observed
+        text: "You note every current and threat, filing a quiet report for the captains."
+        status: completed
+      training_success:
+        conclusion: true
+        outcome: training_success
+        text: "The rookies mirror your formation perfectly, eager for future sorties."
+        status: completed
+
   - slug: forest_lost_pup
     title: "A Whimper in the Brush"
     summary: "Your party hears a faint cry from beyond the treeline."
-    world_tags: ["forest", "starter"]
-    base_weight: 1.0
+    weight_tier: common
+    tags: ["forest", "starter"]
     requirement_tags:
       - base
       - "type:pet_type"
       - "pet_type:grass"
     narrative:
       intro: "You pause along the mossy path. Somewhere past the brush a small creature is crying for help."
+    associations:
+      - world_tags: ["starter", "forest"]
+      - world_keys: ["verdant_canopy"]
+    rewards:
+      outcomes:
+        continue_on_path:
+          drop_keys:
+            - "encounter_forest_lost_pup_continue_on_path"
+          care_effects:
+            mood: -5
+        free_success:
+          drop_keys:
+            - "encounter_forest_lost_pup_free_success"
+          care_effects:
+            mood: 10
+            hygiene: -5
+        guardians_alerted:
+          drop_keys:
+            - "encounter_forest_lost_pup_guardians_alerted"
+          care_effects:
+            mood: 6
+        healing_breeze_escort:
+          drop_keys:
+            - "encounter_forest_lost_pup_healing_breeze_escort"
+          care_effects:
+            mood: 12
+            hygiene: 5
+        healing_breeze_release:
+          drop_keys:
+            - "encounter_forest_lost_pup_healing_breeze_release"
+          care_effects:
+            mood: 8
+        search_failed:
+          drop_keys:
+            - "encounter_forest_lost_pup_search_failed"
     nodes:
       intro:
         text: "A frightened whimper drifts from the brush. The trail ahead is quiet, but the sound tugs at your party."
         options:
           - key: ignore
             label: "Ignore it and keep going"
+            next_node: continue_on_path
             outcome: continue_on_path
           - key: investigate
             label: "Push through the brush"
+            success_chance: 0.75
             next_node: clearing
-            timer_seconds: 90
+            failure_next_node: overgrown_thicket
+            failure_outcome: search_failed
       clearing:
         text: "You discover a young lupin tangled in thorny vines. Its breathing is shallow."
         options:
           - key: free_carefully
             label: "Carefully cut the vines"
+            success_chance: 0.7
+            next_node: free_success
             outcome: free_success
+            failure_next_node: guardians_alerted
+            failure_outcome: guardians_alerted
           - key: call_for_help
             label: "Call for local guardians"
+            next_node: guardians_alerted
             outcome: guardians_alerted
           - key: healing_winds
             label: "Use %{pet_name}'s Healing Breeze"
             next_node: healing_breeze
             requires:
               special_ability_tags: ["healing"]
-            timer_seconds: 120
       healing_breeze:
         text: "Gentle winds swirl as %{pet_name} releases soothing pollen. The pup calms and the vines loosen."
         options:
           - key: escort
             label: "Escort the pup back to the trail"
+            next_node: healing_breeze_escort
             outcome: healing_breeze_escort
           - key: encourage
             label: "Encourage the pup to run home"
+            next_node: healing_breeze_release
             outcome: healing_breeze_release
+      continue_on_path:
+        conclusion: true
+        outcome: continue_on_path
+        text: "You steel yourself and continue down the trail, leaving the cries to fade behind you."
+        status: completed
+      free_success:
+        conclusion: true
+        outcome: free_success
+        text: "With steady paws you cut the vines free and the young lupin leaps gratefully into your arms."
+        status: completed
+      guardians_alerted:
+        conclusion: true
+        outcome: guardians_alerted
+        text: "A flare brings nearby guardians running, and they whisk the pup away for care."
+        status: completed
+      healing_breeze_escort:
+        conclusion: true
+        outcome: healing_breeze_escort
+        text: "Carried by your soothing winds, the pup is safely escorted back to its den."
+        status: completed
+      healing_breeze_release:
+        conclusion: true
+        outcome: healing_breeze_release
+        text: "Restored by your song, the pup sprints home through the brush with a happy yip."
+        status: completed
+      overgrown_thicket:
+        conclusion: true
+        outcome: search_failed
+        text: "The thicket proves too dense; by the time you circle around, the whimper has faded into silence."
+        status: failed
+
+  - slug: glimmering_lantern_distress
+    title: "Lantern-Line Distress"
+    summary: "Beacon braziers along the Glimmering Trail sputter, threatening caravans that rely on their light."
+    weight_tier: uncommon
+    tags: ["starter", "trail", "support"]
+    requirement_tags:
+      - base
+      - "type:pet_type"
+    associations:
+      - world_keys: ["glimmering_trail", "starter_zone"]
+        world_tags: ["starter", "forest"]
+    rewards:
+      outcomes:
+        lantern_repaired:
+          drop_keys:
+            - "encounter_glimmering_lantern_repaired"
+        lantern_signal_boost:
+          drop_keys:
+            - "encounter_glimmering_lantern_signal_boost"
+        lantern_emergency_route:
+          drop_keys:
+            - "encounter_glimmering_lantern_emergency_route"
+        lantern_glowling_refit:
+          drop_keys:
+            - "encounter_glimmering_lantern_glowling_refit"
+    nodes:
+      intro:
+        text: "Beacon keepers wave you over as a third lantern on the ridge flickers dangerously."
+        options:
+          - key: brace_post
+            label: "Stabilize the lantern braces"
+            success_chance: 0.7
+            next_node: lantern_repaired
+            outcome: lantern_repaired
+            failure_next_node: spark_spill
+          - key: sync_beacon
+            label: "%{pet_name} syncs the flare pattern"
+            next_node: lantern_signal_boost
+            outcome: lantern_signal_boost
+            requires:
+              special_ability_tags: ["light", "support"]
+          - key: wait_patrol
+            label: "Wait for the next patrol to arrive"
+            next_node: patrol_watch
+      spark_spill:
+        text: "The weakened housing cracks and a swarm of glowlings streaks into the treeline."
+        options:
+          - key: improvise_barrier
+            label: "Improvise a barrier with spare poles"
+            success_chance: 0.65
+            next_node: lantern_emergency_route
+            outcome: lantern_emergency_route
+            failure_next_node: glowling_chase
+          - key: follow_glow
+            label: "Follow the glowlings"
+            next_node: glowling_chase
+      patrol_watch:
+        text: "You hold position while another patrol jogs up the path, juggling supplies."
+        options:
+          - key: lend_supplies
+            label: "Lend your spare braces"
+            next_node: lantern_repaired
+            outcome: lantern_repaired
+          - key: redirect_traffic
+            label: "Redirect caravans around the dark gap"
+            success_chance: 0.6
+            next_node: lantern_emergency_route
+            outcome: lantern_emergency_route
+            failure_next_node: spark_spill
+      glowling_chase:
+        text: "The escaped glowlings bob through the brush toward an abandoned cache of lantern cores."
+        options:
+          - key: guide_whistles
+            label: "Guide them back with gentle whistles"
+            success_chance: 0.55
+            next_node: lantern_glowling_refit
+            outcome: lantern_glowling_refit
+            failure_next_node: lantern_emergency_route
+            failure_outcome: lantern_emergency_route
+          - key: calming_chime
+            label: "%{pet_name} plays a calming chime"
+            next_node: lantern_glowling_refit
+            outcome: lantern_glowling_refit
+            requires:
+              special_ability_tags: ["song", "calm"]
+      lantern_repaired:
+        conclusion: true
+        outcome: lantern_repaired
+        text: "Together you seat a fresh core and the trail glows steadily once more."
+        status: completed
+      lantern_signal_boost:
+        conclusion: true
+        outcome: lantern_signal_boost
+        text: "%{pet_name}'s harmonized light creates a brighter, longer-lasting beacon pattern."
+        status: completed
+      lantern_emergency_route:
+        conclusion: true
+        outcome: lantern_emergency_route
+        text: "You carve a makeshift detour and keep caravans moving while the keepers reinforce the post."
+        status: completed
+      lantern_glowling_refit:
+        conclusion: true
+        outcome: lantern_glowling_refit
+        text: "The glowlings settle into a hidden cache, gifting you pristine lantern cores for saving them."
+        status: completed
+
+  - slug: glimmering_relay_rush
+    title: "Trail Relay Rush"
+    summary: "Supply sleds race toward the ridge before dusk, but the path is slick."
+    weight_tier: rare
+    tags: ["starter", "trail", "relay"]
+    requirement_tags:
+      - base
+      - "type:ability"
+    associations:
+      - world_keys: ["glimmering_trail", "starter_zone"]
+        world_tags: ["starter", "forest"]
+    rewards:
+      outcomes:
+        relay_supplies_delivered:
+          drop_keys:
+            - "encounter_glimmering_relay_supplies"
+        relay_pace_record:
+          drop_keys:
+            - "encounter_glimmering_relay_record"
+        relay_cache_uncovered:
+          drop_keys:
+            - "encounter_glimmering_relay_cache_uncovered"
+        relay_brake_failure:
+          drop_keys:
+            - "encounter_glimmering_relay_brake_failure"
+    nodes:
+      intro:
+        text: "Handlers lash crates onto glide-sleds, eyeing the slick bend ahead."
+        options:
+          - key: haul_sled
+            label: "Help haul the lead sled"
+            success_chance: 0.6
+            next_node: relay_supplies_delivered
+            outcome: relay_supplies_delivered
+            failure_next_node: relay_skid
+          - key: wind_push
+            label: "%{pet_name} lends a guiding gust"
+            next_node: relay_pace_record
+            outcome: relay_pace_record
+            requires:
+              special_ability_tags: ["wind", "support"]
+          - key: scout_backtrail
+            label: "Scout the backtrail for fallen crates"
+            next_node: relay_cache
+      relay_skid:
+        text: "The sled fishtails and scatters ration crates down a ravine."
+        options:
+          - key: stabilize
+            label: "Stabilize the runners"
+            success_chance: 0.5
+            next_node: relay_supplies_delivered
+            outcome: relay_supplies_delivered
+            failure_next_node: relay_cache
+          - key: brake_release
+            label: "Release the brakes and ride it out"
+            next_node: relay_brake_failure
+            outcome: relay_brake_failure
+      relay_cache:
+        text: "You find a cracked crate humming with spare lantern cores hidden under nettles."
+        options:
+          - key: recover_crate
+            label: "Recover the crate carefully"
+            success_chance: 0.45
+            next_node: relay_cache_uncovered
+            outcome: relay_cache_uncovered
+            failure_next_node: relay_brake_failure
+            failure_outcome: relay_brake_failure
+          - key: pulse_guidance
+            label: "%{pet_name} pulses rhythmic light"
+            next_node: relay_cache_uncovered
+            outcome: relay_cache_uncovered
+            requires:
+              special_ability_tags: ["light", "song"]
+      relay_supplies_delivered:
+        conclusion: true
+        outcome: relay_supplies_delivered
+        text: "The sled arrives intact and the keepers applaud your steady pacing."
+        status: completed
+      relay_pace_record:
+        conclusion: true
+        outcome: relay_pace_record
+        text: "%{pet_name}'s gust keeps the sled floating just above the grit, smashing the old time."
+        status: completed
+      relay_cache_uncovered:
+        conclusion: true
+        outcome: relay_cache_uncovered
+        text: "Hidden ration caches and glow cores spill into your packs before the patrol returns."
+        status: completed
+      relay_brake_failure:
+        conclusion: true
+        outcome: relay_brake_failure
+        text: "You drag the sled upright and salvage what rations you can from the tumble."
+        status: completed
+
+  - slug: glimmering_twilight_courier
+    title: "Twilight Courier Run"
+    summary: "Urgent missives must reach the ridge before the lantern line powers down."
+    weight_tier: uncommon
+    tags: ["starter", "trail", "courier"]
+    requirement_tags:
+      - base
+      - "type:ability"
+    associations:
+      - world_keys: ["glimmering_trail", "starter_zone"]
+        world_tags: ["starter", "forest"]
+    rewards:
+      outcomes:
+        courier_delivered:
+          drop_keys:
+            - "encounter_glimmering_courier_delivered"
+        courier_shortcut:
+          drop_keys:
+            - "encounter_glimmering_courier_shortcut"
+        courier_waylaid:
+          drop_keys:
+            - "encounter_glimmering_courier_waylaid"
+        courier_map_cache:
+          drop_keys:
+            - "encounter_glimmering_courier_map_cache"
+    nodes:
+      intro:
+        text: "Courier handlers shove wax-sealed satchels into your paws. The ridge lights flicker as dusk races in."
+        options:
+          - key: steady_route
+            label: "Stick to the official route"
+            success_chance: 0.75
+            next_node: courier_delivered
+            outcome: courier_delivered
+            failure_next_node: bivouac_logjam
+          - key: shortcut_dash
+            label: "Dash down the glimmering shortcut"
+            success_chance: 0.55
+            next_node: courier_shortcut
+            outcome: courier_shortcut
+            failure_next_node: glide_scramble
+          - key: guiding_flare
+            label: "%{pet_name} releases a guiding flare"
+            next_node: guiding_flare
+            requires:
+              special_ability_tags: ["light"]
+      bivouac_logjam:
+        text: "Collapsed bivouac poles block the curve and caravans are piling up."
+        options:
+          - key: dig_out
+            label: "Dig out the poles"
+            success_chance: 0.6
+            next_node: courier_delivered
+            outcome: courier_delivered
+            failure_next_node: glide_scramble
+          - key: mark_route
+            label: "Mark a makeshift detour"
+            next_node: courier_waylaid
+            outcome: courier_waylaid
+      glide_scramble:
+        text: "Your shortcut collapses into a glowlit ravine filled with scattered manifests."
+        options:
+          - key: recover_manifest
+            label: "Recover the glowing manifests"
+            success_chance: 0.45
+            next_node: courier_map_cache
+            outcome: courier_map_cache
+            failure_next_node: courier_waylaid
+            failure_outcome: courier_waylaid
+          - key: slow_route
+            label: "Guide caravans down slowly"
+            next_node: courier_waylaid
+            outcome: courier_waylaid
+      guiding_flare:
+        text: "%{pet_name}'s flare arcs above the ridge, revealing an abandoned cache of fresh lantern cores."
+        options:
+          - key: harvest_cache
+            label: "Harvest the cache"
+            next_node: courier_map_cache
+            outcome: courier_map_cache
+      courier_delivered:
+        conclusion: true
+        outcome: courier_delivered
+        text: "The missives reach the ridge captain before the lanterns dim, and you stand down proudly."
+        status: completed
+      courier_shortcut:
+        conclusion: true
+        outcome: courier_shortcut
+        text: "Your risky shortcut pays off, shaving minutes off the twilight run."
+        status: completed
+      courier_waylaid:
+        conclusion: true
+        outcome: courier_waylaid
+        text: "The detour delays deliveries, but you at least keep the caravans moving." 
+        status: completed
+      courier_map_cache:
+        conclusion: true
+        outcome: courier_map_cache
+        text: "Inside the ravine you uncover an old courier cache brimming with supplies and badges."
+        status: completed
+
+  - slug: glimmering_brink_evacuation
+    title: "Brinkside Evacuation"
+    summary: "A rope bridge near the Glimmering Trail splinters while novice scouts remain stranded."
+    weight_tier: rare
+    tags: ["starter", "rescue"]
+    requirement_tags:
+      - base
+      - "type:pet_type"
+    associations:
+      - world_keys: ["glimmering_trail", "starter_zone"]
+        world_tags: ["starter", "forest"]
+    rewards:
+      outcomes:
+        brink_rescued:
+          drop_keys:
+            - "encounter_glimmering_brink_rescued"
+        brink_speed_clear:
+          drop_keys:
+            - "encounter_glimmering_brink_speed_clear"
+        brink_shaky_exit:
+          drop_keys:
+            - "encounter_glimmering_brink_shaky_exit"
+        brink_anchor_reward:
+          drop_keys:
+            - "encounter_glimmering_brink_anchor_reward"
+    nodes:
+      intro:
+        text: "Cables snap like harp strings as two novices cling to the sagging bridge."
+        options:
+          - key: lower_rope
+            label: "Lower a rope harness"
+            success_chance: 0.65
+            next_node: brink_rescued
+            outcome: brink_rescued
+            failure_next_node: sway_event
+          - key: sprint_cross
+            label: "Sprint across before the planks give way"
+            success_chance: 0.5
+            next_node: brink_speed_clear
+            outcome: brink_speed_clear
+            failure_next_node: loose_anchor
+          - key: anchor_line
+            label: "%{pet_name} anchors the line"
+            next_node: anchor_line
+            requires:
+              special_ability_tags: ["earth", "support"]
+      sway_event:
+        text: "The bridge sways violently, scattering loose supply crates."
+        options:
+          - key: steady
+            label: "Steady the line"
+            success_chance: 0.55
+            next_node: brink_rescued
+            outcome: brink_rescued
+            failure_next_node: shaky_exit
+          - key: collect_crates
+            label: "Collect the scattered crates"
+            next_node: shaky_exit
+            outcome: brink_shaky_exit
+      loose_anchor:
+        text: "One anchor bolt rips free, dangling the entire span."
+        options:
+          - key: wedge_piton
+            label: "Wedge a piton"
+            success_chance: 0.45
+            next_node: brink_rescued
+            outcome: brink_rescued
+            failure_next_node: shaky_exit
+          - key: ride_it_out
+            label: "Ride the drop and cushion the fall"
+            next_node: shaky_exit
+            outcome: brink_shaky_exit
+      anchor_line:
+        text: "%{pet_name}'s power hardens the bridge struts, forming a stable platform."
+        options:
+          - key: escort_over
+            label: "Escort everyone across"
+            next_node: brink_anchor_reward
+            outcome: brink_anchor_reward
+      shaky_exit:
+        text: "You usher the novices out cautiously, but supplies scatter into the gorge."
+        options:
+          - key: salvage
+            label: "Salvage what you can"
+            next_node: brink_shaky_exit
+            outcome: brink_shaky_exit
+      brink_rescued:
+        conclusion: true
+        outcome: brink_rescued
+        text: "Both novices make it across safely, though the bridge will need repairs."
+        status: completed
+      brink_speed_clear:
+        conclusion: true
+        outcome: brink_speed_clear
+        text: "You reach the far side in record time and signal for the engineers to dismantle the bridge."
+        status: completed
+      brink_shaky_exit:
+        conclusion: true
+        outcome: brink_shaky_exit
+        text: "Everyone survives, but the scramble leaves bruised egos and lost gear behind."
+        status: completed
+      brink_anchor_reward:
+        conclusion: true
+        outcome: brink_anchor_reward
+        text: "With the anchors reinforced, the keepers grant you premium supplies for preventing a disaster."
+        status: completed
 
   - slug: hidden_cache
     title: "Glint Beneath the Leaves"
     summary: "Something metal gleams under a fallen log."
-    world_tags: ["forest", "wilds", "starter"]
-    base_weight: 0.8
+    weight_tier: uncommon
+    tags: ["forest", "wilds", "starter"]
     requirement_tags:
       - base
       - prefix
       - "type:ability"
+    associations:
+      - world_tags: ["forest", "starter"]
+      - world_keys: ["verdant_canopy"]
+    rewards:
+      outcomes:
+        leave_cache:
+          drop_keys:
+            - "encounter_hidden_cache_leave_cache"
+          care_effects:
+            boredom: -5
+        cache_disarmed:
+          drop_keys:
+            - "encounter_hidden_cache_cache_disarmed"
+          care_effects:
+            mood: 6
+            hygiene: -2
+        cache_marked:
+          drop_keys:
+            - "encounter_hidden_cache_cache_marked"
+        snare_broken:
+          drop_keys:
+            - "encounter_hidden_cache_snare_broken"
+          care_effects:
+            hygiene: -20
+        snare_burned:
+          drop_keys:
+            - "encounter_hidden_cache_snare_burned"
+          care_effects:
+            hygiene: -5
+            mood: 2
     nodes:
       intro:
         text: "A faint metallic glint peeks through damp leaves. The air hums with latent energy."
         options:
           - key: leave
             label: "Leave it alone"
+            next_node: leave_cache
             outcome: leave_cache
           - key: search_direct
             label: "Reach in and grab it"
@@ -74,15 +658,16 @@ global:
             next_node: scouted_cache
             requires:
               special_ability_tags: ["scouting", "discovery"]
-            timer_seconds: 75
       cache_result:
         text: "You plunge your hand into the leaves. A sprung snare tightens around your wrist!"
         options:
           - key: break_free
             label: "Break the snare"
+            next_node: snare_broken
             outcome: snare_broken
           - key: burn_snare
             label: "Use a fire ability to scorch the rope"
+            next_node: snare_burned
             outcome: snare_burned
             requires:
               special_ability_tags: ["fire"]
@@ -91,95 +676,1045 @@ global:
         options:
           - key: disarm
             label: "Disarm the rune trap"
+            next_node: cache_disarmed
             outcome: cache_disarmed
           - key: mark_for_later
             label: "Mark the spot for return"
+            next_node: cache_marked
             outcome: cache_marked
+      leave_cache:
+        conclusion: true
+        outcome: leave_cache
+        text: "You back away, letting the forest reclaim whatever treasure lies beneath."
+        status: completed
+      cache_disarmed:
+        conclusion: true
+        outcome: cache_disarmed
+        text: "Skillful claws trace the runes, and the cache opens with a satisfying click."
+        status: completed
+      cache_marked:
+        conclusion: true
+        outcome: cache_marked
+        text: "You notch the surrounding bark, planning to return when the hazards fade."
+        status: completed
+      snare_broken:
+        conclusion: true
+        outcome: snare_broken
+        text: "A sharp yank snaps the trap, though the sting lingers on your wrist."
+        status: completed
+      snare_burned:
+        conclusion: true
+        outcome: snare_burned
+        text: "Flames lick the rope to ash, freeing you before the trap can tighten again."
+        status: completed
 
-worlds:
-  ember-fields:
-    - slug: ember_flare_ambush
-      title: "Crackle in the Distance"
-      summary: "Flames dance unexpectedly along the canyon rim."
-      base_weight: 1.2
-      requirement_tags:
-        - prefix
-        - "ability:fire"
-        - "type:ability"
-      nodes:
-        intro:
-          text: "An eruption of sparks rains down from the ridge. A shadowy ambusher circles above."
-          options:
-            - key: press_on
-              label: "Dash through the embers"
-              next_node: run_through
-            - key: ember_guard
-              label: "%{pet_name} raises a protective ember shield"
-              next_node: guarded_push
-              requires:
-                special_abilities: ["ember_guardian"]
-              timer_seconds: 60
-            - key: intimidate
-              label: "Roar back at the ambusher"
-              outcome: intimidate_success
-              requires:
-                special_ability_tags: ["intimidation"]
-        run_through:
-          text: "You sprint through the curtain of sparks. Heat sears your fur, but the path clears."
-          options:
-            - key: regroup
-              label: "Regroup once you reach cover"
-              outcome: run_through_regroup
-        guarded_push:
-          text: "%{pet_name}'s ember shield blooms outward, sheltering the party as the flames part."
-          options:
-            - key: counterstrike
-              label: "Counter the ambusher"
-              outcome: shield_counter
+  - slug: ember_flare_ambush
+    title: "Crackle in the Distance"
+    summary: "Flames dance unexpectedly along the canyon rim."
+    weight_tier: rare
+    tags: ["fire", "wilds"]
+    requirement_tags:
+      - prefix
+      - "ability:fire"
+      - "type:ability"
+    requires_requirement_tags:
+      - "ability:fire"
+    associations:
+      - world_keys: ["ember_fields"]
+      - world_tags: ["fire"]
+      - world_keys: ["ember_fields"]
+        affix_keys: ["scorching", "toxic"]
+    rewards:
+      outcomes:
+        intimidate_success:
+          drop_keys:
+            - "encounter_ember_flare_ambush_intimidate_success"
+        run_through_regroup:
+          drop_keys:
+            - "encounter_ember_flare_ambush_run_through_regroup"
+        shield_counter:
+          drop_keys:
+            - "encounter_ember_flare_ambush_shield_counter"
+    nodes:
+      intro:
+        text: "An eruption of sparks rains down from the ridge. A shadowy ambusher circles above."
+        options:
+          - key: press_on
+            label: "Dash through the embers"
+            success_chance: 0.6
+            next_node: run_through
+            failure_next_node: shield_counter
+            failure_outcome: shield_counter
+          - key: ember_guard
+            label: "%{pet_name} raises a protective ember shield"
+            next_node: guarded_push
+            requires:
+              special_abilities: ["ember_guardian"]
+          - key: intimidate
+            label: "Roar back at the ambusher"
+            next_node: intimidate_success
+            outcome: intimidate_success
+            requires:
+              special_ability_tags: ["intimidation"]
+      run_through:
+        text: "You sprint through the curtain of sparks. Heat sears your fur, but the path clears."
+        options:
+          - key: regroup
+            label: "Regroup once you reach cover"
+            next_node: run_through_regroup
+            outcome: run_through_regroup
+      guarded_push:
+        text: "%{pet_name}'s ember shield blooms outward, sheltering the party as the flames part."
+        options:
+          - key: counterstrike
+            label: "Counter the ambusher"
+            next_node: shield_counter
+            outcome: shield_counter
+      intimidate_success:
+        conclusion: true
+        outcome: intimidate_success
+        text: "Your roar drowns out the sparks, sending the ambusher fleeing into the smoke."
+        status: completed
+      run_through_regroup:
+        conclusion: true
+        outcome: run_through_regroup
+        text: "You break through the blaze and rally the team in a charred clearing."
+        status: completed
+      shield_counter:
+        conclusion: true
+        outcome: shield_counter
+        text: "A surge of embers rebounds toward the attacker, forcing the fight to end on your terms."
+        status: completed
 
-  aurora-tundra:
-    - slug: frozen_relic
-      title: "Frozen Relic"
-      summary: "An ancient relic is frozen within sapphire ice."
-      base_weight: 1.0
-      requirement_tags:
-        - prefix
-        - "ability:ice"
-        - "type:ability"
-      nodes:
-        intro:
-          text: "An ancient relic rests within sapphire ice. Frozen runes shimmer across its surface."
-          options:
-            - key: chip_away
-              label: "Chip away at the ice"
-              next_node: manual_break
-            - key: focus_heat
-              label: "%{pet_name} focuses elemental heat"
-              next_node: focus_heat
-              requires:
-                special_ability_tags: ["fire"]
-              timer_seconds: 90
-            - key: resonate_song
-              label: "%{pet_name}'s lullaby resonates with the ice"
-              next_node: resonance
-              requires:
-                special_abilities: ["aether_song"]
-              timer_seconds: 120
-        manual_break:
-          text: "You chip away carefully, but fractures spider through the relic."
-          options:
-            - key: salvage
-              label: "Salvage the remaining shards"
-              outcome: manual_salvage
-        focus_heat:
-          text: "Focused flames melt the ice evenly, revealing the relic unharmed."
-          options:
-            - key: claim
-              label: "Claim the relic"
-              outcome: relic_recovered
-        resonance:
-          text: "%{pet_name}'s song vibrates through the ice. Hidden compartments along the cave walls unlock."
-          options:
-            - key: explore
-              label: "Explore the newly opened alcove"
-              outcome: resonance_cache
+  - slug: frozen_relic
+    title: "Frozen Relic"
+    summary: "An ancient relic is frozen within sapphire ice."
+    weight_tier: uncommon
+    tags: ["ice", "ancient"]
+    requirement_tags:
+      - prefix
+      - "ability:ice"
+      - "type:ability"
+    requires_requirement_tags:
+      - "ability:ice"
+    associations:
+      - world_keys: ["aurora_tundra"]
+      - world_keys: ["aurora_tundra"]
+        affix_keys: ["chilling", "celestial"]
+      - world_keys: ["aurora_tundra"]
+        suffix_keys: ["of_whispers", "of_legends"]
+    rewards:
+      outcomes:
+        manual_salvage:
+          drop_keys:
+            - "encounter_frozen_relic_manual_salvage"
+        relic_recovered:
+          drop_keys:
+            - "encounter_frozen_relic_relic_recovered"
+    nodes:
+      intro:
+        text: "An ancient relic rests within sapphire ice. Frozen runes shimmer across its surface."
+        options:
+          - key: chip_away
+            label: "Chip away at the ice"
+            next_node: manual_break
+          - key: focus_heat
+            label: "%{pet_name} focuses elemental heat"
+            next_node: focus_heat
+            requires:
+              special_ability_tags: ["fire"]
+          - key: resonate_song
+            label: "%{pet_name}'s lullaby resonates with the ice"
+            next_node: resonance
+            requires:
+              special_abilities: ["aether_song"]
+      manual_break:
+        text: "You chip away carefully, but fractures spider through the relic."
+        options:
+          - key: salvage
+            label: "Salvage the remaining shards"
+            next_node: manual_salvage
+            outcome: manual_salvage
+      focus_heat:
+        text: "Focused flames melt the ice evenly, revealing the relic unharmed."
+        options:
+          - key: claim
+            label: "Claim the relic"
+            next_node: relic_recovered
+            outcome: relic_recovered
+      resonance:
+        text: "%{pet_name}'s song vibrates through the ice. Hidden compartments along the cave walls unlock."
+        options:
+          - key: explore
+            label: "Explore the newly opened alcove"
+            next_node: relic_recovered
+            outcome: relic_recovered
+      manual_salvage:
+        conclusion: true
+        outcome: manual_salvage
+        text: "You gather the fractured shards, determined to study what remains."
+        status: completed
+      relic_recovered:
+        conclusion: true
+        outcome: relic_recovered
+        text: "The relic emerges pristine, humming softly in your outstretched paws."
+        status: completed
+
+  - slug: verdant_guardians_vigil
+    title: "Guardians' Vigil"
+    summary: "Heartwood wardens test your resolve."
+    weight_tier: uncommon
+    tags: ["forest", "verdant", "trial"]
+    requirement_tags:
+      - base
+      - prefix
+      - "type:pet_type"
+      - "pet_type:grass"
+    requires_requirement_tags:
+      - "pet_type:grass"
+    associations:
+      - world_keys: ["verdant_canopy"]
+        world_tags: ["forest", "verdant"]
+    rewards:
+      outcomes:
+        homage_pass:
+          drop_keys:
+            - "encounter_verdant_guardians_homage_pass"
+        homage_gift:
+          drop_keys:
+            - "encounter_verdant_guardians_homage_gift"
+        rally_success:
+          drop_keys:
+            - "encounter_verdant_guardians_rally_success"
+        canopy_paths:
+          drop_keys:
+            - "encounter_verdant_guardians_canopy_paths"
+    nodes:
+      intro:
+        text: "Ancient sentinels stir as you enter the heartwood terrace."
+        options:
+          - key: bow
+            label: "Offer a respectful bow"
+            next_node: homage
+          - key: rally
+            label: "Raise battle standards"
+            next_node: rally_success
+            outcome: rally_success
+            requires:
+              special_ability_tags: ["leadership", "valor"]
+          - key: commune
+            label: "%{pet_name} communes with the canopy"
+            next_node: canopy_communion
+            requires:
+              special_ability_tags: ["nature", "spirit"]
+      homage:
+        text: "The wardens observe silently, gauging your sincerity."
+        options:
+          - key: await
+            label: "Await their judgment"
+            next_node: homage_pass
+            outcome: homage_pass
+          - key: offer
+            label: "Offer gathered herbs"
+            next_node: homage_gift
+            outcome: homage_gift
+      canopy_communion:
+        text: "Verdant currents swirl, revealing hidden paths."
+        options:
+          - key: mark_paths
+            label: "Mark the revealed paths"
+            next_node: canopy_paths
+            outcome: canopy_paths
+      canopy_paths:
+        conclusion: true
+        outcome: canopy_paths
+        text: "Glowing runes blaze to life, charting hidden routes through the canopy."
+        status: completed
+      homage_gift:
+        conclusion: true
+        outcome: homage_gift
+        text: "You present humble offerings and the wardens nod in serene approval."
+        status: completed
+      homage_pass:
+        conclusion: true
+        outcome: homage_pass
+        text: "The wardens part, granting safe passage deeper into the grove."
+        status: completed
+      rally_success:
+        conclusion: true
+        outcome: rally_success
+        text: "Battle standards snap in the wind as the guardians salute your valor."
+        status: completed
+
+  - slug: beast_wildcall_trial
+    title: "Wildcall Trial"
+    summary: "Ancestral totems awaken when beast-led parties enter the trail."
+    weight_tier: rare
+    tags: ["trial", "beast"]
+    requirement_tags:
+      - base
+      - "type:pet_type"
+      - "pet_type:beast"
+    requires_requirement_tags:
+      - "pet_type:beast"
+    associations:
+      - world_keys: ["glimmering_trail", "starter_zone"]
+        world_tags: ["starter", "forest"]
+      - suffix_keys: ["of_the_hunt"]
+    rewards:
+      outcomes:
+        wildcall_answered:
+          drop_keys:
+            - "encounter_beast_wildcall_answered"
+        wildcall_challenged:
+          drop_keys:
+            - "encounter_beast_wildcall_challenged"
+        wildcall_scouted:
+          drop_keys:
+            - "encounter_beast_wildcall_scouted"
+    nodes:
+      intro:
+        text: "Obsidian totems hum in harmony with your beast companions, demanding a display of unity."
+        options:
+          - key: answer_howl
+            label: "Answer with a rallying howl"
+            next_node: wildcall_answered
+            outcome: wildcall_answered
+          - key: challenge_spirit
+            label: "Challenge the guardian spirit"
+            next_node: wildcall_challenged
+            outcome: wildcall_challenged
+          - key: scout_totems
+            label: "%{pet_name} scouts the perimeter for hidden sigils"
+            next_node: wildcall_scouted
+            outcome: wildcall_scouted
+            requires:
+              special_ability_tags: ["scouting", "insight"]
+      wildcall_answered:
+        conclusion: true
+        outcome: wildcall_answered
+        text: "Your chorus blends with the totems, and ancestral echoes grin approvingly."
+        status: completed
+      wildcall_challenged:
+        conclusion: true
+        outcome: wildcall_challenged
+        text: "You stand firm before the guardian spirit until it bows and fades."
+        status: completed
+      wildcall_scouted:
+        conclusion: true
+        outcome: wildcall_scouted
+        text: "Secret sigils flare, revealing beast-friendly paths through the wilds."
+        status: completed
+
+  - slug: verdant_spirit_parley
+    title: "Verdant Spirit Parley"
+    summary: "Heartwood spirits invite verdant-aligned parties deeper into the canopy."
+    weight_tier: rare
+    tags: ["forest", "spirit"]
+    requirement_tags:
+      - base
+      - "type:pet_type"
+      - "pet_type:grass"
+    requires_requirement_tags:
+      - "pet_type:grass"
+    associations:
+      - world_keys: ["verdant_canopy"]
+        world_tags: ["forest", "verdant"]
+    rewards:
+      outcomes:
+        verdant_growth_shared:
+          drop_keys:
+            - "encounter_verdant_spirit_growth_shared"
+        verdant_passage:
+          drop_keys:
+            - "encounter_verdant_spirit_passage"
+        verdant_weave:
+          drop_keys:
+            - "encounter_verdant_spirit_weave"
+    nodes:
+      intro:
+        text: "Greenfire silhouettes emerge from the trunks, acknowledging your verdant allies."
+        options:
+          - key: share_growth
+            label: "Share growth rituals"
+            next_node: verdant_growth_shared
+            outcome: verdant_growth_shared
+          - key: petition
+            label: "Petition for heartwood passage"
+            next_node: verdant_passage
+            outcome: verdant_passage
+          - key: weave
+            label: "%{pet_name} weaves pollen wards"
+            next_node: verdant_weave
+            outcome: verdant_weave
+            requires:
+              special_ability_tags: ["nature", "support"]
+      verdant_growth_shared:
+        conclusion: true
+        outcome: verdant_growth_shared
+        text: "Your party shares ancient rites and the spirits respond with flourishing vines."
+        status: completed
+      verdant_passage:
+        conclusion: true
+        outcome: verdant_passage
+        text: "Pathways part through the heartwood, inviting you deeper into its secrets."
+        status: completed
+      verdant_weave:
+        conclusion: true
+        outcome: verdant_weave
+        text: "Pollen wards shimmer in tandem with your magic, sealing a new pact."
+        status: completed
+
+  - slug: aurora_crystal_convergence
+    title: "Crystal Convergence"
+    summary: "Frostbound songstones resonate when ice casters travel together."
+    weight_tier: rare
+    tags: ["ice", "ancient"]
+    requirement_tags:
+      - base
+      - "type:ability"
+      - "ability:ice"
+    requires_requirement_tags:
+      - "ability:ice"
+    associations:
+      - world_keys: ["aurora_tundra"]
+        world_tags: ["ice", "tundra"]
+      - affix_keys: ["chilling"]
+    rewards:
+      outcomes:
+        crystal_harmony:
+          drop_keys:
+            - "encounter_aurora_crystal_harmony"
+        crystal_harvest:
+          drop_keys:
+            - "encounter_aurora_crystal_harvest"
+        crystal_shield:
+          drop_keys:
+            - "encounter_aurora_crystal_shield"
+    nodes:
+      intro:
+        text: "Crystal monoliths align around your frost casters, revealing a hidden vault."
+        options:
+          - key: harmonize
+            label: "Harmonize with the crystals"
+            next_node: crystal_harmony
+            outcome: crystal_harmony
+          - key: harvest
+            label: "Harvest condensed mana"
+            next_node: crystal_harvest
+            outcome: crystal_harvest
+          - key: shield
+            label: "%{pet_name} raises frost wards"
+            next_node: crystal_shield
+            outcome: crystal_shield
+            requires:
+              special_ability_tags: ["protection", "ice"]
+      crystal_harmony:
+        conclusion: true
+        outcome: crystal_harmony
+        text: "The songstones hum in tandem with your chorus, revealing a lattice of hidden power."
+        status: completed
+      crystal_harvest:
+        conclusion: true
+        outcome: crystal_harvest
+        text: "You siphon condensed mana into crystal vials, each glowing with aurora light."
+        status: completed
+      crystal_shield:
+        conclusion: true
+        outcome: crystal_shield
+        text: "%{pet_name}'s frost ward solidifies, scattering the ambient magic safely."
+        status: completed
+
+  - slug: tempest_skydance_assembly
+    title: "Skydance Assembly"
+    summary: "Storm riders gather when wind adepts answer the tempest's call."
+    weight_tier: rare
+    tags: ["storm", "air"]
+    requirement_tags:
+      - prefix
+      - "type:ability"
+      - "ability:wind"
+    requires_requirement_tags:
+      - "ability:wind"
+    associations:
+      - affix_keys: ["tempestuous"]
+        world_tags: ["wilds"]
+    rewards:
+      outcomes:
+        skydance_joined:
+          drop_keys:
+            - "encounter_tempest_skydance_joined"
+        skydance_anchored:
+          drop_keys:
+            - "encounter_tempest_skydance_anchored"
+        skydance_surge:
+          drop_keys:
+            - "encounter_tempest_skydance_surge"
+    nodes:
+      intro:
+        text: "Tempest kites spiral overhead, syncing with your wind adepts' pulse."
+        options:
+          - key: join_dance
+            label: "Join the skydance"
+            next_node: skydance_joined
+            outcome: skydance_joined
+          - key: anchor
+            label: "Anchor the currents"
+            next_node: skydance_anchored
+            outcome: skydance_anchored
+          - key: surge
+            label: "%{pet_name} unleashes a gale surge"
+            next_node: skydance_surge
+            outcome: skydance_surge
+            requires:
+              special_ability_tags: ["wind", "momentum"]
+      skydance_joined:
+        conclusion: true
+        outcome: skydance_joined
+        text: "You weave into the skydance, each loop amplifying your party's grace."
+        status: completed
+      skydance_anchored:
+        conclusion: true
+        outcome: skydance_anchored
+        text: "Anchored gusts stabilize the currents, impressing the storm riders."
+        status: completed
+      skydance_surge:
+        conclusion: true
+        outcome: skydance_surge
+        text: "%{pet_name}'s gale tears open the clouds, revealing a clear path ahead."
+        status: completed
+
+  - slug: toxic_spore_bloom
+    title: "Blighted Spore Bloom"
+    summary: "Toxic blooms react to skilled poison casters."
+    weight_tier: rare
+    tags: ["poison", "wilds"]
+    requirement_tags:
+      - prefix
+      - "type:ability"
+      - "ability:poison"
+    requires_requirement_tags:
+      - "ability:poison"
+    associations:
+      - affix_keys: ["toxic"]
+        world_tags: ["wilds"]
+    rewards:
+      outcomes:
+        spores_harvested:
+          drop_keys:
+            - "encounter_toxic_spore_harvested"
+        bloom_neutralized:
+          drop_keys:
+            - "encounter_toxic_spore_neutralized"
+        spores_redirected:
+          drop_keys:
+            - "encounter_toxic_spore_redirected"
+    nodes:
+      intro:
+        text: "A blighted blossom unfurls, releasing spores that mirror your poison arts."
+        options:
+          - key: harvest_spores
+            label: "Harvest the spores"
+            next_node: spores_harvested
+            outcome: spores_harvested
+          - key: neutralize
+            label: "Neutralize the bloom"
+            next_node: bloom_neutralized
+            outcome: bloom_neutralized
+          - key: direct_flow
+            label: "%{pet_name} directs the spore flow"
+            next_node: spores_redirected
+            outcome: spores_redirected
+            requires:
+              special_ability_tags: ["poison", "control"]
+      bloom_neutralized:
+        conclusion: true
+        outcome: bloom_neutralized
+        text: "Toxic petals shrivel under your command, leaving the meadow breathing easier."
+        status: completed
+      spores_harvested:
+        conclusion: true
+        outcome: spores_harvested
+        text: "You bottle the luminous spores for later study."
+        status: completed
+      spores_redirected:
+        conclusion: true
+        outcome: spores_redirected
+        text: "%{pet_name} sweeps the spore cloud aside, revealing hidden sprouts beneath."
+        status: completed
+
+  - slug: whispering_shade_cabal
+    title: "Whispering Shade Cabal"
+    summary: "Shadowcasters are invited to a secretive exchange."
+    weight_tier: rare
+    tags: ["shadow", "cabal"]
+    requirement_tags:
+      - suffix
+      - "type:ability"
+      - "ability:shadow"
+    requires_requirement_tags:
+      - "ability:shadow"
+    associations:
+      - suffix_keys: ["of_whispers"]
+        world_tags: ["forest"]
+    rewards:
+      outcomes:
+        shade_trade:
+          drop_keys:
+            - "encounter_whispering_shade_trade"
+        shade_observed:
+          drop_keys:
+            - "encounter_whispering_shade_observed"
+        shade_bound:
+          drop_keys:
+            - "encounter_whispering_shade_bound"
+    nodes:
+      intro:
+        text: "Shade-veiled silhouettes emerge, intrigued by your shadow artes."
+        options:
+          - key: trade
+            label: "Trade secrets"
+            next_node: shade_trade
+            outcome: shade_trade
+          - key: observe
+            label: "Observe quietly"
+            next_node: shade_observed
+            outcome: shade_observed
+          - key: bind
+            label: "%{pet_name} binds excess umbra"
+            next_node: shade_bound
+            outcome: shade_bound
+            requires:
+              special_ability_tags: ["shadow", "binding"]
+      shade_trade:
+        conclusion: true
+        outcome: shade_trade
+        text: "Secrets slip between cloaked figures as you exchange forbidden lore."
+        status: completed
+      shade_observed:
+        conclusion: true
+        outcome: shade_observed
+        text: "You watch unseen as the cabal completes their silent rites."
+        status: completed
+      shade_bound:
+        conclusion: true
+        outcome: shade_bound
+        text: "%{pet_name}'s bindings tame wild shadows, earning approving nods."
+        status: completed
+
+  - slug: celestial_heavenly_meeting
+    title: "Heavenly Meeting"
+    summary: "Radiant envoys descend when mythic guardians travel with lightcasters."
+    weight_tier: legendary
+    tags: ["celestial", "mythic"]
+    requirement_tags:
+      - prefix
+      - "type:ability"
+      - "ability:light"
+      - "type:pet_type"
+      - "pet_type:mythic"
+    requires_requirement_tags:
+      - "ability:light"
+      - "pet_type:mythic"
+    associations:
+      - affix_keys: ["celestial"]
+      - suffix_keys: ["of_legends"]
+    rewards:
+      outcomes:
+        heavenly_audience:
+          drop_keys:
+            - "encounter_celestial_heavenly_audience"
+        heavenly_exchange:
+          drop_keys:
+            - "encounter_celestial_heavenly_exchange"
+        heavenly_vow:
+          drop_keys:
+            - "encounter_celestial_heavenly_vow"
+    nodes:
+      intro:
+        text: "Auric pillars open above as celestial envoys recognize your radiant, mythic party."
+        options:
+          - key: audience
+            label: "Accept an audience"
+            next_node: heavenly_audience
+            outcome: heavenly_audience
+          - key: exchange
+            label: "Exchange luminous artifacts"
+            next_node: heavenly_exchange
+            outcome: heavenly_exchange
+          - key: vow
+            label: "%{pet_name} swears a radiant vow"
+            next_node: heavenly_vow
+            outcome: heavenly_vow
+            requires:
+              special_ability_tags: ["light", "oath"]
+      heavenly_audience:
+        conclusion: true
+        outcome: heavenly_audience
+        text: "Radiant envoys grant you a private audience among the stars."
+        status: completed
+      heavenly_exchange:
+        conclusion: true
+        outcome: heavenly_exchange
+        text: "Artifacts shimmer between hands as celestial pacts are sealed."
+        status: completed
+      heavenly_vow:
+        conclusion: true
+        outcome: heavenly_vow
+        text: "%{pet_name}'s vow echoes across the firmament, binding the envoy to your cause."
+        status: completed
+
+  - slug: meadow_wandering_bloom
+    title: "Wandering Bloom"
+    summary: "A giant bloom drifts across the meadow, distributing pollen wisps."
+    weight_tier: common
+    tags: ["starter", "meadow"]
+    requirement_tags:
+      - base
+      - "type:ability"
+    associations:
+      - world_keys: ["whispering_meadow", "starter_zone"]
+        world_tags: ["starter", "meadow"]
+    rewards:
+      outcomes:
+        bloom_harmony:
+          drop_keys:
+            - "encounter_meadow_bloom_harmony"
+        bloom_rest:
+          drop_keys:
+            - "encounter_meadow_bloom_rest"
+        pollen_bottled:
+          drop_keys:
+            - "encounter_meadow_bloom_pollen_bottled"
+        pollen_released:
+          drop_keys:
+            - "encounter_meadow_bloom_pollen_released"
+    nodes:
+      intro:
+        text: "Soft pollen wisps swirl as a wandering bloom floats overhead."
+        options:
+          - key: nap
+            label: "Rest beneath the bloom"
+            next_node: bloom_rest
+            outcome: bloom_rest
+          - key: collect
+            label: "Collect pollen samples"
+            next_node: pollen_sample
+          - key: harmonize
+            label: "%{pet_name} sings a calming song"
+            next_node: bloom_harmony
+            outcome: bloom_harmony
+            requires:
+              special_ability_tags: ["song", "support"]
+      pollen_sample:
+        text: "The pollen glows faintly when gathered."
+        options:
+          - key: bottle
+            label: "Bottle the pollen"
+            next_node: pollen_bottled
+            outcome: pollen_bottled
+          - key: release
+            label: "Release it back into the breeze"
+            next_node: pollen_released
+            outcome: pollen_released
+      bloom_harmony:
+        conclusion: true
+        outcome: bloom_harmony
+        text: "The bloom drifts lower, sharing a gentle melody with your party."
+        status: completed
+      bloom_rest:
+        conclusion: true
+        outcome: bloom_rest
+        text: "You nap beneath the petals and wake refreshed, perfumed with pollen."
+        status: completed
+      pollen_bottled:
+        conclusion: true
+        outcome: pollen_bottled
+        text: "Carefully stoppered vials glow with captured meadow light."
+        status: completed
+      pollen_released:
+        conclusion: true
+        outcome: pollen_released
+        text: "You return the pollen to the breeze, and the bloom twirls appreciatively."
+        status: completed
+
+  - slug: meadow_caravan_rescue
+    title: "Wind-Hobbled Caravan"
+    summary: "A merchant wing-caravan is pinned by crosswinds in the Whispering Meadow."
+    weight_tier: uncommon
+    tags: ["starter", "meadow", "aid"]
+    requirement_tags:
+      - base
+      - "type:pet_type"
+    associations:
+      - world_keys: ["whispering_meadow"]
+        world_tags: ["starter", "meadow"]
+    rewards:
+      outcomes:
+        caravan_rescued:
+          drop_keys:
+            - "encounter_meadow_caravan_rescued"
+        caravan_celebration:
+          drop_keys:
+            - "encounter_meadow_caravan_celebration"
+        caravan_resupply:
+          drop_keys:
+            - "encounter_meadow_caravan_resupply"
+        caravan_sunpetal_cache:
+          drop_keys:
+            - "encounter_meadow_caravan_sunpetal_cache"
+    nodes:
+      intro:
+        text: "Canvas wings flap wildly as merchants struggle to keep carts grounded."
+        options:
+          - key: anchor_wagons
+            label: "Anchor the wagons with rope and stakes"
+            success_chance: 0.7
+            next_node: caravan_rescued
+            outcome: caravan_rescued
+            failure_next_node: lost_crate
+          - key: gust_lullaby
+            label: "%{pet_name} hums a breeze-calming lullaby"
+            next_node: caravan_celebration
+            outcome: caravan_celebration
+            requires:
+              special_ability_tags: ["wind", "song"]
+          - key: inspect_crates
+            label: "Inspect fallen crates"
+            next_node: lost_crate
+      lost_crate:
+        text: "A crate cracked open, spilling sunpetal concentrate along the grass."
+        options:
+          - key: haul_supplies
+            label: "Haul the crate back up"
+            success_chance: 0.6
+            next_node: caravan_resupply
+            outcome: caravan_resupply
+            failure_next_node: sunpetal_well
+          - key: brew_on_site
+            label: "Brew tonic on the spot"
+            next_node: sunpetal_well
+      sunpetal_well:
+        text: "The concentrate seeps into a shallow well, radiating warm light."
+        options:
+          - key: bottle_tonic
+            label: "Bottle the glowing tonic"
+            success_chance: 0.5
+            next_node: caravan_sunpetal_cache
+            outcome: caravan_sunpetal_cache
+            failure_next_node: caravan_resupply
+            failure_outcome: caravan_resupply
+          - key: healing_wave
+            label: "%{pet_name} channels the warmth"
+            next_node: caravan_sunpetal_cache
+            outcome: caravan_sunpetal_cache
+            requires:
+              special_ability_tags: ["healing"]
+      caravan_rescued:
+        conclusion: true
+        outcome: caravan_rescued
+        text: "Anchors hold and the caravan rolls on, gifting you rations for the assist."
+        status: completed
+      caravan_celebration:
+        conclusion: true
+        outcome: caravan_celebration
+        text: "Merchants strike up music around your breeze-song, sharing celebratory tonics."
+        status: completed
+      caravan_resupply:
+        conclusion: true
+        outcome: caravan_resupply
+        text: "You salvage enough goods to restock their pantry and yours."
+        status: completed
+      caravan_sunpetal_cache:
+        conclusion: true
+        outcome: caravan_sunpetal_cache
+        text: "Bottled sunpetal tonic shimmers in your pack, a secret thank-you from the meadow."
+        status: completed
+
+  - slug: meadow_gust_chorus
+    title: "Gust Chorus Trial"
+    summary: "Wind spirits weave songs through the meadow, daring your party to echo them."
+    weight_tier: rare
+    tags: ["starter", "meadow", "ritual"]
+    requirement_tags:
+      - base
+      - "type:ability"
+    associations:
+      - world_keys: ["whispering_meadow"]
+        world_tags: ["starter", "meadow"]
+    rewards:
+      outcomes:
+        chorus_harmony:
+          drop_keys:
+            - "encounter_meadow_chorus_harmony"
+        chorus_resonant_oath:
+          drop_keys:
+            - "encounter_meadow_chorus_resonant_oath"
+        chorus_soothing_dream:
+          drop_keys:
+            - "encounter_meadow_chorus_soothing_dream"
+        chorus_hidden_echo:
+          drop_keys:
+            - "encounter_meadow_chorus_hidden_echo"
+    nodes:
+      intro:
+        text: "Breezes form ringing chords around you, inviting a reply."
+        options:
+          - key: answer_call
+            label: "Answer the call with your own melody"
+            success_chance: 0.6
+            next_node: chorus_harmony
+            outcome: chorus_harmony
+            failure_next_node: whisper_maze
+          - key: resonant_oath
+            label: "%{pet_name} performs a breezeharp oath"
+            next_node: chorus_resonant_oath
+            outcome: chorus_resonant_oath
+            requires:
+              special_ability_tags: ["song", "spirit"]
+          - key: follow_whisper
+            label: "Follow the faintest whisper"
+            next_node: whisper_maze
+      whisper_maze:
+        text: "You chase echoes through looping grass tunnels."
+        options:
+          - key: rest_listen
+            label: "Rest and listen"
+            next_node: chorus_soothing_dream
+            outcome: chorus_soothing_dream
+          - key: press_on
+            label: "Press deeper toward the source"
+            success_chance: 0.45
+            next_node: chorus_hidden_echo
+            outcome: chorus_hidden_echo
+            failure_next_node: chorus_misstep
+      chorus_misstep:
+        text: "A burst of wind knocks you back, but the echo grows louder."
+        options:
+          - key: steady_breath
+            label: "Match the rhythm"
+            success_chance: 0.5
+            next_node: chorus_hidden_echo
+            outcome: chorus_hidden_echo
+            failure_next_node: chorus_soothing_dream
+            failure_outcome: chorus_soothing_dream
+          - key: guiding_song
+            label: "%{pet_name} hums a guiding song"
+            next_node: chorus_hidden_echo
+            outcome: chorus_hidden_echo
+            requires:
+              special_ability_tags: ["song", "calm"]
+      chorus_harmony:
+        conclusion: true
+        outcome: chorus_harmony
+        text: "Your melody blends with the chorus, and the winds reward your harmony."
+        status: completed
+      chorus_resonant_oath:
+        conclusion: true
+        outcome: chorus_resonant_oath
+        text: "%{pet_name}'s oath binds a breeze spirit to guide future travels."
+        status: completed
+      chorus_soothing_dream:
+        conclusion: true
+        outcome: chorus_soothing_dream
+        text: "You drift into a soothing dream, waking with calm hearts."
+        status: completed
+      chorus_hidden_echo:
+        conclusion: true
+        outcome: chorus_hidden_echo
+        text: "Deep within the tunnels you capture a rare echo string that hums in your pack."
+        status: completed
+
+  - slug: meadow_mistral_hideandseek
+    title: "Mistral Hide-and-Seek"
+    summary: "Wind sprites challenge travelers to follow their darting trails."
+    weight_tier: rare
+    tags: ["starter", "meadow", "whimsy"]
+    requirement_tags:
+      - base
+      - "type:ability"
+    associations:
+      - world_keys: ["whispering_meadow"]
+        world_tags: ["starter", "meadow"]
+    rewards:
+      outcomes:
+        mistral_playmate:
+          drop_keys:
+            - "encounter_meadow_mistral_playmate"
+        mistral_token:
+          drop_keys:
+            - "encounter_meadow_mistral_token"
+        mistral_drowsy:
+          drop_keys:
+            - "encounter_meadow_mistral_drowsy"
+        mistral_hidden_cache:
+          drop_keys:
+            - "encounter_meadow_mistral_hidden_cache"
+    nodes:
+      intro:
+        text: "Whirling motes giggle as they loop around your party, daring you to give chase."
+        options:
+          - key: play_along
+            label: "Play along with the sprites"
+            success_chance: 0.55
+            next_node: mistral_playmate
+            outcome: mistral_playmate
+            failure_next_node: lull_patch
+          - key: reed_song
+            label: "%{pet_name} matches their melody"
+            next_node: mistral_token
+            outcome: mistral_token
+            requires:
+              special_ability_tags: ["song", "wind"]
+          - key: track_trails
+            label: "Track the faint trails"
+            next_node: sprite_maze
+      sprite_maze:
+        text: "Dancing breezes criss-cross, forming a maze of cool gusts."
+        options:
+          - key: attentive_steps
+            label: "Step carefully through the gusts"
+            success_chance: 0.45
+            next_node: mistral_hidden_cache
+            outcome: mistral_hidden_cache
+            failure_next_node: lull_patch
+          - key: calming_whistle
+            label: "%{pet_name} whistles a calming tune"
+            next_node: mistral_hidden_cache
+            outcome: mistral_hidden_cache
+            requires:
+              special_ability_tags: ["calm", "wind"]
+      lull_patch:
+        text: "The sprites tire you out and shepherd you into a cushioned patch of clover."
+        options:
+          - key: nap
+            label: "Give in to the drowsiness"
+            next_node: mistral_drowsy
+            outcome: mistral_drowsy
+          - key: share_treats
+            label: "Share treats to get back in the game"
+            success_chance: 0.6
+            next_node: mistral_playmate
+            outcome: mistral_playmate
+            failure_next_node: mistral_drowsy
+            failure_outcome: mistral_drowsy
+      mistral_playmate:
+        conclusion: true
+        outcome: mistral_playmate
+        text: "The sprites crown you honorary playmates and scatter refreshing petals around your party."
+        status: completed
+      mistral_token:
+        conclusion: true
+        outcome: mistral_token
+        text: "Your melody impresses the sprites, who gift you a reed flute tuned to their winds."
+        status: completed
+      mistral_drowsy:
+        conclusion: true
+        outcome: mistral_drowsy
+        text: "You awake from a clover nap calmer, if slightly behind schedule."
+        status: completed
+      mistral_hidden_cache:
+        conclusion: true
+        outcome: mistral_hidden_cache
+        text: "Beyond the gusty maze you find a hollow log stuffed with wind-touched curios."
+        status: completed

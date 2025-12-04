@@ -5,9 +5,11 @@ class UserPetsController < ApplicationController
   before_action :refresh_pet_state, only: [:show, :interact_preview, :interact, :level_up, :energy_tick, :details_panel, :overview_panel, :level_up_panel]
 
   def index
-    @user_pets = current_user.user_pets.active.includes({ pet: :pet_types }, :rarity)
+    @user_pets = current_user.user_pets.active.includes({ pet: :pet_types }, :rarity, :pet_thought)
     @user_eggs = current_user.user_eggs.unhatched.includes(:egg).order(created_at: :asc)
     @active_collection = params[:collection].presence_in(%w[pets eggs]) || "pets"
+
+    PetThoughtRefresher.refresh!(@user_pets)
   end
 
   def show
@@ -39,19 +41,12 @@ class UserPetsController < ApplicationController
   def equip
     @user_pet = current_user.user_pets.find(params[:id])
     slot = params[:slot].to_i
-
-    previous_equipped = nil
-
-    UserPet.transaction do
-      current_equipped = current_user.user_pets.active.equipped.includes(:pet).sort_by { |up| -up.pet.power }
-
-      if current_equipped[slot]
-        previous_equipped = current_equipped[slot]
-        previous_equipped.update!(equipped: false)
-      end
-
-      @user_pet.update!(equipped: true)
+    unless slot.between?(0, User::ACTIVE_PET_SLOT_COUNT - 1)
+      head :unprocessable_entity and return
     end
+
+    previous_equipped = current_user.user_pets.find_by(active_slot: slot)
+    current_user.assign_pet_to_slot!(slot, @user_pet)
 
     respond_to do |format|
       format.turbo_stream { render :equip, locals: { previous_pet: previous_equipped } }
@@ -60,7 +55,8 @@ class UserPetsController < ApplicationController
   end
 
   def interact_preview
-    context = panel_context
+    context = params[:context].presence&.to_sym || :page
+    use_item = ActiveModel::Type::Boolean.new.cast(params[:use_item])
 
     if params[:cancel].present?
       render_action_panel(state: :idle, context: context) and return
@@ -99,7 +95,6 @@ class UserPetsController < ApplicationController
 
     requirements = payload[:requirements]
     energy_cost  = payload[:energy_cost]
-    has_items    = requirements.all? { |req| req[:quantity].to_i >= req[:required_quantity].to_i }
     has_energy   = @user_pet.energy.to_i >= energy_cost
 
     unless has_energy
@@ -112,34 +107,30 @@ class UserPetsController < ApplicationController
       return
     end
 
-    unless has_items
-      render_action_panel(
-        state: :error,
-        context: context,
-        message: "You need additional items for #{interaction.humanize.downcase}.",
-        requirements: requirements
-      )
-      return
-    end
+    care_item_options = CareItemResolver.new(current_user).available_for(interaction)
 
     render_action_panel(
       state: :confirm,
       context: context,
       interaction: interaction,
-      message: "#{interaction.humanize} will consume #{energy_cost} energy and use the listed items.",
+      message: "#{interaction.humanize} will consume #{energy_cost} energy. Items boost the effect if used.",
       requirements: requirements,
       energy_cost: energy_cost,
       needs_preview: payload[:needs_preview],
       personality_changes: payload[:personality_changes],
-      tracker_snapshot: payload[:tracker_snapshot]
+      tracker_snapshot: payload[:tracker_snapshot],
+      use_item: use_item,
+      care_item_options: care_item_options
     )
   end
 
   def unequip
     slot = params[:slot].to_i
-    sorted_equipped = current_user.user_pets.active.equipped.includes(:pet).sort_by { |up| -up.pet.power }
-    target_pet = sorted_equipped[slot]
-    target_pet&.update!(equipped: false)
+    unless slot.between?(0, User::ACTIVE_PET_SLOT_COUNT - 1)
+      head :unprocessable_entity and return
+    end
+    target_pet = current_user.user_pets.find_by(active_slot: slot)
+    current_user.clear_pet_slot!(slot)
 
     respond_to do |format|
       format.turbo_stream { render :unequip, locals: { target_pet: target_pet } }
@@ -196,25 +187,32 @@ class UserPetsController < ApplicationController
              end
 
     current_user.grant_player_experience!(GameConfig.player_exp_for_pet_level_up)
-    redirect_to @user_pet, notice: notice
+
+    respond_to do |format|
+      format.turbo_stream do
+        flash.now[:notice] = notice
+        render_panel_stream(panel_partial_for(:overview), panel_locals)
+      end
+      format.html { redirect_to @user_pet, notice: notice }
+    end
   end
 
   def destroy
-    pet_name       = @user_pet.name
-    glow_essence   = @user_pet.glow_essence_reward
-    stat           = current_user.user_stat || current_user.create_user_stat!
-    turbo_frame_id = request.headers["Turbo-Frame"]
-    frame_id       = turbo_frame_id.presence || view_context.dom_id(@user_pet)
-    pet_dom_id     = view_context.dom_id(@user_pet)
+    pet_name         = @user_pet.name
+    glow_essence     = @user_pet.glow_essence_reward
+    glow_currency    = Currency.find_by_key(:glow_essence)
+    glow_wallet      = glow_currency ? current_user.currency_wallet_for(glow_currency) : nil
+    turbo_frame_id   = request.headers["Turbo-Frame"]
+    frame_id         = turbo_frame_id.presence || view_context.dom_id(@user_pet)
+    pet_dom_id       = view_context.dom_id(@user_pet)
 
     total_after_release = nil
     replacement_pet     = nil
 
     UserPet.transaction do
-      stat.with_lock do
-        new_total = stat.glow_essence.to_i + glow_essence
-        stat.update_columns(glow_essence: new_total, updated_at: Time.current)
-        total_after_release = new_total
+      if glow_wallet
+        glow_wallet.credit!(glow_essence)
+        total_after_release = glow_wallet.balance
       end
       @user_pet.destroy!
       remaining_pets = current_user.user_pets.active.includes(:pet, :rarity, :egg)
@@ -222,6 +220,7 @@ class UserPetsController < ApplicationController
     end
     replacement_pet&.catch_up_energy!
 
+    total_after_release ||= glow_wallet&.balance.to_i || 0
     notice = "#{pet_name} was released. You gained #{glow_essence} Glow Essence (#{total_after_release} total)."
 
     respond_to do |format|
@@ -258,8 +257,10 @@ class UserPetsController < ApplicationController
 
   # POST /user_pets/:id/interact
   def interact
-    context = panel_context
+    context = params[:context].presence&.to_sym || :page
     interaction = params[:interaction_type]
+    use_item = params.key?(:use_item) ? ActiveModel::Type::Boolean.new.cast(params[:use_item]) : true
+    alert_metric = params[:alert_metric].presence
 
     if @user_pet.exploring?
       render_action_panel(
@@ -277,13 +278,17 @@ class UserPetsController < ApplicationController
       user: current_user,
       interaction_type: interaction,
       item_ids: params[:item_ids],
-      glow_boost: glow_boost
+      glow_boost: glow_boost,
+      use_items: use_item,
+      care_item: params[:care_item]
     )
 
     result = service.run!
     success_message = care_success_message(interaction, result)
+    helpers.record_care_alert_snooze!(alert_metric) if alert_metric.present?
     current_user.user_items.reload
     flash.now[:notice] = success_message
+    PetRequestService.new(@user_pet).complete_request!(status: "accepted")
 
     respond_to do |format|
       format.turbo_stream do
@@ -292,26 +297,33 @@ class UserPetsController < ApplicationController
         action_dom   = helpers.action_panel_dom_id(@user_pet)
         payload      = interaction_payload(interaction)
         requirements = payload&.dig(:requirements) || []
-        has_items    = requirements.all? { |req| req[:quantity].to_i >= req[:required_quantity].to_i }
 
-        panel_state, panel_message =
-          if payload.blank?
-            [:success, success_message]
-          elsif has_items
-            [:confirm, success_message]
-          else
-            [:error, "You need additional items for #{interaction.to_s.humanize.downcase}."]
-          end
+        panel_state = payload.present? ? :success : :success
+        panel_message = success_message
 
         energy_cost         = payload&.dig(:energy_cost)
         needs_preview       = payload&.dig(:needs_preview) || []
         personality_changes = payload&.dig(:personality_changes) || []
+
+        needs_snapshot = serialized_need_snapshot(@user_pet)
+
+        stats_dom   = helpers.pet_stats_dom_id(@user_pet)
+        alerts_dom  = helpers.care_alert_dom_id(@user_pet)
+        alerts_list = helpers.care_alerts_for(
+          @user_pet,
+          item_counts: helpers.care_item_counts_for(current_user)
+        )
 
         streams = [
           turbo_stream.update(
             info_dom,
             partial: "user_pets/info_body",
             locals: { user_pet: @user_pet, context: context, action_dom_id: action_dom }
+          ),
+          turbo_stream.update(
+            stats_dom,
+            partial: "user_pets/stats_grid",
+            locals: { user_pet: @user_pet }
           ),
           turbo_stream.replace(
             action_dom,
@@ -327,10 +339,20 @@ class UserPetsController < ApplicationController
               energy_cost: energy_cost,
               needs_preview: needs_preview,
               personality_changes: personality_changes,
-              tracker_snapshot: tracker_snapshot
+              tracker_snapshot: tracker_snapshot,
+              needs_snapshot: needs_snapshot,
+              use_item: use_item
             }
           )
         ]
+
+        if context == :detail_alert
+          streams << turbo_stream.replace(
+            alerts_dom,
+            partial: "pets/care_alerts",
+            locals: { pet: @user_pet, care_alerts: alerts_list }
+          )
+        end
 
         if flash.any?
           streams << turbo_stream.update(
@@ -350,7 +372,21 @@ class UserPetsController < ApplicationController
     end
   rescue UserPet::PetSleepingError, UserPet::NotEnoughEnergyError, PetCareService::CareError => e
     respond_to do |format|
-      format.turbo_stream { render_action_panel(state: :error, context: context, message: e.message) }
+      format.turbo_stream do
+        payload = interaction_payload(interaction)
+        render_action_panel(
+          state: :error,
+          context: context,
+          message: e.message,
+          requirements: payload&.dig(:requirements),
+          interaction: interaction,
+          energy_cost: payload&.dig(:energy_cost),
+          needs_preview: payload&.dig(:needs_preview) || [],
+          personality_changes: payload&.dig(:personality_changes) || [],
+          tracker_snapshot: payload&.dig(:tracker_snapshot),
+          care_item_options: CareItemResolver.new(current_user).available_for(interaction)
+        )
+      end
       format.html { redirect_to user_pet_path(@user_pet), alert: e.message }
     end
   end
@@ -438,7 +474,7 @@ class UserPetsController < ApplicationController
     end.compact
   end
 
-  def render_action_panel(state:, context:, message: nil, requirements: nil, interaction: nil, energy_cost: nil, needs_preview: [], personality_changes: [], tracker_snapshot: nil)
+  def render_action_panel(state:, context:, message: nil, requirements: nil, interaction: nil, energy_cost: nil, needs_preview: [], personality_changes: [], tracker_snapshot: nil, use_item: nil, care_item_options: [])
     requirements ||= []
     action_dom = helpers.action_panel_dom_id(@user_pet)
     energy_cost = energy_cost.to_i if energy_cost
@@ -464,7 +500,9 @@ class UserPetsController < ApplicationController
       preview_xp_before: xp_before,
       preview_xp_after: xp_after,
       preview_xp_gain: xp_gain,
-      tracker_snapshot: tracker_snapshot
+      tracker_snapshot: tracker_snapshot,
+      use_item: use_item,
+      care_item_options: care_item_options
     }
 
     respond_to do |format|
@@ -497,6 +535,7 @@ class UserPetsController < ApplicationController
         type: item_type,
         quantity: user_item&.quantity.to_i,
         required_quantity: 1,
+        optional: true,
         description: detail[:description] || detail["description"]
       }
     end
@@ -528,11 +567,23 @@ class UserPetsController < ApplicationController
     }
   end
 
+  def serialized_need_snapshot(pet)
+    %i[hunger hygiene boredom injury_level mood].map do |metric|
+      next unless pet.respond_to?(metric)
+      value = pet.send(metric).to_f
+      {
+        key: metric,
+        value: value,
+        percent: value.clamp(UserPet::NEEDS_MIN, UserPet::NEEDS_MAX)
+      }
+    end.compact
+  end
+
   private
 
   # Expect these helpers to exist elsewhere in your codebase.
   def set_user_pet
-    @user_pet = current_user.user_pets.find(params[:id])
+    @user_pet = current_user.user_pets.includes(:pet, :rarity, :pet_thought).find(params[:id])
   end
 
   def refresh_pet_state
@@ -540,6 +591,10 @@ class UserPetsController < ApplicationController
 
     ticks = @user_pet.catch_up_energy!
     @user_pet.catch_up_needs!(care_ticks: ticks)
+    @user_pet.accrue_held_coins!
+    @user_pet.ensure_sleep_state!
+    PetThoughtRefresher.refresh!(@user_pet)
+    PetRequestService.new(@user_pet).refresh_request!
   end
 
   def panel_context
@@ -558,30 +613,17 @@ class UserPetsController < ApplicationController
   end
 
   def render_panel(type, extra_locals: {})
-    partial =
-      case type
-      when :details then "user_pets/panel_details"
-      when :overview then "user_pets/panel_overview"
-      when :level_up then "user_pets/level_up_panel"
-      else
-        "user_pets/panel_overview"
-      end
-
-    locals   = { user_pet: @user_pet }.merge(extra_locals)
+    partial = panel_partial_for(type)
+    locals = panel_locals(extra_locals)
     frame_id = helpers.user_pet_panel_dom_id(@user_pet)
 
     respond_to do |format|
-      format.turbo_stream do
-        render turbo_stream: turbo_stream.replace(
-          frame_id,
-          partial: partial,
-          locals: locals
-        )
-      end
-
+      format.turbo_stream { render_panel_stream(partial, locals, frame_id) }
       format.html do
         if turbo_frame_request?
-          render partial: partial, locals: locals, formats: :html
+          html_content = render_to_string(partial: partial, locals: locals, formats: [:html])
+          frame_html = view_context.tag.turbo_frame(id: frame_id) { html_content }
+          render html: frame_html
         else
           redirect_to user_pet_path(@user_pet)
         end
@@ -644,5 +686,22 @@ class UserPetsController < ApplicationController
 
     redirect_target = successor ? user_pet_path(successor) : user_pets_path
     redirect_to redirect_target, alert: notice
+  end
+
+  def panel_partial_for(type)
+    case type
+    when :details then "user_pets/panel_details"
+    when :level_up then "user_pets/level_up_panel"
+    else
+      "user_pets/panel_overview"
+    end
+  end
+
+  def panel_locals(extra = {})
+    { user_pet: @user_pet }.merge(extra)
+  end
+
+  def render_panel_stream(partial, locals, frame_id = helpers.user_pet_panel_dom_id(@user_pet))
+    render turbo_stream: turbo_stream.replace(frame_id, partial: partial, locals: locals)
   end
 end

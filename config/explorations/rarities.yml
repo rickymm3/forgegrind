@@ -1,0 +1,19 @@
+rarities:
+  common:
+    label: "Common"
+    color: "#94a3b8"
+  uncommon:
+    label: "Uncommon"
+    color: "#34d399"
+  rare:
+    label: "Rare"
+    color: "#60a5fa"
+  epic:
+    label: "Epic"
+    color: "#a855f7"
+  legendary:
+    label: "Legendary"
+    color: "#f59e0b"
+  mythic:
+    label: "Mythic"
+    color: "#f97316"

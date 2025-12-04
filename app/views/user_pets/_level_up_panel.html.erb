@@ -20,7 +20,7 @@
   </div>
 
   <div class="level-up-panel__body">
-    <%= form_with url: level_up_user_pet_path(user_pet), method: :post, data: { turbo_frame: "_top" }, class: "level-up-panel__form" do |f| %>
+    <%= form_with url: level_up_user_pet_path(user_pet), method: :post, class: "level-up-panel__form" do |f| %>
       <div class="level-up-panel__field">
         <label for="held_user_item_id" class="level-up-panel__label">Hold an item (optional)</label>
         <% if leveling_items.present? %>
@@ -38,14 +38,10 @@
 
       <div class="level-up-panel__actions">
         <%= f.submit "Confirm Level Up", class: "level-up-panel__primary" %>
-        <%= button_to "Cancel",
-                      details_panel_user_pet_path(user_pet, format: :turbo_stream),
-                      method: :get,
-                      form: {
-                        class: "level-up-panel__cancel-form",
-                        data: { turbo_frame: user_pet_panel_dom_id(user_pet) }
-                      },
-                      class: "level-up-panel__secondary" %>
+        <%= link_to "Cancel",
+                    details_panel_user_pet_path(user_pet),
+                    class: "level-up-panel__secondary",
+                    data: { turbo_frame: user_pet_panel_dom_id(user_pet) } %>
       </div>
     <% end %>
   </div>

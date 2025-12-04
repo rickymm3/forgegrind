@@ -6,7 +6,9 @@
   <p class="pet-bar__value"
      data-pet-display-target="energyValue"
      data-base-value="<%= user_pet.energy %>"
-     data-max-value="<%= UserPet::MAX_ENERGY %>">
+     data-max-value="<%= UserPet::MAX_ENERGY %>"
+     data-sleep-threshold="<%= UserPet::SLEEP_THRESHOLD %>"
+     data-wake-threshold="<%= UserPet::WAKE_THRESHOLD %>">
     <span class="pet-energy__total"><%= user_pet.energy %> / <%= UserPet::MAX_ENERGY %></span>
   </p>
   <div class="pet-bar__track">
@@ -16,6 +18,20 @@
          data-max-value="<%= UserPet::MAX_ENERGY %>"
          style="width: <%= energy_percent %>%"></div>
   </div>
+  <div class="pet-energy__delta hidden"
+       data-pet-display-target="energyDelta">
+    <span class="pet-energy__delta-segment"
+          data-pet-display-target="energyDeltaBefore"><%= user_pet.energy %></span>
+    <span class="pet-energy__delta-arrow">→</span>
+    <span class="pet-energy__delta-segment"
+          data-pet-display-target="energyDeltaAfter"><%= user_pet.energy %></span>
+    <span class="pet-energy__delta-change"
+          data-pet-display-target="energyDeltaChange"></span>
+  </div>
+  <p class="pet-energy__alert hidden"
+     data-pet-display-target="energySleepAlert">
+    <%= user_pet.name.presence || user_pet.pet.name %> will fall asleep until reaching <%= UserPet::WAKE_THRESHOLD %> EN.
+  </p>
   <% if user_pet.energy >= UserPet::MAX_ENERGY %>
     <p class="pet-energy__status">Energy is at max.</p>
   <% else %>

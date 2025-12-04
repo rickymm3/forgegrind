@@ -4,6 +4,7 @@ class UsersController < ApplicationController
   def show
     @user = current_user
     @stat = @user.ensure_user_stat
+    @currency_balances = helpers.currency_balances_for(@user)
     @attribute_stats = [
       { label: "HP",         key: :hp_level },
       { label: "Attack",     key: :attack_level },

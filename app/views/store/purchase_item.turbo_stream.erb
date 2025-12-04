@@ -1,0 +1,32 @@
+<% currencies = currency_balances_for(current_user) %>
+<% coins    = currencies.find { |c| c.name == "Coins" } %>
+<% diamonds = currencies.find { |c| c.name == "Diamonds" } %>
+
+<% if coins %>
+  <%= turbo_stream.update(coins.dom_id || currency_dom_id("Coins")) do %>
+    <%= number_with_delimiter(coins.amount.to_i) %>
+  <% end %>
+<% end %>
+
+<% if diamonds %>
+  <%= turbo_stream.update(diamonds.dom_id || currency_dom_id("Diamonds")) do %>
+    <%= number_with_delimiter(diamonds.amount.to_i) %>
+  <% end %>
+<% end %>
+
+<%= turbo_stream.replace "currency_balances", partial: "shared/currency_badges", locals: { currencies: currencies } %>
+
+<% if @purchase_error.present? %>
+  <%= turbo_stream.append "toast-container" do %>
+    <%= render "shared/toast", message: @purchase_error, theme: :error %>
+  <% end %>
+<% elsif @purchased_offer.present? %>
+  <% item = @purchased_offer[:item] %>
+  <% quantity = @purchased_offer[:quantity].to_i %>
+  <% currency = @purchased_offer[:currency] %>
+  <% price    = @purchased_offer[:price] %>
+  <% label    = currency ? "#{price} #{currency.name}" : price %>
+  <%= turbo_stream.append "toast-container" do %>
+    <%= render "shared/toast", message: "+#{quantity} #{item.name} (#{label})", theme: :success %>
+  <% end %>
+<% end %>

@@ -42,3 +42,1012 @@ forest:
       type: counter
       counter_key: forest_explorer_runs
       threshold: 5
+blazing_zone_drops:
+  exp: 25
+  diamonds: 40
+  items:
+    ember_shard:
+      quantity: 2
+      chance: 0.6
+    fire_stone:
+      quantity: 1
+      chance: 0.25
+  flags: {}
+frozen_zone_drops:
+  exp: 30
+  diamonds: 60
+  items:
+    frost_splitter:
+      quantity: 1
+      chance: 0.5
+    ice_stone:
+      quantity: 1
+      chance: 0.25
+  flags: {}
+storm_zone_drops:
+  exp: 35
+  diamonds: 80
+  items:
+    storm_core:
+      quantity: 1
+      chance: 0.4
+    wind_stone:
+      quantity: 1
+      chance: 0.3
+  flags: {}
+toxic_zone_drops:
+  exp: 28
+  diamonds: 55
+  items:
+    venom_gland:
+      quantity: 1
+      chance: 0.45
+    poison_stone:
+      quantity: 1
+      chance: 0.25
+  flags: {}
+celestial_zone_drops:
+  exp: 45
+  diamonds: 120
+  items:
+    stardust_fragment:
+      quantity: 2
+      chance: 0.4
+    light_stone:
+      quantity: 1
+      chance: 0.2
+  flags: {}
+verdant_zone_drops:
+  exp: 26
+  diamonds: 50
+  items:
+    verdant_seed:
+      quantity: 2
+      chance: 0.55
+    grass_stone:
+      quantity: 1
+      chance: 0.25
+  flags: {}
+legendary_zone_drops:
+  exp: 60
+  diamonds: 200
+  items:
+    legendary_core:
+      quantity: 1
+      chance: 0.4
+    mythic_token:
+      quantity: 1
+      chance: 0.15
+  flags:
+    legendary_reward:
+      type: milestone
+      badge: legendary_pathfinder
+meadow_glade_drops:
+  exp: 5
+  diamonds: 15
+  items:
+    meadow_charm:
+      quantity: 1
+      chance: 0.3
+  flags: {}
+emberscout_cache:
+  exp: 8
+  diamonds: 20
+  items:
+    ember_shard:
+      quantity: 1
+      chance: 0.35
+  flags: {}
+verdant_guardian_drops:
+  exp: 12
+  diamonds: 35
+  items:
+    verdant_seed:
+      quantity: 2
+      chance: 0.5
+  flags: {}
+frostborn_supplies:
+  exp: 15
+  diamonds: 40
+  items:
+    frost_splitter:
+      quantity: 1
+      chance: 0.4
+    ice_stone:
+      quantity: 1
+      chance: 0.25
+  flags: {}
+stormfront_cache:
+  exp: 22
+  diamonds: 60
+  items:
+    aurora_lens:
+      quantity: 1
+      chance: 0.4
+    wind_stone:
+      quantity: 1
+      chance: 0.3
+  flags: {}
+toxic_omen_drops:
+  exp: 20
+  diamonds: 55
+  items:
+    venom_gland:
+      quantity: 1
+      chance: 0.5
+    poison_stone:
+      quantity: 1
+      chance: 0.3
+  flags: {}
+celestial_echoes:
+  exp: 35
+  diamonds: 110
+  items:
+    stardust_fragment:
+      quantity: 2
+      chance: 0.45
+    light_stone:
+      quantity: 1
+      chance: 0.25
+  flags: {}
+encounter_meadow_safe_skies_patrol_completed:
+  items:
+    whistle:
+      quantity: 1
+      chance: 1.0
+    treat:
+      quantity: 1
+      chance: 0.6
+  eggs:
+    starter_patrol:
+      egg_name: "Starter Egg"
+      quantity: 1
+      chance: 0.08
+encounter_meadow_safe_skies_patrol_observed:
+  items:
+    treat:
+      quantity: 1
+      chance: 0.5
+  eggs:
+    starter_patrol:
+      egg_name: "Starter Egg"
+      quantity: 1
+      chance: 0.04
+encounter_meadow_safe_skies_training_success:
+  items:
+    whistle:
+      quantity: 1
+      chance: 0.8
+    leveling_stone:
+      quantity: 1
+      chance: 0.3
+  eggs:
+    starter_patrol:
+      egg_name: "Starter Egg"
+      quantity: 1
+      chance: 0.12
+encounter_forest_lost_pup_continue_on_path:
+  items:
+    treat:
+      quantity: 1
+      chance: 0.6
+  eggs:
+    starter_patrol:
+      egg_name: "Starter Egg"
+      quantity: 1
+      chance: 0.05
+encounter_forest_lost_pup_free_success:
+  items:
+    blanket:
+      quantity: 1
+      chance: 1.0
+    treat:
+      quantity: 1
+      chance: 0.8
+  eggs:
+    forest_reward:
+      egg_name: "Forest Egg"
+      quantity: 1
+      chance: 0.35
+encounter_forest_lost_pup_guardians_alerted:
+  items:
+    blanket:
+      quantity: 1
+      chance: 1.0
+    map:
+      quantity: 1
+      chance: 0.6
+  eggs:
+    forest_reward:
+      egg_name: "Forest Egg"
+      quantity: 1
+      chance: 0.45
+encounter_forest_lost_pup_search_failed:
+  items:
+    wooden_stick:
+      quantity: 1
+      chance: 0.5
+    treat:
+      quantity: 1
+      chance: 0.4
+encounter_forest_lost_pup_healing_breeze_escort:
+  items:
+    treat:
+      quantity: 1
+      chance: 1.0
+  eggs:
+    forest_reward:
+      egg_name: "Forest Egg"
+      quantity: 1
+      chance: 1.0
+encounter_forest_lost_pup_healing_breeze_release:
+  items:
+    treat:
+      quantity: 1
+      chance: 1.0
+  eggs:
+    forest_reward:
+      egg_name: "Forest Egg"
+      quantity: 1
+      chance: 0.6
+encounter_hidden_cache_leave_cache:
+  items:
+    map:
+      quantity: 1
+      chance: 0.4
+    treat:
+      quantity: 1
+      chance: 0.6
+encounter_hidden_cache_cache_disarmed:
+  items:
+    leveling_stone:
+      quantity: 1
+      chance: 0.8
+    normal_stone:
+      quantity: 1
+      chance: 0.5
+encounter_hidden_cache_cache_marked:
+  items:
+    map:
+      quantity: 1
+      chance: 1.0
+    leveling_stone:
+      quantity: 1
+      chance: 0.4
+encounter_hidden_cache_snare_broken:
+  items:
+    normal_stone:
+      quantity: 1
+      chance: 0.4
+    treat:
+      quantity: 1
+      chance: 0.6
+encounter_hidden_cache_snare_burned:
+  items:
+    fire_stone:
+      quantity: 1
+      chance: 0.7
+encounter_ember_flare_ambush_intimidate_success:
+  items:
+    fire_stone:
+      quantity: 1
+      chance: 0.8
+    wind_stone:
+      quantity: 1
+      chance: 0.3
+  eggs:
+    starter_patrol:
+      egg_name: "Starter Egg"
+      quantity: 1
+      chance: 0.1
+encounter_ember_flare_ambush_run_through_regroup:
+  items:
+    treat:
+      quantity: 1
+      chance: 0.8
+    fire_stone:
+      quantity: 1
+      chance: 0.35
+encounter_ember_flare_ambush_shield_counter:
+  items:
+    fire_stone:
+      quantity: 1
+      chance: 1.0
+    leveling_stone:
+      quantity: 1
+      chance: 0.4
+  eggs:
+    starter_patrol:
+      egg_name: "Starter Egg"
+      quantity: 1
+      chance: 0.15
+encounter_frozen_relic_manual_salvage:
+  items:
+    ice_stone:
+      quantity: 1
+      chance: 0.5
+    treat:
+      quantity: 1
+      chance: 0.4
+encounter_frozen_relic_relic_recovered:
+  items:
+    ice_stone:
+      quantity: 1
+      chance: 1.0
+    spirit_stone:
+      quantity: 1
+      chance: 0.3
+  eggs:
+    nature_reward:
+      egg_name: "Nature Egg"
+      quantity: 1
+      chance: 0.25
+encounter_verdant_guardians_homage_pass:
+  items:
+    grass_stone:
+      quantity: 1
+      chance: 0.4
+    treat:
+      quantity: 1
+      chance: 0.6
+encounter_verdant_guardians_homage_gift:
+  items:
+    grass_stone:
+      quantity: 1
+      chance: 0.7
+    map:
+      quantity: 1
+      chance: 0.5
+  eggs:
+    starter_patrol:
+      egg_name: "Starter Egg"
+      quantity: 1
+      chance: 0.1
+encounter_verdant_guardians_rally_success:
+  items:
+    grass_stone:
+      quantity: 1
+      chance: 1.0
+    spirit_stone:
+      quantity: 1
+      chance: 0.4
+  eggs:
+    nature_reward:
+      egg_name: "Nature Egg"
+      quantity: 1
+      chance: 0.2
+encounter_verdant_guardians_canopy_paths:
+  items:
+    map:
+      quantity: 1
+      chance: 1.0
+    treat:
+      quantity: 1
+      chance: 0.7
+  eggs:
+    nature_reward:
+      egg_name: "Nature Egg"
+      quantity: 1
+      chance: 0.1
+encounter_beast_wildcall_answered:
+  items:
+    treat:
+      quantity: 1
+      chance: 1.0
+    whistle:
+      quantity: 1
+      chance: 0.3
+  eggs:
+    starter_patrol:
+      egg_name: "Starter Egg"
+      quantity: 1
+      chance: 0.18
+encounter_beast_wildcall_challenged:
+  items:
+    blanket:
+      quantity: 1
+      chance: 1.0
+    leveling_stone:
+      quantity: 1
+      chance: 0.3
+  eggs:
+    sapling_reward:
+      egg_name: "Sapling Egg"
+      quantity: 1
+      chance: 0.25
+encounter_beast_wildcall_scouted:
+  items:
+    map:
+      quantity: 1
+      chance: 0.7
+    treat:
+      quantity: 1
+      chance: 0.7
+encounter_verdant_spirit_growth_shared:
+  items:
+    grass_stone:
+      quantity: 1
+      chance: 0.8
+    spirit_stone:
+      quantity: 1
+      chance: 0.3
+  eggs:
+    nature_reward:
+      egg_name: "Nature Egg"
+      quantity: 1
+      chance: 0.25
+encounter_verdant_spirit_passage:
+  items:
+    map:
+      quantity: 1
+      chance: 1.0
+    treat:
+      quantity: 1
+      chance: 0.5
+  eggs:
+    sapling_reward:
+      egg_name: "Sapling Egg"
+      quantity: 1
+      chance: 0.2
+encounter_verdant_spirit_weave:
+  items:
+    spirit_stone:
+      quantity: 1
+      chance: 0.8
+    grass_stone:
+      quantity: 1
+      chance: 0.5
+  eggs:
+    nature_reward:
+      egg_name: "Nature Egg"
+      quantity: 1
+      chance: 0.35
+encounter_aurora_crystal_harmony:
+  items:
+    ice_stone:
+      quantity: 1
+      chance: 0.7
+    spirit_stone:
+      quantity: 1
+      chance: 0.4
+  eggs:
+    nature_reward:
+      egg_name: "Nature Egg"
+      quantity: 1
+      chance: 0.2
+encounter_aurora_crystal_harvest:
+  items:
+    ice_stone:
+      quantity: 1
+      chance: 1.0
+    leveling_stone:
+      quantity: 1
+      chance: 0.4
+encounter_aurora_crystal_shield:
+  items:
+    ice_stone:
+      quantity: 1
+      chance: 0.6
+    wind_stone:
+      quantity: 1
+      chance: 0.4
+  eggs:
+    sapling_reward:
+      egg_name: "Sapling Egg"
+      quantity: 1
+      chance: 0.15
+encounter_tempest_skydance_joined:
+  items:
+    wind_stone:
+      quantity: 1
+      chance: 0.9
+    storm_stone:
+      quantity: 1
+      chance: 0.3
+  eggs:
+    starter_patrol:
+      egg_name: "Starter Egg"
+      quantity: 1
+      chance: 0.12
+encounter_tempest_skydance_anchored:
+  items:
+    wind_stone:
+      quantity: 1
+      chance: 1.0
+    spirit_stone:
+      quantity: 1
+      chance: 0.3
+encounter_tempest_skydance_surge:
+  items:
+    storm_stone:
+      quantity: 1
+      chance: 0.8
+    wind_stone:
+      quantity: 1
+      chance: 0.5
+  eggs:
+    nature_reward:
+      egg_name: "Nature Egg"
+      quantity: 1
+      chance: 0.18
+encounter_toxic_spore_harvested:
+  items:
+    soap:
+      quantity: 1
+      chance: 1.0
+    treat:
+      quantity: 1
+      chance: 0.8
+encounter_toxic_spore_neutralized:
+  items:
+    soap:
+      quantity: 1
+      chance: 1.0
+    spirit_stone:
+      quantity: 1
+      chance: 0.3
+encounter_toxic_spore_redirected:
+  items:
+    shadow_stone:
+      quantity: 1
+      chance: 0.5
+    soap:
+      quantity: 1
+      chance: 0.6
+  eggs:
+    starter_patrol:
+      egg_name: "Starter Egg"
+      quantity: 1
+      chance: 0.08
+encounter_whispering_shade_trade:
+  items:
+    shadow_stone:
+      quantity: 1
+      chance: 0.8
+    spirit_stone:
+      quantity: 1
+      chance: 0.4
+  eggs:
+    starter_patrol:
+      egg_name: "Starter Egg"
+      quantity: 1
+      chance: 0.1
+encounter_whispering_shade_observed:
+  items:
+    shadow_stone:
+      quantity: 1
+      chance: 0.5
+    treat:
+      quantity: 1
+      chance: 0.5
+encounter_whispering_shade_bound:
+  items:
+    shadow_stone:
+      quantity: 1
+      chance: 0.9
+    spirit_stone:
+      quantity: 1
+      chance: 0.4
+  eggs:
+    nature_reward:
+      egg_name: "Nature Egg"
+      quantity: 1
+      chance: 0.15
+encounter_celestial_heavenly_audience:
+  items:
+    celestial_stone:
+      quantity: 1
+      chance: 0.9
+    spirit_stone:
+      quantity: 1
+      chance: 0.5
+  eggs:
+    nature_reward:
+      egg_name: "Nature Egg"
+      quantity: 1
+      chance: 0.25
+encounter_celestial_heavenly_exchange:
+  items:
+    celestial_stone:
+      quantity: 1
+      chance: 0.8
+    leveling_stone:
+      quantity: 1
+      chance: 0.4
+  eggs:
+    sapling_reward:
+      egg_name: "Sapling Egg"
+      quantity: 1
+      chance: 0.22
+encounter_celestial_heavenly_vow:
+  items:
+    celestial_stone:
+      quantity: 1
+      chance: 1.0
+    storm_stone:
+      quantity: 1
+      chance: 0.4
+  eggs:
+    nature_reward:
+      egg_name: "Nature Egg"
+      quantity: 1
+      chance: 0.35
+encounter_meadow_bloom_harmony:
+  items:
+    whistle:
+      quantity: 1
+      chance: 0.8
+    treat:
+      quantity: 1
+      chance: 0.7
+  eggs:
+    starter_patrol:
+      egg_name: "Starter Egg"
+      quantity: 1
+      chance: 0.1
+encounter_meadow_bloom_rest:
+  items:
+    blanket:
+      quantity: 1
+      chance: 1.0
+    treat:
+      quantity: 1
+      chance: 0.8
+encounter_meadow_bloom_pollen_bottled:
+  items:
+    treat:
+      quantity: 1
+      chance: 1.0
+    map:
+      quantity: 1
+      chance: 0.6
+encounter_meadow_bloom_pollen_released:
+  items:
+    treat:
+      quantity: 1
+      chance: 0.8
+  eggs:
+    starter_patrol:
+      egg_name: "Starter Egg"
+      quantity: 1
+      chance: 0.06
+
+encounter_glimmering_lantern_repaired:
+  exp: 12
+  diamonds: 25
+  items:
+    lantern_core:
+      quantity: 1
+      chance: 0.7
+    trail_ration_bundle:
+      quantity: 1
+      chance: 0.85
+
+encounter_glimmering_lantern_signal_boost:
+  exp: 16
+  diamonds: 35
+  items:
+    lantern_core:
+      quantity: 1
+      chance: 0.95
+    leveling_stone:
+      quantity: 1
+      chance: 0.35
+  eggs:
+    starter_patrol:
+      egg_name: "Starter Egg"
+      quantity: 1
+      chance: 0.15
+
+encounter_glimmering_lantern_emergency_route:
+  exp: 10
+  diamonds: 20
+  items:
+    trail_ration_bundle:
+      quantity: 1
+      chance: 0.9
+    map:
+      quantity: 1
+      chance: 0.5
+
+encounter_glimmering_lantern_glowling_refit:
+  exp: 18
+  diamonds: 45
+  items:
+    lantern_core:
+      quantity: 1
+      chance: 1.0
+    leveling_stone:
+      quantity: 1
+      chance: 0.4
+  eggs:
+    forest_reward:
+      egg_name: "Forest Egg"
+      quantity: 1
+      chance: 0.2
+
+encounter_glimmering_relay_supplies:
+  exp: 11
+  diamonds: 22
+  items:
+    trail_ration_bundle:
+      quantity: 1
+      chance: 1.0
+    treat:
+      quantity: 1
+      chance: 0.7
+
+encounter_glimmering_relay_record:
+  exp: 15
+  diamonds: 32
+  items:
+    lantern_core:
+      quantity: 1
+      chance: 0.6
+    map:
+      quantity: 1
+      chance: 0.8
+
+encounter_glimmering_relay_cache_uncovered:
+  exp: 20
+  diamonds: 55
+  items:
+    lantern_core:
+      quantity: 1
+      chance: 1.0
+    trail_ration_bundle:
+      quantity: 2
+      chance: 0.9
+    leveling_stone:
+      quantity: 1
+      chance: 0.45
+
+encounter_glimmering_relay_brake_failure:
+  exp: 9
+  diamonds: 18
+  items:
+    trail_ration_bundle:
+      quantity: 1
+      chance: 0.7
+    wooden_stick:
+      quantity: 1
+      chance: 0.8
+
+encounter_meadow_caravan_rescued:
+  exp: 10
+  diamonds: 24
+  items:
+    treat:
+      quantity: 1
+      chance: 0.85
+    meadow_sunpetal_tonic:
+      quantity: 1
+      chance: 0.6
+
+encounter_meadow_caravan_celebration:
+  exp: 14
+  diamonds: 32
+  items:
+    meadow_sunpetal_tonic:
+      quantity: 1
+      chance: 1.0
+    breezeharp_string:
+      quantity: 1
+      chance: 0.35
+  eggs:
+    starter_patrol:
+      egg_name: "Starter Egg"
+      quantity: 1
+      chance: 0.12
+
+encounter_meadow_caravan_resupply:
+  exp: 9
+  diamonds: 18
+  items:
+    trail_ration_bundle:
+      quantity: 1
+      chance: 0.8
+    meadow_sunpetal_tonic:
+      quantity: 1
+      chance: 0.5
+
+encounter_meadow_caravan_sunpetal_cache:
+  exp: 18
+  diamonds: 40
+  items:
+    meadow_sunpetal_tonic:
+      quantity: 2
+      chance: 1.0
+    breezeharp_string:
+      quantity: 1
+      chance: 0.5
+
+encounter_meadow_chorus_harmony:
+  exp: 11
+  diamonds: 26
+  items:
+    breezeharp_string:
+      quantity: 1
+      chance: 0.4
+    treat:
+      quantity: 1
+      chance: 0.9
+
+encounter_meadow_chorus_resonant_oath:
+  exp: 17
+  diamonds: 42
+  items:
+    breezeharp_string:
+      quantity: 1
+      chance: 1.0
+    blanket:
+      quantity: 1
+      chance: 0.6
+  eggs:
+    starter_patrol:
+      egg_name: "Starter Egg"
+      quantity: 1
+      chance: 0.15
+
+encounter_meadow_chorus_soothing_dream:
+  exp: 9
+  diamonds: 20
+  items:
+    blanket:
+      quantity: 1
+      chance: 1.0
+    treat:
+      quantity: 1
+      chance: 0.8
+
+encounter_meadow_chorus_hidden_echo:
+  exp: 16
+  diamonds: 38
+  items:
+    breezeharp_string:
+      quantity: 1
+      chance: 0.8
+    meadow_sunpetal_tonic:
+      quantity: 1
+      chance: 0.7
+
+encounter_glimmering_courier_delivered:
+  exp: 12
+  diamonds: 25
+  items:
+    trail_ration_bundle:
+      quantity: 1
+      chance: 0.8
+    twilight_courier_badge:
+      quantity: 1
+      chance: 0.6
+
+encounter_glimmering_courier_shortcut:
+  exp: 15
+  diamonds: 35
+  items:
+    twilight_courier_badge:
+      quantity: 1
+      chance: 1.0
+    lantern_core:
+      quantity: 1
+      chance: 0.5
+
+encounter_glimmering_courier_waylaid:
+  exp: 10
+  diamonds: 15
+  items:
+    trail_ration_bundle:
+      quantity: 1
+      chance: 1.0
+    wooden_stick:
+      quantity: 1
+      chance: 0.6
+
+encounter_glimmering_courier_map_cache:
+  exp: 20
+  diamonds: 50
+  items:
+    twilight_courier_badge:
+      quantity: 1
+      chance: 1.0
+    lantern_core:
+      quantity: 1
+      chance: 0.8
+    leveling_stone:
+      quantity: 1
+      chance: 0.35
+
+encounter_glimmering_brink_rescued:
+  exp: 13
+  diamonds: 28
+  items:
+    trail_ration_bundle:
+      quantity: 1
+      chance: 1.0
+    map:
+      quantity: 1
+      chance: 0.6
+
+encounter_glimmering_brink_speed_clear:
+  exp: 18
+  diamonds: 40
+  items:
+    lantern_core:
+      quantity: 1
+      chance: 0.8
+    twilight_courier_badge:
+      quantity: 1
+      chance: 0.7
+
+encounter_glimmering_brink_shaky_exit:
+  exp: 9
+  diamonds: 16
+  items:
+    trail_ration_bundle:
+      quantity: 1
+      chance: 0.8
+    wooden_stick:
+      quantity: 1
+      chance: 0.7
+
+encounter_glimmering_brink_anchor_reward:
+  exp: 20
+  diamonds: 55
+  items:
+    lantern_core:
+      quantity: 1
+      chance: 1.0
+    leveling_stone:
+      quantity: 1
+      chance: 0.4
+    twilight_courier_badge:
+      quantity: 1
+      chance: 0.9
+
+encounter_meadow_mistral_playmate:
+  exp: 11
+  diamonds: 24
+  items:
+    treat:
+      quantity: 1
+      chance: 0.9
+    meadow_sunpetal_tonic:
+      quantity: 1
+      chance: 0.5
+
+encounter_meadow_mistral_token:
+  exp: 14
+  diamonds: 32
+  items:
+    mistral_reed_flute:
+      quantity: 1
+      chance: 0.8
+    breezeharp_string:
+      quantity: 1
+      chance: 0.4
+
+encounter_meadow_mistral_drowsy:
+  exp: 9
+  diamonds: 18
+  items:
+    blanket:
+      quantity: 1
+      chance: 1.0
+    treat:
+      quantity: 1
+      chance: 0.7
+
+encounter_meadow_mistral_hidden_cache:
+  exp: 18
+  diamonds: 40
+  items:
+    mistral_reed_flute:
+      quantity: 1
+      chance: 1.0
+    meadow_sunpetal_tonic:
+      quantity: 1
+      chance: 0.8
+    breezeharp_string:
+      quantity: 1
+      chance: 0.45

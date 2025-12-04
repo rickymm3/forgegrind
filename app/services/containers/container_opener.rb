@@ -163,14 +163,16 @@ module Containers
       config = CHEST_CURRENCY_REWARDS[chest_type.key]
       return [] unless config
 
+      currency = Currency.find_by_key(config[:currency_key]) || Currency.find_by(name: config[:currency_name])
+      return [] unless currency
+
       total_amount = Array.new(quantity) { random.rand(config[:min]..config[:max]) }.sum
       return [] if total_amount <= 0
 
-      stat = ensure_user_stat
-      stat.increment!(config[:stat_column], total_amount)
+      user.credit_currency!(currency, total_amount)
 
-      display_name = config[:currency_name]
-      symbol = config[:symbol] || currency_symbol(display_name)
+      display_name = config[:currency_name] || currency.name
+      symbol = config[:symbol] || currency_symbol(display_name) || currency.symbol
 
       [{
         "currency" => display_name,
@@ -214,18 +216,18 @@ module Containers
 
     CHEST_CURRENCY_REWARDS = {
       "pet_care_box_lvl1" => {
-        currency_name: "Diamonds",
-        stat_column: :diamonds,
-        min: 100,
-        max: 200,
-        symbol: "💎"
+        currency_name: "Coins",
+        currency_key: :coins,
+        min: 50,
+        max: 100,
+        symbol: "🪙"
       },
       "pet_care_box_lvl2" => {
-        currency_name: "Diamonds",
-        stat_column: :diamonds,
+        currency_name: "Coins",
+        currency_key: :coins,
         min: 100,
         max: 200,
-        symbol: "💎"
+        symbol: "🪙"
       }
     }.freeze
   end

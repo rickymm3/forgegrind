@@ -16,7 +16,7 @@
     <h2 class="text-2xl font-semibold text-slate-100"><%= egg.name %></h2>
     <p class="text-xs text-slate-400"><%= status_label %></p>
   </div>
-  <%= link_to user_pets_path(collection: "eggs"),
+  <%= link_to pets_path(view: "eggs"),
               class: "inline-flex items-center justify-center rounded-full bg-slate-800/70 p-2 text-slate-300 transition hover:text-white",
               aria: { label: "Close egg details" } do %>
     <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
@@ -100,6 +100,6 @@
                   class: "inline-flex items-center gap-2 rounded-full bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950" %>
   <% end %>
   <%= link_to "Close",
-              user_pets_path(collection: "eggs"),
+              pets_path(view: "eggs"),
               class: "inline-flex items-center justify-center rounded-full border border-slate-700/70 bg-slate-900/60 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:text-white" %>
 </div>

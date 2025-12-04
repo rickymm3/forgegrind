@@ -1,0 +1,20 @@
+<div class="pet-storage">
+  <% if storage_pets.empty? %>
+    <p class="pet-storage__empty">No pets in storage yet.</p>
+  <% else %>
+    <div class="pet-storage__grid">
+      <% storage_pets.each do |pet| %>
+        <% image_path = pet_profile_image_path(pet) %>
+        <%= link_to user_pet_path(pet),
+                    data: { turbo_frame: "_top" },
+                    class: "pet-storage__bubble" do %>
+          <span class="pet-storage__level">Lv <%= pet.level %></span>
+          <%= image_tag image_path,
+                        alt: pet.name.presence || pet.pet.name,
+                        class: "pet-storage__image" %>
+          <span class="pet-storage__name"><%= pet.name.presence || pet.pet.name %></span>
+        <% end %>
+      <% end %>
+    </div>
+  <% end %>
+</div>

@@ -268,6 +268,9 @@ class ExplorationsController < ApplicationController
         schedule = ExplorationEncounterCatalog.schedule_for(
           world: @generated_exploration.world,
           duration: @user_exploration.duration_seconds,
+          base_key: @generated_exploration.base_key,
+          prefix_key: @generated_exploration.prefix_key,
+          suffix_key: @generated_exploration.suffix_key,
           ability_refs: ability_refs,
           ability_tags: ability_tags,
           requirements: progress,
@@ -402,9 +405,15 @@ class ExplorationsController < ApplicationController
   end
 
   def assign_rescout_state
-    @rescout_cooldown_remaining = 0
-    @rescout_wait_human = nil
-    @rescout_available_at = nil
+    remaining = ExplorationGenerator.cooldown_remaining_for(current_user)
+    @rescout_cooldown_remaining = remaining
+    if remaining.positive?
+      @rescout_available_at = Time.current + remaining.seconds
+      @rescout_wait_human = view_context.distance_of_time_in_words(Time.current, @rescout_available_at)
+    else
+      @rescout_available_at = Time.current
+      @rescout_wait_human = nil
+    end
   end
 
   def respond_with_reroll_error(message)

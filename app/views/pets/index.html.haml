@@ -1,12 +1,32 @@
-.container.mx-auto.mt-16.text-center
-  %h1.text-3xl.font-bold.mb-6 All Pets
-  - if @pets.any?
-    .grid.grid-cols-1.md:grid-cols-2.lg:grid-cols-3.gap-6
-      - @pets.each do |pet|
-        .border.p-4.rounded.shadow.bg-white
-          %h2.text-xl.font-semibold
-            = link_to pet.name, pet_path(pet), class: "text-blue-600 hover:underline"
-          %p.text-sm.text-gray-600.mt-1= "Power: #{pet.power}"
-          %p.text-sm.text-gray-600.mt-1= "Rarity: #{pet.rarity.name}"
-  - else
-    %p.text-gray-500 No pets found.
+- content_for :title, "Pets"
+- content_for :main_classes_override, "app-shell__main pet-hub-shell"
+- content_for :main_inner_classes_override, "pet-hub__inner"
+- content_for :header do
+  .pet-hub-header
+    .pet-hub-header__title
+      %p.pet-hub-header__eyebrow Companions
+      %h1.pet-hub-header__heading Active Party
+    .pet-hub-header__actions
+      %turbo-frame#pet-hub-meta
+        = render "pets/header_meta",
+          active_slots: @active_slots,
+          storage_count: @storage_count
+      .pet-hub-toggle
+        = link_to "Active",
+          pets_path(view: "active"),
+          class: ["pet-hub-toggle__button", ("is-active" if @view_mode == "active")].compact.join(" ")
+        = link_to "Storage",
+          pets_path(view: "storage"),
+          class: ["pet-hub-toggle__button", ("is-active" if @view_mode == "storage")].compact.join(" ")
+        = link_to "Eggs",
+          pets_path(view: "eggs"),
+          class: ["pet-hub-toggle__button", ("is-active" if @view_mode == "eggs")].compact.join(" ")
+.pet-hub
+  .pet-hub__body
+    %turbo-frame#pet-hub-main.pet-hub-main-frame
+      - if @view_mode == "storage"
+        = render "pets/storage_grid", storage_pets: @storage_pets
+      - elsif @view_mode == "eggs"
+        = render "pets/eggs_grid", user_eggs: @user_eggs
+      - else
+        = render "pets/active_slots", active_slots: @active_slots

@@ -410,7 +410,7 @@
              end %>
         <% timeline_nodes << { label: "Finish", status: finish_status } %>
         <% edge_count = [timeline_nodes.size - 1, 1].max %>
-        <% completed_segments = segment_entries.count { |segment| segment[:status].to_s == 'completed' } %>
+        <% completed_segments = segment_entries.count { |segment| %w[completed checkpoint].include?(segment[:status].to_s) } %>
         <% completed_edges = [completed_segments, edge_count].min %>
         <% completed_edges = edge_count if user_exploration.complete? %>
         <% active_edge_fraction = 0.0 %>
@@ -515,8 +515,8 @@
         <% schedule_entries = user_exploration.encounter_schedule_entries %>
         <% next_pending_entry = schedule_entries
                                  .reject { |entry| entry[:status].to_s == 'completed' || entry[:status].to_s == 'active' }
-                                 .min_by { |entry| entry[:offset_seconds].to_i } %>
-        <% next_pending_offset = next_pending_entry&.[](:offset_seconds)&.to_i %>
+                                 .min_by { |entry| safe_offset_seconds(entry[:offset_seconds]) || Float::INFINITY } %>
+        <% next_pending_offset = safe_offset_seconds(next_pending_entry&.[](:offset_seconds)) %>
         <% next_encounter_display =
              if user_exploration.active_encounter?
                user_exploration.active_encounter_data
@@ -525,6 +525,11 @@
              else
                nil
              end %>
+        <% progress_ratio = if total_duration.positive?
+                              (elapsed_seconds.to_f / total_duration).clamp(0.0, 1.0)
+                            else
+                              0.0
+                            end %>
         <% activation_url = activate_encounter_user_exploration_path(user_exploration) %>
         <div class="space-y-3"
              data-controller="countdown"
@@ -542,12 +547,33 @@
             </p>
             <p class="text-xs text-slate-500">Started: <%= l(user_exploration.started_at, format: :short) %></p>
           </div>
-          <div class="bg-slate-50 rounded-lg px-3 py-2 flex items-center justify-between">
-            <span class="text-xs font-semibold text-slate-500 uppercase">Tracking</span>
+          <div class="bg-slate-50 rounded-lg px-3 py-2 flex items-center justify-between gap-3">
+            <% if rarity_label.present? %>
+              <span class="inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide"
+                    style="<%= rarity_color ? "border-color: #{rarity_color}55; background-color: #{rarity_color}1a; color: #{rarity_color};" : '' %>">
+                <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8">
+                  <path d="M12 3l2.5 6.5L21 10l-5 4.5L17.5 21 12 17.5 6.5 21 8 14.5 3 10l6.5-.5L12 3z" />
+                </svg>
+                <%= rarity_label %>
+              </span>
+            <% else %>
+              <span class="text-xs font-semibold text-slate-500 uppercase">Tracking</span>
+            <% end %>
             <span class="text-sm font-semibold text-slate-900"
                   data-countdown-target="output">
               <%= exploration_duration_label(remaining_seconds) %>
             </span>
+          </div>
+          <div>
+            <div class="h-2 w-full overflow-hidden rounded-full bg-slate-200">
+              <div class="h-full rounded-full bg-indigo-500 transition-all"
+                   style="width: <%= (progress_ratio * 100).round(1) %>%"
+                   data-countdown-target="progress"></div>
+            </div>
+            <div class="mt-1 flex items-center justify-between text-[11px] uppercase tracking-wide text-slate-400">
+              <span>Start</span>
+              <span>Finish</span>
+            </div>
           </div>
           <% if next_encounter_display.present? %>
             <% display_data = next_encounter_display.with_indifferent_access %>
@@ -560,7 +586,8 @@
               <% if user_exploration.active_encounter? %>
                 <span class="text-[11px] font-semibold uppercase text-indigo-200">Awaiting decision</span>
               <% else %>
-                <% trigger_in = [display_data[:offset_seconds].to_i - elapsed_seconds, 0].max %>
+                <% encounter_offset = safe_offset_seconds(display_data[:offset_seconds]) %>
+                <% trigger_in = encounter_offset ? [encounter_offset - elapsed_seconds, 0].max : 0 %>
                 <span class="text-[11px] font-semibold uppercase text-indigo-200">
                   Triggers in <%= exploration_duration_label(trigger_in) %>
                 </span>
@@ -620,7 +647,7 @@
            end %>
       <% timeline_nodes << { label: "Finish", status: finish_status } %>
       <% edge_count = [timeline_nodes.size - 1, 1].max %>
-      <% completed_segments = segment_entries.count { |segment| segment[:status].to_s == 'completed' } %>
+      <% completed_segments = segment_entries.count { |segment| %w[completed checkpoint].include?(segment[:status].to_s) } %>
       <% completed_edges = [completed_segments, edge_count].min %>
       <% completed_edges = edge_count if user_exploration.complete? %>
       <% active_edge_fraction = 0.0 %>
@@ -690,6 +717,9 @@
                 <p class="text-xs text-emerald-700">Outcome: <span class="font-semibold"><%= encounter_result[:outcome_label] %></span></p>
               <% else %>
                 <p class="text-xs text-emerald-700">Nothing of note was found.</p>
+              <% end %>
+              <% if encounter_result[:conclusion_text].present? %>
+                <p class="text-xs text-emerald-600/80"><%= encounter_result[:conclusion_text] %></p>
               <% end %>
               <% if encounter_result[:reward_summary].present? %>
                 <p class="text-xs text-emerald-700">Rewards: <span class="font-semibold"><%= encounter_result[:reward_summary] %></span></p>

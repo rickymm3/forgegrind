@@ -1,0 +1,45 @@
+<% care_metrics = [:hunger, :hygiene, :boredom, :injury_level, :mood].filter_map do |metric|
+  next unless user_pet.respond_to?(metric)
+  value = user_pet.send(metric).to_f rescue nil
+  next unless value
+  {
+    key: metric,
+    label: need_label(metric),
+    value: value.round(1),
+    percent: value.clamp(0.0, 100.0).round(1)
+  }
+end %>
+
+<div class="pet-stats-grid">
+  <% care_metrics.each do |metric| %>
+    <% attention_class = metric[:percent] < 60 ? "pet-stat--needs-care" : "pet-stat--healthy" %>
+    <div class="pet-stat <%= attention_class %>"
+         data-pet-display-target="need"
+         data-key="<%= metric[:key] %>"
+         data-base-value="<%= metric[:value] %>"
+         data-base-percent="<%= metric[:percent] %>">
+      <div class="pet-stat__header">
+        <span class="pet-stat__label"><%= metric[:label] %></span>
+        <div class="pet-stat__value-wrap">
+          <span class="pet-stat__value"
+                data-pet-display-target="needValue"
+                data-key="<%= metric[:key] %>"><%= metric[:value] %></span>
+          <span class="pet-stat__delta hidden"
+                data-pet-display-target="needDelta"
+                data-key="<%= metric[:key] %>"></span>
+        </div>
+      </div>
+      <div class="pet-stat__track">
+        <div class="pet-stat__preview"
+             data-pet-display-target="needPreview"
+             data-key="<%= metric[:key] %>"
+             data-base-percent="<%= metric[:percent] %>"
+             aria-hidden="true"></div>
+        <div class="pet-stat__fill"
+             data-pet-display-target="needBar"
+             data-key="<%= metric[:key] %>"
+             style="width: <%= metric[:percent] %>%"></div>
+      </div>
+    </div>
+  <% end %>
+</div>

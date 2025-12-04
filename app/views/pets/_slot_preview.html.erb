@@ -1,0 +1,21 @@
+<div class="pet-preview">
+  <% if user_pet.present? %>
+    <% image_path = pet_profile_image_path(user_pet) %>
+    <div class="pet-preview__avatar">
+      <%= image_tag image_path,
+                    alt: user_pet.name.presence || user_pet.pet.name,
+                    class: "pet-preview__avatar-image" %>
+    </div>
+    <div class="pet-preview__details">
+      <p class="pet-preview__name"><%= user_pet.name.presence || user_pet.pet.name %></p>
+      <p class="pet-preview__meta">
+        <span>Lv <%= user_pet.level %></span>
+        <span><%= "#{user_pet.energy.to_i} / #{UserPet::MAX_ENERGY} Energy" %></span>
+      </p>
+    </div>
+  <% else %>
+    <div class="pet-preview__empty">
+      <span>Empty slot</span>
+    </div>
+  <% end %>
+</div>

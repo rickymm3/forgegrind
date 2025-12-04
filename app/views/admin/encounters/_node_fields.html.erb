@@ -1,0 +1,66 @@
+<div class="rounded-xl border border-slate-700/70 bg-slate-900/70 p-4 space-y-4" data-node data-removable data-node-index="<%= node_index %>">
+  <div class="flex items-center justify-between">
+    <div>
+      <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide">Event</p>
+      <p class="text-lg font-semibold text-slate-50"><%= node[:label].presence || node[:key].presence || "Untitled Event" %></p>
+    </div>
+    <button type="button"
+            class="text-xs text-slate-400 hover:text-red-400"
+            data-action="encounter-builder#removeBlock">
+      Remove
+    </button>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+    <div>
+      <label class="form-label">Event key</label>
+      <%= text_field_tag "encounter[nodes][#{node_index}][key]",
+                         node[:key],
+                         class: "form-input",
+                         data: {
+                           action: "input->encounter-builder#handleNodeInput",
+                           event_option: "key"
+                         } %>
+    </div>
+    <div>
+      <label class="form-label">Display name</label>
+      <%= text_field_tag "encounter[nodes][#{node_index}][label]",
+                         node[:label],
+                         class: "form-input",
+                         data: {
+                           action: "input->encounter-builder#handleNodeInput",
+                           event_option: "label"
+                         } %>
+    </div>
+    <div>
+      <label class="form-label">Outcome ID</label>
+      <%= text_field_tag "encounter[nodes][#{node_index}][outcome]",
+                         node[:outcome],
+                         class: "form-input",
+                         placeholder: "e.g. forest_lost_pup_free_success" %>
+    </div>
+    <div>
+      <label class="form-label">Status label</label>
+      <%= text_field_tag "encounter[nodes][#{node_index}][status]",
+                         node[:status],
+                         class: "form-input",
+                         placeholder: "completed / failed etc." %>
+    </div>
+    <div class="flex items-center gap-2">
+      <%= check_box_tag "encounter[nodes][#{node_index}][conclusion]",
+                        "1",
+                        node[:conclusion],
+                        class: "form-checkbox" %>
+      <label class="text-sm text-slate-300">Chain end (conclusion)</label>
+    </div>
+  </div>
+
+  <div>
+    <label class="form-label">Narrative text</label>
+    <%= text_area_tag "encounter[nodes][#{node_index}][text]",
+                      node[:text],
+                      class: "form-textarea",
+                      rows: 3,
+                      placeholder: "Describe what happens in this event…" %>
+  </div>
+</div>

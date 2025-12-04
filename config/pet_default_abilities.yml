@@ -1,6 +1,6 @@
 # config/pet_default_abilities.yml
 
-sprig:
+houndlet:
   standard:
     - tackle
     - growl
@@ -8,68 +8,7 @@ sprig:
   rare:
     - whirlwind
 
-twigster:
-  standard:
-    - tackle
-    - growl
-    - venom_dart
-  rare:
-    - whirlwind
-
-barkling:
-  standard:
-    - tackle
-    - ember_burst
-    - growl
-  rare:
-    - whirlwind
-
-verdant:
-  standard:
-    - tackle
-    - growl
-  rare:
-    - whirlwind
-
-cat:
-  standard:
-    - tackle
-    - ember_burst
-    - growl
-  rare:
-    - whirlwind
-
-dog:
-  standard:
-    - tackle
-    - ember_burst
-    - growl
-  rare:
-    - whirlwind
-
-mouse:
-  standard:
-    - tackle
-    - growl
-  rare:
-    - whirlwind
-
-fish:
-  standard:
-    - tackle
-    - growl
-    - frost_shard
-  rare:
-    - whirlwind
-
-deer:
-  standard:
-    - tackle
-    - growl
-  rare:
-    - whirlwind
-
-owl:
+kittian:
   standard:
     - tackle
     - growl
@@ -77,18 +16,43 @@ owl:
   rare:
     - whirlwind
 
-bear:
+nibblin:
   standard:
     - tackle
-    - ember_burst
     - growl
+    - shadow_bind
   rare:
     - whirlwind
 
-dryad:
+fawndrel:
   standard:
     - tackle
     - growl
+    - frost_shard
+  rare:
+    - whirlwind
+
+glimmerfin:
+  standard:
+    - tackle
+    - growl
+    - frost_shard
+  rare:
+    - whirlwind
+
+noctwing:
+  standard:
+    - tackle
+    - growl
+    - shadow_bind
+  rare:
+    - whirlwind
+
+verdant:
+  standard:
+    - tackle
+    - growl
+    - venom_dart
   rare:
     - whirlwind
 

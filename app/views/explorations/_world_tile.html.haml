@@ -4,6 +4,8 @@
 - selected          = !!selected
 - state             = (state || (generated ? generated.slot_state_sym : :empty)).to_sym
 - cooldown_seconds  = (cooldown_seconds || generated&.cooldown_remaining_seconds || 0).to_i
+- reroll_cooldown_seconds ||= generated&.reroll_cooldown_remaining_seconds || 0
+- reroll_available_at ||= generated&.reroll_available_at
 - slot_label        = slot_index ? "Slot #{slot_index}" : nil
 - format_countdown  = ->(value) { value = value.to_i; minutes = value / 60; seconds = value % 60; format("%02d:%02d", minutes, seconds) }
 
@@ -42,4 +44,6 @@
            rarity_style: rarity_style,
            duration_label: duration_label,
            world: world,
-           segment_status: segment_status
+           segment_status: segment_status,
+           reroll_cooldown_seconds: reroll_cooldown_seconds,
+           reroll_available_at: reroll_available_at

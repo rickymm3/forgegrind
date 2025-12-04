@@ -31,7 +31,37 @@
              right: meta_stack %>
 <% end %>
 
-<div class="flex-1 w-full">
+<% equipped_pets = current_user.user_pets.equipped %>
+<% if equipped_pets.any? %>
+  <%= render "explorations/pet_camp", user_pets: equipped_pets %>
+<% end %>
+
+<% can_rescout = @selected_generated &&
+                 !@selected_generated.consumed? &&
+                 (@user_exploration.blank? || @user_exploration.complete?) &&
+                 @selected_generated.slot_state_sym != :cooldown %>
+<% if can_rescout %>
+  <% reroll_seconds = @selected_generated.reroll_cooldown_remaining_seconds %>
+  <% reroll_disabled = reroll_seconds.positive? %>
+  <% reroll_wait = nil %>
+  <% if reroll_disabled %>
+    <% available_time = @selected_generated.reroll_available_at || (Time.current + reroll_seconds.seconds) %>
+    <% reroll_wait = distance_of_time_in_words(Time.current, available_time) %>
+  <% end %>
+  <div class="zone-rescout">
+    <%= button_to "Rescout Expedition",
+                  reroll_exploration_path(@selected_generated),
+                  method: :post,
+                  class: "zone-rescout__button",
+                  disabled: reroll_disabled,
+                  form: { data: { turbo_confirm: "Replace this expedition with a fresh route?", turbo_frame: "_top" } } %>
+    <% if reroll_wait.present? %>
+      <p class="zone-rescout__note">Available in <%= reroll_wait %></p>
+    <% end %>
+  </div>
+<% end %>
+
+<div class="flex-1 w-full zone-content">
   <div class="mx-auto w-full max-w-4xl px-4 pb-28">
     <%= render "explorations/zone_card",
                generated_exploration: generated,

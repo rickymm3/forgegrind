@@ -3,6 +3,7 @@ class PetCareService
 
   CARE_EXP_REWARD        = 1
   GLOW_ESSENCE_BOOST     = 1.5
+  ITEM_BOOST_MULTIPLIER  = 1.25
 
   ACTIONS = {
     "play" => {
@@ -11,6 +12,13 @@ class PetCareService
       needs: { boredom: 20, hunger: -5, hygiene: -4, mood: 8 },
       personality: { playfulness: 1.0, curiosity: 0.5 },
       flag_counters: { plays_total: 1 }
+    },
+    "rainbow_fruit" => {
+      energy_cost: 10,
+      required_item_types: %w[rainbow_fruit],
+      needs: { hunger: 10, hygiene: 10, boredom: 10, injury_level: 10, mood: -3 },
+      personality: { confidence: 0.5, curiosity: 0.5 },
+      flag_counters: { boosts_total: 1 }
     },
     "wash" => {
       energy_cost: 8,
@@ -63,12 +71,14 @@ class PetCareService
     }
   }.freeze
 
-  def initialize(user_pet:, user:, interaction_type:, item_ids: [], glow_boost: false)
+  def initialize(user_pet:, user:, interaction_type:, item_ids: [], glow_boost: false, use_items: true, care_item: nil)
     @user_pet = user_pet
     @user = user
     @interaction_type = interaction_type.to_s
     @item_ids = Array(item_ids)
     @glow_boost = glow_boost
+    @use_items = use_items
+    @care_item = care_item
   end
 
   def run!
@@ -77,6 +87,7 @@ class PetCareService
     end
 
     result = { needs: {}, personality: {}, badges: [], flags: {} }
+    care_item_entry = resolve_care_item(definition)
 
     UserPet.transaction do
       @user_pet.lock!
@@ -88,11 +99,18 @@ class PetCareService
       validate_energy!(definition)
       required_items = resolve_required_items(definition)
       crit_roll = roll_critical_care(definition, required_items: required_items)
-      multiplier = glow_multiplier * crit_roll[:multiplier]
+      multiplier = glow_multiplier * crit_roll[:multiplier] * item_multiplier(required_items)
 
       spend_glow_essence!
       apply_energy_cost!(definition[:energy_cost])
       needs_result    = apply_needs(definition[:needs] || {}, boost_multiplier: multiplier)
+      if care_item_entry
+        item_needs = care_item_entry.stats || {}
+        needs_result = merge_needs_results(needs_result, apply_needs(item_needs, boost_multiplier: 1.0))
+        apply_badge!(care_item_entry.badge) if care_item_entry.badge.present?
+        apply_coin_buff!(care_item_entry.coin_buff) if care_item_entry.coin_buff.present?
+        consume_care_item!(care_item_entry)
+      end
       result[:needs]  = needs_result[:deltas]
       mood_adjustment = needs_result[:mood_delta]
       result[:personality] = apply_personality(definition[:personality] || {})
@@ -201,15 +219,15 @@ class PetCareService
   end
 
   def resolve_required_items(definition)
+    return [] unless use_items?
+
     types = Array(definition[:required_item_types])
     return [] if types.blank?
 
-    types.map do |item_type|
-      find_item_for_type(item_type.to_s)
-    end
+    types.map { |item_type| find_item_for_type!(item_type.to_s) }
   end
 
-  def find_item_for_type(item_type)
+  def find_item_for_type!(item_type)
     item = Item.find_by(item_type: item_type) || Item.find_by(name: item_type)
     raise CareError, "Required item #{item_type.inspect} not found." unless item
 
@@ -246,20 +264,76 @@ class PetCareService
     glow_boost? ? GLOW_ESSENCE_BOOST : 1.0
   end
 
+  def item_multiplier(user_items)
+    user_items.compact.any? ? ITEM_BOOST_MULTIPLIER : 1.0
+  end
+
+  def resolve_care_item(definition)
+    return nil unless @care_item.present?
+
+    interaction_key = @interaction_type
+    available = CareItemResolver.new(user).available_for(interaction_key)
+    entry = available.find { |e| e.item_type.to_s == @care_item.to_s }
+    raise CareError, "Selected item is not available." unless entry
+    entry
+  end
+
+  def consume_care_item!(entry)
+    return unless entry&.user_item_id
+
+    user_item = user.user_items.find_by(id: entry.user_item_id)
+    return unless user_item
+
+    if user_item.quantity.to_i <= 1
+      user_item.destroy!
+    else
+      user_item.update!(quantity: user_item.quantity - 1)
+    end
+  end
+
+  def merge_needs_results(base, extra)
+    merged = {
+      deltas: (base[:deltas] || {}).dup,
+      mood_delta: base[:mood_delta].to_f + extra[:mood_delta].to_f
+    }
+    extra[:deltas].each do |k, v|
+      merged[:deltas][k] = merged[:deltas].fetch(k, 0) + v
+    end
+    merged
+  end
+
+  def apply_badge!(badge_key)
+    return if badge_key.blank?
+    # Placeholder: integrate with badge system if available.
+    @user_pet.badges = (@user_pet.badges || []) | [badge_key.to_s]
+  end
+
+  def apply_coin_buff!(buff)
+    return unless buff
+    multiplier = buff[:multiplier].to_f
+    duration   = buff[:duration_minutes].to_i
+    return if multiplier.zero? || duration <= 0
+
+    expires_at = Time.current + duration.minutes
+    @user_pet.update_columns(
+      coin_buff_multiplier: multiplier,
+      coin_buff_expires_at: expires_at
+    )
+  end
+
+  def use_items?
+    @use_items != false
+  end
+
   def spend_glow_essence!
     return unless glow_boost?
 
-    stat = user.user_stat
-    unless stat
-      stat = user.create_user_stat!(User::STAT_DEFAULTS.merge(energy_updated_at: Time.current))
-    end
+    currency = Currency.find_by_key(:glow_essence)
+    raise CareError, "Glow Essence currency unavailable." unless currency
 
-    stat.with_lock do
-      if stat.glow_essence.to_i <= 0
-        raise CareError, "Not enough Glow Essence."
-      end
-      stat.update!(glow_essence: stat.glow_essence.to_i - 1)
-    end
+    user.debit_currency!(currency, 1)
+  rescue ActiveRecord::Rollback, ActiveRecord::RecordNotFound => e
+    raise CareError, e.message
   end
 
   def grant_care_exp!
