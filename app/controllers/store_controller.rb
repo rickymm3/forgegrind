@@ -9,7 +9,24 @@ class StoreController < ApplicationController
     { item_type: "map", price: 80, quantity: 1, currency_key: :coins },
     { item_type: "soap", price: 90, quantity: 1, currency_key: :coins },
     { item_type: "rainbow_fruit", price: 150, quantity: 1, currency_key: :coins, highlighted: true },
-    { item_type: "rainbow_fruit", price: 20, quantity: 1, currency_key: :diamonds }
+    { item_type: "rainbow_fruit", price: 20, quantity: 1, currency_key: :diamonds },
+
+    # Extended care catalog
+    { item_type: "bone", price: 80, quantity: 1, currency_key: :coins },
+    { item_type: "bouncy_ball", price: 120, quantity: 1, currency_key: :coins },
+    { item_type: "pet_carnival_pass", price: 400, quantity: 1, currency_key: :coins, highlighted: true },
+
+    { item_type: "spa_soap", price: 110, quantity: 1, currency_key: :coins },
+    { item_type: "deluxe_bath_kit", price: 220, quantity: 1, currency_key: :coins },
+
+    { item_type: "hearty_meal", price: 140, quantity: 1, currency_key: :coins },
+    { item_type: "gourmet_feast", price: 260, quantity: 1, currency_key: :coins },
+
+    { item_type: "plush_blanket", price: 130, quantity: 1, currency_key: :coins },
+    { item_type: "weighted_blanket", price: 240, quantity: 1, currency_key: :coins },
+
+    { item_type: "first_aid_kit", price: 150, quantity: 1, currency_key: :coins },
+    { item_type: "deluxe_medpack", price: 280, quantity: 1, currency_key: :coins }
   ].freeze
 
   def index

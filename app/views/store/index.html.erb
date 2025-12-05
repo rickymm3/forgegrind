@@ -17,38 +17,59 @@
   <% case @active_tab %>
   <% when "items" %>
     <section class="space-y-2">
-      <%= turbo_frame_tag "store-item-hero", class: "store-item-hero-frame sticky top-4 z-10" do %>
-        <%= render "store/items_hero", offer: @selected_offer, currency_balances: @currency_balances, hero: true %>
-      <% end %>
-
-      <% if @pet_care_offers.present? %>
-        <div class="store-item-grid grid grid-cols-4 gap-2 overflow-y-auto pb-6 mt-2" style="max-height: 50vh;">
-          <% @pet_care_offers.each do |offer| %>
-            <% item = offer[:item] %>
-            <% icon_path = care_item_image_path(item.item_type) %>
-            <%= link_to store_path(tab: "items", item_type: offer[:item_type]),
-                        data: { turbo_frame: "store-item-hero" },
-                        class: "store-item-card" do %>
-              <div class="store-item-slot">
-                <% if icon_path.present? %>
-                  <%= image_tag icon_path, alt: item.name, class: "store-item-icon" %>
-                <% else %>
-                  <span class="store-item-fallback"><%= item.name.first %></span>
-                <% end %>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div class="lg:col-span-2">
+          <% if @pet_care_offers.present? %>
+            <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+              <% @pet_care_offers.each do |offer| %>
+                <% item = offer[:item] %>
+                <% metadata = inventory_item_metadata(item) %>
+                <% rarity = metadata[:rarity] || "common" %>
+                <% frame_class = rarity_frame_class(rarity) %>
+                <% rarity_color = rarity_color_class(rarity) %>
+                <% icon_path = care_item_image_path(item.item_type) rescue nil %>
+                <div class="space-y-2">
+                  <%= link_to store_path(tab: "items", item_type: offer[:item_type]),
+                              data: { turbo_frame: "store-item-hero", turbo_method: :get },
+                              class: "group relative block aspect-square overflow-hidden rounded-3xl border-2 #{frame_class} bg-slate-900/60 shadow-inner shadow-slate-950/40 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 hover:scale-[1.01]" do %>
+                    <span class="sr-only"><%= item.name %></span>
+                    <% if icon_path.present? %>
+                      <img alt="" class="absolute inset-0 h-full w-full object-contain p-4 transition duration-200 group-hover:scale-105" src="<%= icon_path %>">
+                    <% else %>
+                      <div class="absolute inset-0 flex items-center justify-center text-sm text-slate-300">No Art</div>
+                    <% end %>
+                    <span class="absolute top-2 left-2 inline-flex items-center rounded-full bg-slate-950/80 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-<%= rarity_color %>">
+                      <%= rarity.to_s.titleize %>
+                    </span>
+                    <span class="absolute bottom-2 right-2 inline-flex items-center rounded-full bg-indigo-600/90 px-3 py-1 text-[11px] font-semibold text-white shadow-md">
+                      <%= offer[:price] %> <%= offer[:currency].symbol || offer[:currency].name %>
+                    </span>
+                  <% end %>
+                  <div class="flex items-center justify-between text-xs text-slate-400">
+                    <span class="font-semibold text-slate-100 text-sm truncate"><%= item.name %></span>
+                    <span class="capitalize"><%= item.item_type %></span>
+                  </div>
+                </div>
+              <% end %>
+            </div>
+          <% else %>
+            <div class="rounded-3xl border border-slate-800 bg-slate-950/70 p-8 shadow-inner shadow-slate-950/40">
+              <div class="space-y-4 text-center text-slate-300">
+                <h2 class="text-xl font-semibold text-slate-100">Items arriving soon</h2>
+                <p class="text-sm">
+                  The Forge is still crafting consumables and gear. Check back later for limited-time bundles and seasonal offerings.
+                </p>
               </div>
-            <% end %>
+            </div>
           <% end %>
         </div>
-      <% else %>
-        <div class="rounded-3xl border border-slate-800 bg-slate-950/70 p-8 shadow-inner shadow-slate-950/40">
-          <div class="space-y-4 text-center text-slate-300">
-            <h2 class="text-xl font-semibold text-slate-100">Items arriving soon</h2>
-            <p class="text-sm">
-              The Forge is still crafting consumables and gear. Check back later for limited-time bundles and seasonal offerings.
-            </p>
-          </div>
+
+        <div class="lg:col-span-1">
+          <%= turbo_frame_tag "store-item-hero", class: "store-item-hero-frame sticky top-4 z-10" do %>
+            <%= render "store/items_hero", offer: @selected_offer, currency_balances: @currency_balances, hero: true %>
+          <% end %>
         </div>
-      <% end %>
+      </div>
     </section>
   <% when "eggs" %>
     <section class="space-y-6">

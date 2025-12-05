@@ -21,6 +21,13 @@
     <%= render "shared/toast", message: @purchase_error, theme: :error %>
   <% end %>
 <% elsif @purchased_offer.present? %>
+  <%= turbo_stream.update "store-item-hero" do %>
+    <%= render "store/items_hero",
+               offer: @purchased_offer,
+               currency_balances: @currency_balances,
+               hero: true %>
+  <% end %>
+
   <% item = @purchased_offer[:item] %>
   <% quantity = @purchased_offer[:quantity].to_i %>
   <% currency = @purchased_offer[:currency] %>

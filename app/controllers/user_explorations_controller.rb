@@ -15,8 +15,13 @@ class UserExplorationsController < ApplicationController
     @coin_reward = 0
 
     @user_pets = @user_exploration.user_pets.to_a
+    @leader_pet = @user_pets.find { |pet| pet.id == @user_exploration.primary_user_pet_id }
     apply_experience_and_needs!(@user_pets, @user_exploration.duration_seconds, outcome.need_penalty_multiplier)
     @user_pets.each { |pet| pet.ensure_sleep_state! }
+    refresh_pet_state(@leader_pet) if @leader_pet.present?
+    @leader_slot_dom_id = if @leader_pet&.active_slot.present?
+                            helpers.pet_slot_dom_id(@leader_pet, @leader_pet.active_slot)
+                          end
 
     diamonds_currency = Currency.find_by_key(:diamonds)
 
@@ -67,6 +72,19 @@ class UserExplorationsController < ApplicationController
     checkpoint = @user_exploration.mark_active_segment_checkpoint!
     checkpoint ||= @user_exploration.checkpoint_segment_entry
     if checkpoint.nil?
+      if @user_exploration.segment_progress_entries.all? { |entry| entry[:status].to_s == 'completed' } && @user_exploration.complete?
+        respond_to do |format|
+          format.turbo_stream do
+            render_ready_streams(@user_exploration)
+          end
+          format.html do
+            destination = @user_exploration.generated_exploration || @user_exploration.world
+            redirect_to(destination.is_a?(GeneratedExploration) ? zone_explorations_path(id: destination.id) : explorations_path)
+          end
+        end
+        return
+      end
+
       head :unprocessable_entity and return
     end
 
@@ -263,6 +281,18 @@ class UserExplorationsController < ApplicationController
 
     user_pet.needs_updated_at = Time.current
     user_pet.recalc_mood!(save: false)
+  end
+
+  def refresh_pet_state(pet)
+    return unless pet
+
+    ticks = pet.catch_up_energy!
+    pet.catch_up_needs!(care_ticks: ticks)
+    pet.accrue_held_coins!
+    pet.ensure_sleep_state!
+    PetThoughtRefresher.refresh!(pet)
+    PetRequestService.new(pet).refresh_request!
+    pet.save!(validate: false)
   end
 
   def base_need_penalties(duration_seconds)

@@ -12,7 +12,6 @@ bases:
     flavor: "An illuminated path carved for first-time scouts."
     checkpoint_labels:
       - "Trailhead Patrol"
-      - "Final Descent"
     rewards:
       base_drop_key: "starter_zone"
     requirements:

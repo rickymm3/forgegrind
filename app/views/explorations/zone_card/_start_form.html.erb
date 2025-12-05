@@ -1,0 +1,47 @@
+<%= form_with url: start_exploration_path(generated),
+              method: :post,
+              data: { turbo_frame: detail_dom_id },
+              class: "space-y-5" do %>
+  <%= hidden_field_tag :user_pet_ids, selected_pet_ids.join(',') %>
+  <%= hidden_field_tag :party_order, selected_pet_ids.join(',') %>
+  <%= hidden_field_tag :primary_user_pet_id, selected_pet_ids.first %>
+
+  <% unmet = requirement_progress.reject { |r| r[:fulfilled] } %>
+  <div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-3 space-y-2">
+    <div class="flex items-center justify-between">
+      <p class="text-xs font-semibold text-slate-700">Expedition requirements</p>
+      <% if requirement_progress.empty? %>
+        <span class="text-[11px] font-semibold text-slate-500">None</span>
+      <% elsif unmet.any? %>
+        <span class="text-[11px] font-semibold text-amber-600"><%= unmet.size %> unmet</span>
+      <% else %>
+        <span class="text-[11px] font-semibold text-emerald-600">All satisfied</span>
+      <% end %>
+    </div>
+    <div class="flex flex-wrap gap-2">
+      <% if requirement_progress.present? %>
+        <% requirement_progress.each do |entry| %>
+          <% fulfilled = entry[:fulfilled] %>
+          <span class="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold border <%= fulfilled ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200' %>">
+            <span class="inline-block h-1.5 w-1.5 rounded-full <%= fulfilled ? 'bg-emerald-500' : 'bg-amber-500' %>"></span>
+            <%= entry[:label].presence || entry[:id].to_s.humanize %>
+            <% if entry[:required].to_i > 0 %>
+              <span class="text-[10px] font-normal opacity-80">(need <%= entry[:required] %>)</span>
+            <% end %>
+          </span>
+        <% end %>
+      <% else %>
+        <span class="text-[11px] text-slate-500">No requirements for this expedition.</span>
+      <% end %>
+    </div>
+    <% if unmet.any? %>
+      <p class="text-[11px] text-amber-700">Select pets that satisfy unmet requirements to enable Start.</p>
+    <% end %>
+  </div>
+
+  <div class="flex items-center justify-between flex-wrap gap-3">
+    <p class="text-xs text-slate-500">Leader must be active; companions come from storage.</p>
+    <%= submit_tag "Start Expedition",
+                   class: "inline-flex items-center gap-2 rounded-full bg-indigo-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white" %>
+  </div>
+<% end %>

@@ -1,4 +1,6 @@
+<% require "ostruct" %>
 <% exploring = pet.respond_to?(:exploring?) && pet.exploring? %>
+<% sleeping = pet.respond_to?(:asleep_until) && pet.asleep_until.present? && pet.asleep_until.future? %>
 <% request = care_request.presence || {} %>
 <% request_need = request["need"] %>
 <% definition = PetRequestService::REQUEST_DEFINITIONS[request_need&.to_sym] %>
@@ -6,6 +8,7 @@
 <% interaction = definition&.dig(:interaction) %>
 <% action_def = interaction ? PetCareService::ACTIONS[interaction] : nil %>
 <% care_item_counts = care_item_counts_for(current_user) %>
+<% required_types = Array(action_def&.dig(:required_item_types)) %>
 <% cooling_down = request_cooldown_until.present? && request_cooldown_until.future? %>
 <% next_window = request_cooldown_until&.strftime("%l:%M %p") if cooling_down %>
 
@@ -20,6 +23,17 @@
         </div>
       </div>
       <p class="pet-request__prompt">This companion is out exploring. Care requests will resume when they return.</p>
+    </div>
+  <% elsif sleeping %>
+    <div class="pet-request__card pet-request__card--idle">
+      <div class="pet-request__header">
+        <div class="pet-request__icon">💤</div>
+        <div>
+          <p class="pet-request__eyebrow">Sleeping</p>
+          <p class="pet-request__title">Resting now</p>
+        </div>
+      </div>
+      <p class="pet-request__prompt"><%= pet.name.presence || "This companion" %> is asleep. Check back soon.</p>
     </div>
   <% elsif request.present? %>
     <div class="pet-request__card">
@@ -42,7 +56,15 @@
       <p class="pet-request__prompt"><%= request["prompt"] || definition&.dig(:prompt) || "Your pet is asking for care." %></p>
       <p class="pet-request__description"><%= request["description"] || definition&.dig(:description) %></p>
 
-      <% care_item_options = interaction ? CareItemResolver.new(current_user).available_for(interaction) : [] %>
+        <% care_item_options = interaction ? CareItemResolver.new(current_user).available_for(interaction) : [] %>
+      <% if care_item_options.empty? && required_types.any? %>
+        <% inventory = current_user.user_items.includes(:item).index_by { |ui| ui.item&.item_type } %>
+        <% required_types.each do |type| %>
+          <% ui = inventory[type] %>
+          <% next unless ui&.quantity.to_i.positive? %>
+          <% care_item_options << OpenStruct.new(item_type: type, name: ui.item.name, quantity: ui.quantity) %>
+        <% end %>
+      <% end %>
 
       <div class="pet-request__actions">
         <%= form_with url: accept_request_pet_path(pet),
@@ -51,7 +73,7 @@
                       class: "pet-request__form" do %>
           <div class="pet-request__item-select">
             <label class="pet-request__item-label">Optional item</label>
-            <select name="care_item" class="pet-request__item-dropdown" <%= "disabled" if care_item_options.empty? %>>
+            <select name="care_item" class="pet-request__item-dropdown">
               <option value="">No extra item</option>
               <% care_item_options.each do |entry| %>
                 <option value="<%= entry.item_type %>"><%= "#{entry.name} (#{entry.quantity}×)" %></option>

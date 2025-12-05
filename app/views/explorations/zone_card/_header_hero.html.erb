@@ -1,0 +1,36 @@
+<%# Hero/header block for zone card %>
+<div class="relative h-40 bg-slate-900">
+  <%= image_tag world_zone_image_path(generated.world),
+                alt: generated.world.name,
+                class: "absolute inset-0 h-full w-full object-cover" %>
+  <div class="absolute inset-0 bg-gradient-to-t from-slate-900/85 via-slate-900/30 to-slate-900/60"></div>
+  <div class="absolute top-4 left-4 flex items-center gap-2 text-white text-xs uppercase tracking-wider font-semibold">
+    <span class="rounded-full px-3 py-1 bg-white/20">Expedition</span>
+  </div>
+  <div class="absolute bottom-4 left-4 text-white">
+    <h3 class="text-2xl font-semibold"><%= generated.name %></h3>
+    <p class="text-xs flex items-center gap-2 text-white/80">
+      <span class="inline-flex items-center gap-1">
+        <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path d="M12 6v6l4 2" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
+        </svg>
+        Duration · <%= duration_label.join(' ') %>
+      </span>
+      <span class="inline-flex items-center gap-1">
+        <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path d="M3 12h3m12 0h3M12 3v3m0 12v3" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
+        </svg>
+        <%= generated.world.name %>
+      </span>
+    </p>
+    <% if rarity_label %>
+      <p class="mt-2 inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-semibold uppercase"
+         style="<%= rarity_color ? "border-color: #{rarity_color}55; background-color: #{rarity_color}1a; color: #{rarity_color};" : '' %>">
+        <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6">
+          <path d="M12 3l2.5 6.5L21 10l-5 4.5L17.5 21 12 17.5 6.5 21 8 14.5 3 10l6.5-.5L12 3z" />
+        </svg>
+        <%= rarity_label %>
+      </p>
+    <% end %>
+  </div>
+</div>

@@ -7,7 +7,8 @@ export default class extends Controller {
   static values = {
     max: { type: Number, default: 3 },
     previewUrl: String,
-    filters: Object
+    filters: Object,
+    equippedIds: Array
   }
 
   static targets = [
@@ -72,6 +73,14 @@ export default class extends Controller {
       this.flashLimit()
       return
     }
+    if (this.selections.length === 0 && !this.isEquipped(id)) {
+      this.flashHint("Leader must be an active pet.")
+      return
+    }
+    if (this.selections.length >= 1 && this.isEquipped(id) && id !== this.primaryId) {
+      this.flashHint("Companions must come from storage pets.")
+      return
+    }
     this.selections.push(id)
     if (!this.primaryId) {
       this.primaryId = id
@@ -88,7 +97,11 @@ export default class extends Controller {
     this.selections.splice(index, 1)
     this.setCheckboxState(id, false)
     if (this.primaryId === id) {
-      this.primaryId = this.selections[0] || null
+      const nextLeader = this.selections.find((petId) => this.isEquipped(petId))
+      this.primaryId = nextLeader || null
+      if (!this.primaryId) {
+        this.selections = []
+      }
     }
     this.refreshAll()
     this.submitPreview()
@@ -106,7 +119,14 @@ export default class extends Controller {
     if (primary && this.selections.includes(primary)) {
       this.primaryId = primary
     } else {
-      this.primaryId = this.selections[0] || null
+      // prefer an equipped pet as leader if present
+      const equippedLeader = this.selections.find((petId) => this.isEquipped(petId))
+      this.primaryId = equippedLeader || this.selections[0] || null
+      if (this.primaryId && !this.isEquipped(this.primaryId)) {
+        // invalid initial state; reset
+        this.selections = []
+        this.primaryId = null
+      }
     }
   }
 
@@ -223,7 +243,7 @@ export default class extends Controller {
 
   refreshStartButton() {
     if (!this.hasStartButtonTarget) return
-    const disabled = this.selections.length === 0
+    const disabled = this.selections.length === 0 || !this.primaryId
     this.startButtonTarget.disabled = disabled
     this.startButtonTarget.classList.toggle("opacity-60", disabled)
     this.startButtonTarget.classList.toggle("cursor-not-allowed", disabled)
@@ -287,6 +307,17 @@ export default class extends Controller {
     }, 500)
   }
 
+  flashHint(message) {
+    if (!this.hasSelectionHintTarget) return
+    this.selectionHintTarget.textContent = message
+    this.selectionHintTarget.classList.add("text-amber-600", "font-semibold")
+    clearTimeout(this.hintTimeout)
+    this.hintTimeout = setTimeout(() => {
+      this.refreshSelectionHint()
+      this.selectionHintTarget.classList.remove("text-amber-600", "font-semibold")
+    }, 2000)
+  }
+
   assignHiddenValue(field, value) {
     this.normalizeFields(field).forEach((element) => {
       if (element) element.value = value
@@ -331,6 +362,12 @@ export default class extends Controller {
 
   isSelected(id) {
     return this.selections.includes(id)
+  }
+
+  isEquipped(id) {
+    if (!this.hasEquippedIdsValue) return false
+    const intId = parseInt(id, 10)
+    return this.equippedIdsValue.map((v) => parseInt(v, 10)).includes(intId)
   }
 
   get csrfToken() {

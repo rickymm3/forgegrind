@@ -1,0 +1,96 @@
+<% title = role == "leader" ? "Choose a leader (active pet)" : "Choose a companion (storage)" %>
+<turbo-frame id="party-picker-panel">
+  <div class="fixed inset-0 z-40 bg-slate-950/70 backdrop-blur-sm"></div>
+  <div class="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-4 pb-10">
+    <div class="pointer-events-auto w-full max-w-4xl rounded-3xl border border-slate-800 bg-slate-950/95 p-5 shadow-2xl shadow-slate-950/50 space-y-5">
+      <header class="flex items-start justify-between gap-3">
+        <div>
+          <p class="text-[11px] font-semibold uppercase tracking-wide text-indigo-300"><%= title %></p>
+          <h2 class="text-lg font-semibold text-slate-50">Select a pet</h2>
+          <p class="text-sm text-slate-400">Unavailable pets are hidden. Filters are optional.</p>
+        </div>
+        <%= button_to "Close",
+                      party_picker_exploration_path(generated_exploration, cancel: 1),
+                      method: :get,
+                      data: { turbo_frame: "party-picker-panel" },
+                      class: "inline-flex items-center gap-2 rounded-full border border-slate-700/70 bg-slate-900/60 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950" %>
+      </header>
+
+      <%= form_with url: party_picker_exploration_path(generated_exploration),
+                    method: :get,
+                    data: { turbo_frame: "party-picker-panel" },
+                    class: "grid grid-cols-1 sm:grid-cols-3 gap-3" do %>
+        <%= hidden_field_tag :role, role %>
+        <%= hidden_field_tag :selected_pet_ids, selected_pet_ids.join(",") %>
+        <input type="text"
+               name="name"
+               value="<%= filters[:name] %>"
+               placeholder="Search name"
+               class="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+        <select name="pet_type_id"
+                class="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-400">
+          <option value="">All types</option>
+          <% PetType.order(:name).each do |type| %>
+            <option value="<%= type.id %>" <%= "selected" if filters[:pet_type_id].to_s == type.id.to_s %>><%= type.name %></option>
+          <% end %>
+        </select>
+        <select name="rarity_id"
+                class="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-400">
+          <option value="">All rarities</option>
+          <% Rarity.order(:name).each do |rarity| %>
+            <option value="<%= rarity.id %>" <%= "selected" if filters[:rarity_id].to_s == rarity.id.to_s %>><%= rarity.name %></option>
+          <% end %>
+        </select>
+        <div class="sm:col-span-3">
+          <button type="submit"
+                  class="inline-flex items-center gap-2 rounded-full bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950">
+            Apply filters
+          </button>
+        </div>
+      <% end %>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        <% @pets.each do |pet| %>
+          <% name = pet.name.presence || pet.pet.name %>
+          <% rarity_label = pet.rarity&.name %>
+          <% selected_ids = selected_pet_ids.dup %>
+          <% updated_ids =
+               if role == "leader"
+                 ([pet.id] + selected_ids.reject { |id| id == pet.id }).first(4)
+               else
+                 ids = selected_ids.dup
+                 # If no leader chosen yet, ignore companion selection to avoid stealing leader slot
+                 next if ids.empty?
+                 ids << pet.id unless ids.include?(pet.id)
+                 ids.first(4)
+               end %>
+          <% next unless updated_ids %>
+          <% select_url = preview_exploration_path(generated_exploration, selected_pet_ids: updated_ids.join(",")) %>
+          <div class="rounded-2xl border border-slate-800 bg-slate-900/80 p-3 space-y-2 shadow-inner shadow-slate-950/40">
+            <div class="flex items-center gap-3">
+              <div class="h-12 w-12 rounded-xl border border-slate-700 bg-slate-950 overflow-hidden">
+                <%= image_tag pet_sprite_path(pet.pet),
+                              alt: name,
+                              class: "h-full w-full object-contain" %>
+              </div>
+              <div class="space-y-1">
+                <p class="text-sm font-semibold text-slate-100 truncate"><%= name %></p>
+                <p class="text-xs text-slate-400">
+                  <%= rarity_label %> • Lv <%= pet.level %>
+                </p>
+              </div>
+            </div>
+            <div class="flex justify-between items-center">
+              <p class="text-xs text-slate-400">Power <span class="font-semibold text-slate-100"><%= pet.pet.power %></span></p>
+              <%= button_to(role == "leader" ? "Set leader" : "Add companion",
+                            select_url,
+                            method: :post,
+                            data: { turbo_frame: dom_id(generated_exploration, :detail) },
+                            class: "inline-flex items-center gap-2 rounded-full bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-indigo-700") %>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</turbo-frame>

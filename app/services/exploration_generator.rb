@@ -237,6 +237,11 @@ class ExplorationGenerator
       prefix: prefix_config&.dig(:label),
       suffix: suffix_config&.dig(:label)
     }.compact
+    component_descriptions = {
+      base: base_config&.dig(:description) || base_config&.dig(:flavor) || component_labels[:base],
+      prefix: prefix_config&.dig(:description) || prefix_config&.dig(:flavor) || component_labels[:prefix],
+      suffix: suffix_config&.dig(:description) || suffix_config&.dig(:flavor) || component_labels[:suffix]
+    }.compact
     world_info = {
       key: base_config[:world_key] || base_key,
       name: base_config[:world_name],
@@ -255,6 +260,7 @@ class ExplorationGenerator
         prefix: prefix_key,
         suffix: suffix_key
       },
+      component_descriptions: component_descriptions,
       component_labels: component_labels,
       world: world_info,
       combination_key: combination_key,
@@ -375,7 +381,7 @@ class ExplorationGenerator
 
   def final_leg_label_for(base_config)
     base_name = base_config&.dig(:world_name)
-    base_name.present? ? "Final approach to #{base_name}" : "Final Approach"
+    base_name.present? ? "Finish" : "Finish"
   end
 
   def normalize_segment_templates(templates, total_duration_seconds)

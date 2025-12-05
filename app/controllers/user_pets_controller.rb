@@ -191,7 +191,20 @@ class UserPetsController < ApplicationController
     respond_to do |format|
       format.turbo_stream do
         flash.now[:notice] = notice
-        render_panel_stream(panel_partial_for(:overview), panel_locals)
+        streams = []
+        panel_frame_id = helpers.user_pet_panel_dom_id(@user_pet)
+        streams << turbo_stream.replace(panel_frame_id, partial: panel_partial_for(:overview), locals: panel_locals)
+        # Update active slot frame if requested
+        if params[:frame_id].present?
+          frame_id = params[:frame_id]
+          slot_index = @user_pet.active_slot || 0
+          streams << turbo_stream.replace(
+            frame_id,
+            partial: "pets/active_slot",
+            locals: { pet: @user_pet, index: slot_index }
+          )
+        end
+        render turbo_stream: streams
       end
       format.html { redirect_to @user_pet, notice: notice }
     end

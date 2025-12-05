@@ -1,0 +1,65 @@
+<% segments = Array(generated.segment_definitions).map { |seg| seg.respond_to?(:with_indifferent_access) ? seg.with_indifferent_access : seg } %>
+<% checkpoints = segments.presence || [] %>
+<% active_index = nil %>
+<% completed_indices = [] %>
+<% active_progress = 0 %>
+<% if user_exploration&.using_segments? %>
+  <% entries = user_exploration.segment_progress_entries.sort_by { |e| e[:index].to_i } %>
+  <% entries.each do |entry| %>
+    <% case entry[:status].to_s
+       when 'active'
+         active_index = entry[:index].to_i
+       when 'completed'
+         completed_indices << entry[:index].to_i
+       when 'checkpoint'
+         active_index = entry[:index].to_i
+         completed_indices << (entry[:index].to_i - 1) if entry[:index].to_i.positive?
+       end %>
+  <% end %>
+  <% clock = user_exploration.active_segment_clock(reference_time: Time.current) %>
+  <% if clock && clock[:duration_seconds].to_i.positive? %>
+    <% active_progress = ((clock[:elapsed_seconds].to_f / clock[:duration_seconds].to_f) * 100).clamp(0.0, 100.0) %>
+  <% end %>
+<% end %>
+<div class="zone-map">
+  <div class="zone-map__header">
+    <span class="zone-map__eyebrow">Route Map</span>
+    <span class="zone-map__eyebrow-meta"><%= checkpoints.size %> checkpoints</span>
+  </div>
+  <div class="zone-map__timeline">
+    <div class="zone-map__node zone-map__node--start">
+      <div class="zone-map__pin">
+        <span class="zone-map__icon">S</span>
+      </div>
+      <p class="zone-map__label">Start</p>
+    </div>
+    <% checkpoints.each_with_index do |segment, idx| %>
+      <% completed = completed_indices.include?(idx) %>
+      <% active = active_index == idx %>
+      <% connector_classes = ["zone-map__connector"] %>
+      <% connector_classes << "zone-map__connector--completed" if completed %>
+      <% connector_classes << "zone-map__connector--active" if active %>
+      <div class="<%= connector_classes.join(' ') %>">
+        <div class="zone-map__connector-track"></div>
+        <% if completed %>
+          <div class="zone-map__connector-fill zone-map__connector-fill--full"></div>
+        <% elsif active %>
+          <div class="zone-map__connector-fill" style="width: <%= active_progress %>%"></div>
+          <div class="zone-map__traveler" style="left: <%= active_progress %>%"></div>
+        <% end %>
+      </div>
+      <% node_classes = ["zone-map__node"] %>
+      <% node_classes << "zone-map__node--completed" if completed %>
+      <% node_classes << "zone-map__node--active" if active %>
+      <div class="<%= node_classes.join(' ') %>">
+        <div class="zone-map__pin">
+          <span class="zone-map__icon">C<%= idx + 1 %></span>
+        </div>
+        <div class="zone-map__content">
+          <p class="zone-map__label"><%= segment[:label].presence || "Checkpoint #{idx + 1}" %></p>
+          <p class="zone-map__meta"><%= exploration_duration_label(segment[:duration_seconds].to_i) %></p>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</div>

@@ -1,15 +1,17 @@
 <% generated = @selected_generated %>
 <% world = generated.world %>
 <% metadata = generated.metadata || {} %>
-<% flavor = metadata[:flavor] || metadata["flavor"] %>
-<% world_description = Array(flavor).compact.first %>
 <% duration_seconds = generated.duration_seconds.to_i %>
 <% duration_label = exploration_duration_label(duration_seconds) %>
 <% rarity_label = metadata[:rarity_label] || metadata["rarity_label"] %>
 <% rarity_color = metadata[:rarity_color] || metadata["rarity_color"] %>
+<% descriptors = exploration_descriptor_pills(generated) %>
+<% checkpoint_count = Array(generated.segment_definitions).size %>
 
-<% subtitle_text = world_description.presence || "Scout this zone to earn rewards and uncover encounters." %>
+<% title_text = exploration_base_label(generated) %>
+<% subtitle_text = world&.name || "Scout this zone to earn rewards and uncover encounters." %>
 <% duration_badge = content_tag(:div, duration_label, class: "page-badge page-badge--neutral") %>
+<% checkpoints_badge = content_tag(:div, "#{checkpoint_count} checkpoints", class: "page-badge page-badge--neutral") %>
 <% rarity_badge = nil %>
 <% if rarity_label.present? %>
   <% rarity_style = rarity_color ? "border-color: #{rarity_color}55; background-color: #{rarity_color}1a; color: #{rarity_color};" : nil %>
@@ -19,60 +21,53 @@
   <% end %>
 <% end %>
 <% meta_stack = content_tag(:div, class: "page-header__meta-stack") do %>
-  <%= safe_join([duration_badge, rarity_badge].compact) %>
+  <%= safe_join([rarity_badge].compact) %>
 <% end %>
 
 <% content_for :header do %>
-  <%= render "shared/page_header",
-             title: generated.name,
-             subtitle: subtitle_text,
-             back_path: explorations_path,
-             back_label: "Back to explorations",
-             right: meta_stack %>
-<% end %>
-
-<% equipped_pets = current_user.user_pets.equipped %>
-<% if equipped_pets.any? %>
-  <%= render "explorations/pet_camp", user_pets: equipped_pets %>
-<% end %>
-
-<% can_rescout = @selected_generated &&
-                 !@selected_generated.consumed? &&
-                 (@user_exploration.blank? || @user_exploration.complete?) &&
-                 @selected_generated.slot_state_sym != :cooldown %>
-<% if can_rescout %>
-  <% reroll_seconds = @selected_generated.reroll_cooldown_remaining_seconds %>
-  <% reroll_disabled = reroll_seconds.positive? %>
-  <% reroll_wait = nil %>
-  <% if reroll_disabled %>
-    <% available_time = @selected_generated.reroll_available_at || (Time.current + reroll_seconds.seconds) %>
-    <% reroll_wait = distance_of_time_in_words(Time.current, available_time) %>
-  <% end %>
-  <div class="zone-rescout">
-    <%= button_to "Rescout Expedition",
-                  reroll_exploration_path(@selected_generated),
-                  method: :post,
-                  class: "zone-rescout__button",
-                  disabled: reroll_disabled,
-                  form: { data: { turbo_confirm: "Replace this expedition with a fresh route?", turbo_frame: "_top" } } %>
-    <% if reroll_wait.present? %>
-      <p class="zone-rescout__note">Available in <%= reroll_wait %></p>
-    <% end %>
+  <div class="page-header">
+    <div class="flex items-start gap-4 sm:gap-6 w-full">
+      <div class="flex flex-1 items-center gap-3 min-w-0">
+        <%= link_to explorations_path,
+                    class: "page-header__back flex h-12 w-12 flex-none items-center justify-center rounded-full border border-slate-200 bg-white text-lg font-semibold text-slate-600 hover:bg-slate-50",
+                    aria: { label: "Back to explorations" } do %>
+          <span aria-hidden="true" class="page-header__back-icon">←</span>
+        <% end %>
+        <div class="flex flex-col leading-tight min-w-0">
+          <h1 class="text-xl font-semibold text-white line-clamp-2 break-words"><%= title_text %></h1>
+          <p class="text-[11px] text-white/80 flex items-center gap-2 mt-1 truncate">
+            <span class="inline-flex items-center gap-1">
+              <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path d="M12 6v6l4 2" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
+              </svg>
+              <%= duration_label %>
+            </span>
+            <span class="inline-flex items-center gap-1 text-slate-400">
+              <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path d="M3 12h3m12 0h3M12 3v3m0 12v3" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
+              </svg>
+              <%= subtitle_text %>
+            </span>
+          </p>
+        </div>
+      </div>
+      <div class="flex flex-col items-end gap-2 flex-none">
+        <%= rarity_badge if rarity_badge.present? %>
+      </div>
+    </div>
   </div>
 <% end %>
 
-<div class="flex-1 w-full zone-content">
-  <div class="mx-auto w-full max-w-4xl px-4 pb-28">
-    <%= render "explorations/zone_card",
-               generated_exploration: generated,
-               user_exploration: @user_exploration,
-               requirement_progress: @requirement_progress,
-               requirement_groups: @requirement_groups,
-               available_pets: @available_pets,
-               selected_pet_ids: @selected_pet_ids,
-               filters: @filters,
-               state: @zone_state,
-               show_filters: false,
-               compact_layout: true %>
-  </div>
+<turbo-frame id="party-picker-panel"></turbo-frame>
+
+<div class="flex-1 w-full zone-content" id="zone-card-container">
+  <%= render "explorations/zone_card_wrapper",
+             generated_exploration: generated,
+             user_exploration: @user_exploration,
+             requirement_progress: @requirement_progress,
+             requirement_groups: @requirement_groups,
+             available_pets: @available_pets,
+             selected_pet_ids: @selected_pet_ids,
+             filters: @filters,
+             state: @zone_state %>
 </div>

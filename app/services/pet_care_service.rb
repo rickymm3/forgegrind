@@ -274,8 +274,21 @@ class PetCareService
     interaction_key = @interaction_type
     available = CareItemResolver.new(user).available_for(interaction_key)
     entry = available.find { |e| e.item_type.to_s == @care_item.to_s }
-    raise CareError, "Selected item is not available." unless entry
-    entry
+    return entry if entry
+
+    # Fallback: allow any owned item matching the selected type even if not in the catalog
+    ui = user.user_items.includes(:item).find { |u| u.item&.item_type.to_s == @care_item.to_s && u.quantity.to_i.positive? }
+    raise CareError, "Selected item is not available." unless ui
+
+    OpenStruct.new(
+      item_type: ui.item.item_type,
+      name: ui.item.name,
+      quantity: ui.quantity,
+      stats: {},
+      badge: nil,
+      coin_buff: nil,
+      user_item_id: ui.id
+    )
   end
 
   def consume_care_item!(entry)
@@ -381,3 +394,4 @@ class PetCareService
     @random ||= Random.new
   end
 end
+require "ostruct"

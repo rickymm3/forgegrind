@@ -92,6 +92,7 @@ post "/store/items/:item_type/purchase", to: "store#purchase_item", as: :store_p
       post :start
       post :preview
       post :reroll
+      get :party_picker
     end
   end
 

@@ -1,0 +1,311 @@
+<% leader_ids = selected_pet_ids.first.present? ? [selected_pet_ids.first] : [] %>
+<% companion_ids = selected_pet_ids.drop(1) %>
+<% equipped_set = Array(equipped_pet_ids).map(&:to_i) %>
+
+<div class="rounded-2xl border border-slate-200 bg-white p-4 space-y-4">
+  <div class="flex items-start justify-between gap-3">
+    <div>
+      <h4 class="text-sm font-semibold text-slate-700">Choose your exploration squad</h4>
+      <p class="text-xs text-slate-500">One leader (active slot) and up to three companions from storage. All gain EXP; leader spends energy.</p>
+    </div>
+    <div class="flex flex-col items-end gap-1 text-xs text-slate-500">
+      <span>Leader energy cost: <%= UserPet::EXPLORATION_ENERGY_COST %></span>
+      <span>Companions: no energy cost</span>
+    </div>
+  </div>
+
+  <div class="flex flex-col gap-4">
+    <div>
+      <p class="text-xs uppercase tracking-wide text-slate-500 font-semibold mb-2">Leader (Active pets)</p>
+      <div class="flex flex-wrap justify-start gap-4"
+           data-party-selector-target="slot">
+        <% [["Leader", leader_ids.first]].each do |label, _assigned_id| %>
+          <div class="flex flex-col items-center gap-2">
+            <div class="relative">
+              <button type="button"
+                      class="<%= slot_size_classes %> rounded-full bg-slate-800/5 text-slate-400 flex items-center justify-center text-2xl font-semibold transition hover:bg-slate-800/10"
+                      data-slot-element="main"
+                      data-action="click->party-selector#setPrimaryFromSlot"
+                      disabled>
+                <img class="hidden <%= slot_size_classes %> rounded-full object-cover"
+                     alt=""
+                     data-slot-element="image" />
+                <span class="<%= slot_avatar_placeholder_class %>" data-slot-element="placeholder">+</span>
+                <span class="hidden absolute -bottom-1 left-1/2 -translate-x-1/2 rounded-full bg-indigo-600 px-2 py-0.5 text-[10px] font-semibold text-white uppercase"
+                      data-slot-element="primary">
+                  Leader
+                </span>
+              </button>
+              <button type="button"
+                      class="hidden absolute -top-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-slate-900 text-white text-xs"
+                      data-slot-element="remove"
+                      data-action="click->party-selector#removeFromSlot">
+                ×
+              </button>
+            </div>
+            <div class="text-center space-y-1">
+              <p class="text-sm font-semibold text-slate-700" data-slot-element="name">Empty slot</p>
+              <p class="text-xs text-slate-400" data-slot-element="ability">Select an active pet</p>
+            </div>
+            <span class="text-[10px] uppercase font-semibold text-slate-400"><%= label %></span>
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+    <div>
+      <p class="text-xs uppercase tracking-wide text-slate-500 font-semibold mb-2">Companions (Storage, up to 3)</p>
+      <div class="flex flex-wrap justify-start gap-4"
+           data-party-selector-target="slot">
+        <% ["Companion", "Companion", "Companion"].each do |label| %>
+          <div class="flex flex-col items-center gap-2">
+            <div class="relative">
+              <button type="button"
+                      class="<%= slot_size_classes %> rounded-full bg-slate-800/5 text-slate-400 flex items-center justify-center text-2xl font-semibold transition hover:bg-slate-800/10"
+                      data-slot-element="main"
+                      data-action="click->party-selector#setPrimaryFromSlot"
+                      disabled>
+                <img class="hidden <%= slot_size_classes %> rounded-full object-cover"
+                     alt=""
+                     data-slot-element="image" />
+                <span class="<%= slot_avatar_placeholder_class %>" data-slot-element="placeholder">+</span>
+              </button>
+              <button type="button"
+                      class="hidden absolute -top-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-slate-900 text-white text-xs"
+                      data-slot-element="remove"
+                      data-action="click->party-selector#removeFromSlot">
+                ×
+              </button>
+            </div>
+            <div class="text-center space-y-1">
+              <p class="text-sm font-semibold text-slate-700" data-slot-element="name">Empty slot</p>
+              <p class="text-xs text-slate-400" data-slot-element="ability">Select a companion</p>
+            </div>
+            <span class="text-[10px] uppercase font-semibold text-slate-400"><%= label %></span>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <% if equipped_pets.empty? %>
+    <div class="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-6 text-center text-sm text-slate-500">
+      No active pets available for leadership right now.
+    </div>
+  <% else %>
+    <div class="<%= pet_list_grid_classes %> mb-4">
+      <% equipped_pets.each do |pet| %>
+        <% sleeping = pet.asleep_until.present? && pet.asleep_until.future? %>
+        <% energy_insufficient = pet.energy.to_i < UserPet::EXPLORATION_ENERGY_COST %>
+        <% disabled_reason =
+            if pet.exploring?
+              "Exploring"
+            elsif sleeping
+              "Resting"
+            end %>
+        <% disabled = pet.exploring? || sleeping %>
+        <% display_name = pet.name.presence || pet.pet.name %>
+        <% ability = pet.pet.special_ability %>
+        <% ability_name = ability&.name %>
+        <% ability_tagline = ability&.tagline %>
+        <% ability_tags = ability&.encounter_tags_list&.join(',') %>
+        <% sprite = defined?(pet_sprite_path) ? pet_sprite_path(pet.pet) : asset_path("pets/#{pet.pet.name.parameterize}.png") %>
+        <% container_classes = ["party-card", "relative"] %>
+        <% container_classes << "party-selected" if selected_pet_ids.include?(pet.id) %>
+        <% role_label = "Active (Leader eligible)" %>
+        <div class="<%= container_classes.join(' ') %>"
+             data-party-selector-target="card"
+             data-user-pet-id="<%= pet.id %>"
+             data-display-name="<%= display_name %>"
+             data-image-url="<%= sprite %>"
+             data-ability-name="<%= ability_name %>"
+             data-ability-tagline="<%= ability_tagline %>"
+             data-ability-tags="<%= ability_tags %>"
+             data-disabled="<%= disabled %>"
+             data-disabled-reason="<%= disabled_reason %>"
+             data-action="click->party-selector#toggleCard">
+          <%= check_box_tag "user_pet_ids[]",
+                            pet.id,
+                            selected_pet_ids.include?(pet.id),
+                            class: "hidden",
+                            disabled: disabled,
+                            data: { "party-selector-target": "checkbox" } %>
+          <% button_classes = ["w-full", "rounded-xl", "border", "border-slate-200", "bg-white",
+                               "p-3", "transition", "text-left", "duration-150"] %>
+          <% if disabled %>
+            <% button_classes << "opacity-60 cursor-not-allowed" %>
+          <% elsif energy_insufficient %>
+            <% button_classes << "opacity-80" %>
+          <% else %>
+            <% button_classes << "hover:shadow-md hover:border-indigo-400" %>
+          <% end %>
+          <button type="button"
+                  class="<%= button_classes.join(' ') %>">
+            <div class="flex items-start gap-3">
+              <img class="<%= card_avatar_classes %> rounded-full object-cover"
+                   alt="<%= pet.pet.name %>"
+                   src="<%= sprite %>" />
+              <div class="flex-1 space-y-1">
+                <div class="flex items-center justify-between">
+                  <span class="text-sm font-semibold text-slate-800"><%= display_name %></span>
+                  <span class="text-xs font-semibold text-slate-500">Lvl <%= pet.level %></span>
+                </div>
+                <div class="flex items-center justify-between text-xs text-slate-500">
+                  <span class="inline-flex items-center gap-1">
+                    <span class="font-semibold">Power</span>
+                    <%= pet.pet.power %>
+                  </span>
+                  <span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold bg-indigo-50 text-indigo-700">
+                    <%= role_label %>
+                  </span>
+                </div>
+                <% if ability_name.present? %>
+                  <p class="text-xs text-indigo-600 font-semibold flex items-center gap-1">
+                    <span class="inline-flex h-1.5 w-1.5 rounded-full bg-indigo-400"></span>
+                    <%= ability_name %>
+                  </p>
+                <% end %>
+                <% if ability_tagline.present? %>
+                  <p class="text-[11px] text-slate-500"><%= ability_tagline %></p>
+                <% end %>
+                <% if disabled_reason.present? %>
+                  <span class="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">
+                    <span class="inline-block h-1.5 w-1.5 rounded-full bg-indigo-500"></span>
+                    <%= disabled_reason %>
+                  </span>
+                <% elsif energy_insufficient %>
+                  <span class="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
+                    <span class="inline-block h-1.5 w-1.5 rounded-full bg-amber-500"></span>
+                    Low energy
+                  </span>
+                <% end %>
+              </div>
+            </div>
+            <span class="hidden pointer-events-none absolute top-2 right-2 rounded-full bg-indigo-600 px-2 py-0.5 text-[10px] font-semibold text-white uppercase"
+                  data-card-element="primary">
+              Leader
+            </span>
+          </button>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+
+  <% if storage_pets.empty? %>
+    <div class="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-6 text-center text-sm text-slate-500">
+      No storage pets available for companions right now.
+    </div>
+  <% else %>
+    <div class="<%= pet_list_grid_classes %>">
+      <% storage_pets.each do |pet| %>
+        <% sleeping = pet.asleep_until.present? && pet.asleep_until.future? %>
+        <% energy_insufficient = pet.energy.to_i < UserPet::EXPLORATION_ENERGY_COST %>
+        <% disabled_reason =
+            if pet.exploring?
+              "Exploring"
+            elsif sleeping
+              "Resting"
+            end %>
+        <% disabled = pet.exploring? || sleeping %>
+        <% display_name = pet.name.presence || pet.pet.name %>
+        <% ability = pet.pet.special_ability %>
+        <% ability_name = ability&.name %>
+        <% ability_tagline = ability&.tagline %>
+        <% ability_tags = ability&.encounter_tags_list&.join(',') %>
+        <% sprite = defined?(pet_sprite_path) ? pet_sprite_path(pet.pet) : asset_path("pets/#{pet.pet.name.parameterize}.png") %>
+        <% container_classes = ["party-card", "relative"] %>
+        <% container_classes << "party-selected" if selected_pet_ids.include?(pet.id) %>
+        <% role_label = equipped_set.include?(pet.id) ? "Active (Leader eligible)" : "Storage" %>
+        <div class="<%= container_classes.join(' ') %>"
+             data-party-selector-target="card"
+             data-user-pet-id="<%= pet.id %>"
+             data-display-name="<%= display_name %>"
+             data-image-url="<%= sprite %>"
+             data-ability-name="<%= ability_name %>"
+             data-ability-tagline="<%= ability_tagline %>"
+             data-ability-tags="<%= ability_tags %>"
+             data-disabled="<%= disabled %>"
+             data-disabled-reason="<%= disabled_reason %>"
+             data-action="click->party-selector#toggleCard">
+          <%= check_box_tag "user_pet_ids[]",
+                            pet.id,
+                            selected_pet_ids.include?(pet.id),
+                            class: "hidden",
+                            disabled: disabled,
+                            data: { "party-selector-target": "checkbox" } %>
+          <% button_classes = ["w-full", "rounded-xl", "border", "border-slate-200", "bg-white",
+                               "p-3", "transition", "text-left", "duration-150"] %>
+          <% if disabled %>
+            <% button_classes << "opacity-60 cursor-not-allowed" %>
+          <% elsif energy_insufficient %>
+            <% button_classes << "opacity-80" %>
+          <% else %>
+            <% button_classes << "hover:shadow-md hover:border-indigo-400" %>
+          <% end %>
+          <button type="button"
+                  class="<%= button_classes.join(' ') %>">
+            <div class="flex items-start gap-3">
+              <img class="<%= card_avatar_classes %> rounded-full object-cover"
+                   alt="<%= pet.pet.name %>"
+                   src="<%= sprite %>" />
+              <div class="flex-1 space-y-1">
+                <div class="flex items-center justify-between">
+                  <span class="text-sm font-semibold text-slate-800"><%= display_name %></span>
+                  <span class="text-xs font-semibold text-slate-500">Lvl <%= pet.level %></span>
+                </div>
+                <div class="flex items-center justify-between text-xs text-slate-500">
+                  <span class="inline-flex items-center gap-1">
+                    <span class="font-semibold">Power</span>
+                    <%= pet.pet.power %>
+                  </span>
+                  <span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold <%= equipped_set.include?(pet.id) ? 'bg-indigo-50 text-indigo-700' : 'bg-slate-100 text-slate-600' %>">
+                    <%= role_label %>
+                  </span>
+                </div>
+                <% if ability_name.present? %>
+                  <p class="text-xs text-indigo-600 font-semibold flex items-center gap-1">
+                    <span class="inline-flex h-1.5 w-1.5 rounded-full bg-indigo-400"></span>
+                    <%= ability_name %>
+                  </p>
+                <% end %>
+                <% if ability_tagline.present? %>
+                  <p class="text-[11px] text-slate-500"><%= ability_tagline %></p>
+                <% end %>
+                <% if disabled_reason.present? %>
+                  <span class="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">
+                    <span class="inline-block h-1.5 w-1.5 rounded-full bg-indigo-500"></span>
+                    <%= disabled_reason %>
+                  </span>
+                <% elsif energy_insufficient %>
+                  <span class="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
+                    <span class="inline-block h-1.5 w-1.5 rounded-full bg-amber-500"></span>
+                    Low energy
+                  </span>
+                <% end %>
+              </div>
+            </div>
+            <span class="hidden pointer-events-none absolute top-2 right-2 rounded-full bg-indigo-600 px-2 py-0.5 text-[10px] font-semibold text-white uppercase"
+                  data-card-element="primary">
+              Leader
+            </span>
+            <span class="hidden pointer-events-none absolute top-2 right-2 rounded-full bg-slate-700 px-2 py-0.5 text-[10px] font-semibold text-white uppercase"
+                  data-card-element="companion">
+              Companion
+            </span>
+          </button>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+
+  <div class="flex items-center justify-between text-xs text-slate-500">
+    <span>Tap a slot to promote a leader or remove a companion.</span>
+    <span class="text-amber-600 font-semibold">Leader must be from active pets.</span>
+  </div>
+  <button type="submit"
+          class="w-full inline-flex justify-center items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-400 <%= 'opacity-60 cursor-not-allowed' if selected_pet_ids.empty? %>"
+          data-party-selector-target="startButton"
+          <%= 'disabled' if selected_pet_ids.empty? %>>
+    Send Squad
+  </button>
+</div>

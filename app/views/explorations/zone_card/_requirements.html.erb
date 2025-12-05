@@ -1,0 +1,33 @@
+<%# Shared requirements block %>
+<% requirement_progress ||= [] %>
+<% title ||= "Requirements" %>
+<% show_bonus ||= false %>
+<div class="space-y-2">
+  <h4 class="text-xs font-semibold text-slate-400 uppercase"><%= title %></h4>
+  <% if requirement_progress.present? %>
+    <% requirement_progress.each do |entry| %>
+      <div class="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2">
+        <span class="text-xs font-semibold text-slate-600"><%= entry[:label] || entry[:key].to_s.titleize %></span>
+        <span class="text-xs font-semibold <%= entry[:fulfilled] ? 'text-emerald-600' : 'text-slate-500' %>">
+          <%= "#{entry[:current]} / #{entry[:required]}" %>
+        </span>
+      </div>
+    <% end %>
+  <% else %>
+    <div class="rounded-lg bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-500">
+      No requirements for this route.
+    </div>
+  <% end %>
+</div>
+
+<% if show_bonus %>
+  <% all_met = requirement_progress.all? { |entry| entry[:fulfilled] } %>
+  <% if all_met %>
+    <div class="inline-flex items-center gap-2 rounded-full bg-emerald-100 text-emerald-700 px-3 py-1 text-xs font-semibold uppercase">
+      <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
+      </svg>
+      <span>Bonus rewards unlocked</span>
+    </div>
+  <% end %>
+<% end %>

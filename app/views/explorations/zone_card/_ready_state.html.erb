@@ -1,0 +1,91 @@
+<% rewards = {} %>
+<% coin_reward = rewards[:coins] || rewards["coins"] %>
+<% diamond_reward = rewards[:diamonds] || rewards["diamonds"] %>
+<% item_rewards = rewards[:items] || rewards["items"] || [] %>
+<% container_rewards = rewards[:containers] || rewards["containers"] || [] %>
+
+<div class="space-y-4 bg-white rounded-2xl border border-slate-200 px-5 py-4 shadow-sm">
+  <div class="flex flex-col gap-1">
+    <p class="text-sm font-semibold text-emerald-700 inline-flex items-center gap-2">
+      <span class="inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
+      Expedition complete
+    </p>
+    <h3 class="text-lg font-semibold text-slate-900"><%= generated.name %></h3>
+    <p class="text-xs text-slate-500">Your party returns with rewards and experience.</p>
+  </div>
+
+  <div class="space-y-2">
+    <h4 class="text-xs font-semibold uppercase tracking-wide text-slate-500">Rewards</h4>
+    <div class="flex flex-wrap gap-2 text-sm text-slate-700">
+      <% if coin_reward.to_i.positive? %>
+        <span class="inline-flex items-center gap-1 rounded-full bg-amber-50 px-3 py-1 text-amber-700 border border-amber-200">
+          +<%= coin_reward %> Coins
+        </span>
+      <% end %>
+      <% if diamond_reward.to_i.positive? %>
+        <span class="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-3 py-1 text-indigo-700 border border-indigo-200">
+          +<%= diamond_reward %> Diamonds
+        </span>
+      <% end %>
+      <% Array(item_rewards).each do |entry| %>
+        <% name = entry[:name] || entry["name"] || "Item" %>
+        <% qty  = entry[:quantity] || entry["quantity"] || 1 %>
+        <span class="inline-flex items-center gap-1 rounded-full bg-slate-50 px-3 py-1 text-slate-700 border border-slate-200">
+          +<%= qty %> <%= name %>
+        </span>
+      <% end %>
+      <% Array(container_rewards).each do |entry| %>
+        <% name = entry[:name] || entry["name"] || "Container" %>
+        <% qty  = entry[:quantity] || entry["quantity"] || 1 %>
+        <span class="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-3 py-1 text-emerald-700 border border-emerald-200">
+          +<%= qty %> <%= name %>
+        </span>
+      <% end %>
+      <% if coin_reward.to_i.zero? && diamond_reward.to_i.zero? && item_rewards.blank? && container_rewards.blank? %>
+        <span class="text-xs text-slate-500">Rewards will be applied on collect.</span>
+      <% end %>
+    </div>
+  </div>
+
+  <% if user_exploration&.user_pets&.any? %>
+    <div class="space-y-2">
+      <h4 class="text-xs font-semibold uppercase tracking-wide text-slate-500">Party gains</h4>
+      <div class="space-y-2">
+        <% user_exploration.user_pets.each do |pet| %>
+          <div class="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50 px-3 py-2">
+            <div class="flex items-center gap-3">
+              <% sprite = defined?(pet_sprite_path) ? pet_sprite_path(pet.pet) : asset_path("pets/#{pet.pet.name.parameterize}.png") rescue nil %>
+              <% if sprite.present? %>
+                <img class="h-10 w-10 rounded-full object-cover" alt="<%= pet.pet.name %>" src="<%= sprite %>">
+              <% else %>
+                <div class="h-10 w-10 rounded-full bg-slate-200"></div>
+              <% end %>
+              <div>
+                <p class="text-sm font-semibold text-slate-800"><%= pet.name.presence || pet.pet.name %></p>
+                <p class="text-[11px] text-slate-500 flex items-center gap-3">
+                  <span>Level <%= pet.level %></span>
+                  <% if pet.respond_to?(:experience_points) && pet.respond_to?(:experience_threshold) %>
+                    <span>EXP <%= pet.experience_points %> / <%= pet.experience_threshold %></span>
+                  <% end %>
+                </p>
+              </div>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+
+  <%= button_to "Collect rewards",
+                complete_user_exploration_path(user_exploration),
+                method: :post,
+                class: "w-full inline-flex justify-center items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-400",
+                form: { data: { turbo_frame: "_top" } } %>
+
+  <% if defined?(@rescout_wait_human) && @rescout_wait_human.present? %>
+    <div class="text-xs text-slate-500 flex items-center gap-2">
+      <span class="inline-flex h-1.5 w-1.5 rounded-full bg-slate-400"></span>
+      Rescout available in <%= @rescout_wait_human %>
+    </div>
+  <% end %>
+</div>

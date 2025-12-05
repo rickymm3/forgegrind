@@ -18,6 +18,12 @@ module ApplicationHelper
         label: "Explore",
         path: explorations_path,
         description: "Scout zones and embark on runs."
+      },
+      {
+        id: :inventory,
+        label: "Inventory",
+        path: inventory_path,
+        description: "View items and containers."
       }
     ]
   end
@@ -30,6 +36,8 @@ module ApplicationHelper
       :store
     when "explorations", "user_explorations"
       :explore
+    when "inventories"
+      :inventory
     else
       nil
     end

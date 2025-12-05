@@ -62,7 +62,8 @@
               <%= button_to "Level Up",
                             level_up_user_pet_path(pet.id),
                             method: :post,
-                            data: { turbo_frame: "_top" },
+                            params: { frame_id: dom_id },
+                            data: { turbo_stream: true },
                             class: "pet-slot__level-up" %>
             </div>
           <% end %>

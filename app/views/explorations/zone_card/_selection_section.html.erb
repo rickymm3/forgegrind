@@ -1,0 +1,91 @@
+<%# Leader/companion selection + start form %>
+<% selected_pet_ids ||= [] %>
+<% selected_pets_lookup = current_user.user_pets.where(id: selected_pet_ids).includes(:rarity, pet: :pet_types).index_by(&:id) %>
+<% leader_id = selected_pet_ids.first %>
+<% companion_ids = selected_pet_ids.drop(1) %>
+
+<div class="rounded-2xl border border-slate-200 bg-white px-4 py-3 space-y-3">
+  <div class="flex items-center justify-between">
+    <div>
+      <p class="text-[11px] font-semibold uppercase text-slate-500">Pick a leader</p>
+      <p class="text-sm text-slate-600">Leader must be an active pet. Companions come from storage.</p>
+    </div>
+    <div class="hidden sm:block text-xs text-slate-400">
+      Tap a slot to choose a pet.
+    </div>
+  </div>
+  <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
+    <div class="relative flex flex-col items-center gap-2 p-3 rounded-xl border border-slate-200 bg-slate-50">
+      <% leader_pet = selected_pets_lookup[leader_id] %>
+      <%= link_to party_picker_exploration_path(generated, role: :leader, selected_pet_ids: selected_pet_ids.join(",")),
+                  data: { turbo_frame: "party-picker-panel", turbo_stream: true },
+                  class: "flex flex-col items-center gap-2 focus:outline-none w-full" do %>
+        <% if leader_pet %>
+          <div class="relative h-16 w-16 rounded-full border border-indigo-200 bg-white overflow-hidden">
+            <%= image_tag pet_sprite_path(leader_pet.pet), alt: leader_pet.name.presence || leader_pet.pet.name, class: "h-full w-full object-contain" %>
+            <span class="absolute -bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-indigo-600 px-2 py-0.5 text-[10px] font-semibold text-white uppercase">Leader</span>
+          </div>
+          <p class="text-sm font-semibold text-slate-800 truncate"><%= leader_pet.name.presence || leader_pet.pet.name %></p>
+          <p class="text-xs text-slate-500"><%= leader_pet.rarity&.name %> • Lv <%= leader_pet.level %></p>
+        <% else %>
+          <div class="h-16 w-16 rounded-full border border-dashed border-slate-300 bg-white flex items-center justify-center text-2xl text-slate-300">+</div>
+          <p class="text-sm font-semibold text-slate-400">No leader</p>
+          <p class="text-xs text-slate-400">Select an active pet</p>
+        <% end %>
+      <% end %>
+      <% if leader_pet %>
+        <% remove_ids = selected_pet_ids - [leader_pet.id] %>
+        <%= button_to "×",
+                      preview_exploration_path(generated, selected_pet_ids: remove_ids.join(",")),
+                      method: :post,
+                      data: { turbo_frame: detail_dom_id },
+                      class: "absolute -top-2 -right-2 h-6 w-6 rounded-full bg-slate-900 text-white text-xs font-bold flex items-center justify-center shadow" %>
+      <% end %>
+    </div>
+    <% 3.times do |idx| %>
+      <% pet = companion_ids[idx] && selected_pets_lookup[companion_ids[idx]] %>
+      <div class="relative flex flex-col items-center gap-2 p-3 rounded-xl border border-slate-200 bg-slate-50">
+        <% companion_path = party_picker_exploration_path(generated, role: :companion, selected_pet_ids: selected_pet_ids.join(",")) %>
+        <% disabled = leader_pet.nil? %>
+        <% link_classes = "flex flex-col items-center gap-2 w-full focus:outline-none " + (disabled ? "opacity-50 cursor-not-allowed" : "") %>
+        <% if disabled %>
+          <div class="<%= link_classes %>">
+            <div class="h-16 w-16 rounded-full border border-dashed border-slate-300 bg-white flex items-center justify-center text-2xl text-slate-300">+</div>
+            <p class="text-sm font-semibold text-slate-400">Empty slot</p>
+            <p class="text-xs text-slate-400">Pick a leader first</p>
+          </div>
+        <% else %>
+          <%= link_to companion_path,
+                      data: { turbo_frame: "party-picker-panel", turbo_stream: true },
+                      class: link_classes do %>
+            <% if pet %>
+              <div class="h-16 w-16 rounded-full border border-emerald-200 bg-white overflow-hidden">
+                <%= image_tag pet_sprite_path(pet.pet), alt: pet.name.presence || pet.pet.name, class: "h-full w-full object-contain" %>
+              </div>
+              <p class="text-sm font-semibold text-slate-800 truncate"><%= pet.name.presence || pet.pet.name %></p>
+              <p class="text-xs text-slate-500"><%= pet.rarity&.name %> • Lv <%= pet.level %></p>
+            <% else %>
+              <div class="h-16 w-16 rounded-full border border-dashed border-slate-300 bg-white flex items-center justify-center text-2xl text-slate-300">+</div>
+              <p class="text-sm font-semibold text-slate-400">Empty slot</p>
+              <p class="text-xs text-slate-400">Select from storage</p>
+            <% end %>
+          <% end %>
+          <% if pet %>
+            <% remove_ids = selected_pet_ids - [pet.id] %>
+            <%= button_to "×",
+                          preview_exploration_path(generated, selected_pet_ids: remove_ids.join(",")),
+                          method: :post,
+                          data: { turbo_frame: detail_dom_id },
+                          class: "absolute -top-2 -right-2 h-6 w-6 rounded-full bg-slate-900 text-white text-xs font-bold flex items-center justify-center shadow" %>
+          <% end %>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<%= render "explorations/zone_card/start_form",
+           generated: generated,
+           detail_dom_id: detail_dom_id,
+           selected_pet_ids: selected_pet_ids,
+           requirement_progress: requirement_progress %>

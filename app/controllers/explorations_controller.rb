@@ -1,8 +1,9 @@
 class ExplorationsController < ApplicationController
+  include ExplorationsHelper
   RewardItem = Struct.new(:item, :quantity, keyword_init: true)
 
   before_action :authenticate_user!
-  before_action :set_generated_exploration, only: %i[preview start reroll]
+  before_action :set_generated_exploration, only: %i[preview start reroll party_picker]
 
   def index
     load_exploration_sets
@@ -44,7 +45,11 @@ class ExplorationsController < ApplicationController
     @user_exploration = context[:user_exploration]
     @requirement_progress = context[:requirement_progress]
     @requirement_groups = context[:requirement_groups]
+    @equipped_pets = current_user.user_pets.equipped.includes(:learned_abilities, pet: :pet_types)
+    @equipped_pet_ids = @equipped_pets.pluck(:id)
     @available_pets = load_available_pets({})
+    @storage_pets = @available_pets.where.not(id: @equipped_pet_ids)
+                                   .reorder(Arel.sql("user_pets.power DESC"))
     @selected_pet_ids = []
     @filters = {}
     @slot_entries = build_slot_entries(@selected_generated)
@@ -99,6 +104,19 @@ class ExplorationsController < ApplicationController
     new_generated&.set_reroll_cooldown!(reroll_ready_at)
     new_generated&.set_slot_state!(:active)
 
+    context = new_generated ? detail_locals(new_generated) : {}
+    @user_exploration = context[:user_exploration]
+    @requirement_progress = context[:requirement_progress]
+    @requirement_groups = context[:requirement_groups]
+    @equipped_pets = current_user.user_pets.equipped.includes(:learned_abilities, pet: :pet_types)
+    @equipped_pet_ids = @equipped_pets.pluck(:id)
+    @available_pets = load_available_pets({})
+    @storage_pets = @available_pets.where.not(id: @equipped_pet_ids)
+                                   .reorder(Arel.sql("user_pets.power DESC"))
+    @selected_pet_ids = []
+    @filters = {}
+    @zone_state = inferred_zone_state(@user_exploration)
+
     load_exploration_sets
     assign_rescout_state
     @selected_generated = new_generated
@@ -115,11 +133,43 @@ class ExplorationsController < ApplicationController
             slot_entries: @slot_entries
           }
         )
+        if new_generated
+          streams << turbo_stream.update(
+            "zone-card-container",
+            partial: "explorations/zone_card_wrapper",
+            locals: {
+              generated_exploration: new_generated,
+              user_exploration: @user_exploration,
+              requirement_progress: @requirement_progress,
+              requirement_groups: @requirement_groups,
+              available_pets: @available_pets,
+              selected_pet_ids: @selected_pet_ids,
+              filters: @filters,
+              state: @zone_state
+            }
+          )
+          streams << turbo_stream.update(
+            "zone-map-container",
+            partial: "explorations/zone_card/map",
+            locals: { generated: new_generated, user_exploration: @user_exploration }
+          )
+          streams << turbo_stream.update(
+            "zone-descriptors",
+            partial: "explorations/zone_card/descriptors",
+            locals: { descriptors: exploration_descriptor_pills(new_generated) }
+          )
+          streams << turbo_stream.update(
+            "zone-rescout-wrapper",
+            partial: "explorations/zone_card/rescout",
+            locals: { generated: new_generated,
+                      user_exploration: @user_exploration }
+          ) if view_context.lookup_context.exists?("explorations/zone_card/_rescout")
+        end
         streams << turbo_stream.update(
           "flash_messages",
           partial: "shared/flash_messages"
         )
-        render turbo_stream: streams
+        render turbo_stream: streams and return
       end
       format.html do
         redirect_to(new_generated ? zone_explorations_path(id: new_generated.id) : explorations_path, notice: "Expedition rerolled.")
@@ -169,7 +219,12 @@ class ExplorationsController < ApplicationController
   def preview
     @filters = params.slice(:name, :pet_type_id).permit(:name, :pet_type_id)
     @selected_pet_ids = parse_selected_ids(params[:selected_pet_ids] || params[:user_pet_ids])
+    @selected_pet_ids = @selected_pet_ids.first(4)
+    @equipped_pets = current_user.user_pets.equipped.includes(:learned_abilities, pet: :pet_types)
+    @equipped_pet_ids = @equipped_pets.pluck(:id)
     @available_pets = load_available_pets(@filters)
+    @storage_pets = @available_pets.where.not(id: @equipped_pet_ids)
+                                   .reorder(Arel.sql("user_pets.power DESC"))
     @selected_pets = current_user.user_pets.active.includes(:learned_abilities, pet: :pet_types).where(id: @selected_pet_ids)
     @progress = @generated_exploration.requirements_progress_for(@selected_pets)
     show_filters = params[:show_filters].nil? ? true : ActiveModel::Type::Boolean.new.cast(params[:show_filters])
@@ -180,7 +235,8 @@ class ExplorationsController < ApplicationController
         card_dom_id = view_context.dom_id(@generated_exploration, :detail)
         grouped = @progress.group_by { |req| req[:source] || 'base' }
 
-        render turbo_stream: turbo_stream.update(
+        streams = []
+        streams << turbo_stream.update(
           card_dom_id,
           partial: "explorations/zone_card",
           locals: {
@@ -196,6 +252,58 @@ class ExplorationsController < ApplicationController
             compact_layout: compact_layout
           }
         )
+        streams << turbo_stream.update("party-picker-panel", "")
+        render turbo_stream: streams
+      end
+      format.html { redirect_to zone_explorations_path(id: @generated_exploration.id) }
+    end
+  end
+
+  def party_picker
+    role = params[:role].presence_in(%w[leader companion]) || "companion"
+    if params[:cancel].present?
+      respond_to do |format|
+        format.turbo_stream do
+          render turbo_stream: turbo_stream.update("party-picker-panel", "")
+        end
+        format.html { redirect_to zone_explorations_path(id: @generated_exploration.id) }
+      end
+      return
+    end
+
+    @filters = params.slice(:name, :pet_type_id, :rarity_id).permit(:name, :pet_type_id, :rarity_id)
+    @selected_pet_ids = parse_selected_ids(params[:selected_pet_ids]).first(4)
+
+    active_ids = current_user.user_explorations.joins(:user_pets).where(completed_at: nil).pluck("user_pets.id")
+    scope = current_user.user_pets.active.includes(:rarity, pet: :pet_types)
+    scope = if role == "leader"
+              scope.equipped
+            else
+              scope.where(active_slot: nil)
+            end
+    scope = scope.where.not(id: active_ids)
+    scope = scope.where.not(id: @selected_pet_ids) if @selected_pet_ids.any?
+    scope = scope.where("asleep_until IS NULL OR asleep_until <= ?", Time.current)
+    scope = scope.where("user_pets.name ILIKE ?", "%#{@filters[:name]}%") if @filters[:name].present?
+    scope = scope.joins(pet: :pet_types).where(pet_types: { id: @filters[:pet_type_id] }) if @filters[:pet_type_id].present?
+    scope = scope.where(rarity_id: @filters[:rarity_id]) if @filters[:rarity_id].present?
+
+    @role = role
+    @pets = scope.order(Arel.sql("user_pets.power DESC"))
+
+    respond_to do |format|
+      format.turbo_stream do
+        render turbo_stream: turbo_stream.update(
+          "party-picker-panel",
+          partial: "explorations/party_picker",
+          locals: {
+            generated_exploration: @generated_exploration,
+            pets: @pets,
+            role: @role,
+            filters: @filters,
+            selected_pet_ids: @selected_pet_ids
+          }
+        )
       end
       format.html { redirect_to zone_explorations_path(id: @generated_exploration.id) }
     end
@@ -208,7 +316,7 @@ class ExplorationsController < ApplicationController
       redirect_to zone_explorations_path(id: @generated_exploration.id) and return
     end
 
-    if selected_ids.size > 3
+    if selected_ids.size > 4
       head :unprocessable_entity and return
     end
 
@@ -237,18 +345,23 @@ class ExplorationsController < ApplicationController
       head :unprocessable_entity and return
     end
 
+    equipped_ids = current_user.user_pets.equipped.pluck(:id)
+    unless equipped_ids.include?(primary_pet.id)
+      flash[:alert] = "Leader must be one of your active pets."
+      redirect_to zone_explorations_path(id: @generated_exploration.id) and return
+    end
+
+    companion_ids = ordered_ids - [primary_id]
+    unless (companion_ids & equipped_ids).empty?
+      flash[:alert] = "Companions must be chosen from storage pets."
+      redirect_to zone_explorations_path(id: @generated_exploration.id) and return
+    end
+
     begin
       ActiveRecord::Base.transaction do
-        @selected_pets.each do |pet|
-          pet.lock!
-          pet.spend_energy!(UserPet::EXPLORATION_ENERGY_COST, allow_debt: true)
-          pet.add_experience_points(UserPet::EXPLORATION_EXP_REWARD)
-          pet.save!(validate: false)
-          while pet.can_level_up?
-            pet.level_up!
-            current_user.grant_player_experience!(GameConfig.player_exp_for_pet_level_up)
-          end
-        end
+        primary_pet.lock!
+        primary_pet.spend_energy!(UserPet::EXPLORATION_ENERGY_COST, allow_debt: true)
+        primary_pet.save!(validate: false)
 
         @user_exploration = current_user.user_explorations.create!(
           world: @generated_exploration.world,
@@ -265,19 +378,23 @@ class ExplorationsController < ApplicationController
         ability_refs = snapshot[:members].map { |entry| entry[:special_ability_reference] }.compact
         ability_tags = snapshot[:members].flat_map { |entry| entry[:special_ability_tags] }.compact.uniq
 
-        schedule = ExplorationEncounterCatalog.schedule_for(
-          world: @generated_exploration.world,
-          duration: @user_exploration.duration_seconds,
-          base_key: @generated_exploration.base_key,
-          prefix_key: @generated_exploration.prefix_key,
-          suffix_key: @generated_exploration.suffix_key,
-          ability_refs: ability_refs,
-          ability_tags: ability_tags,
-          requirements: progress,
-          fulfilled_ids: fulfilled_requirement_ids,
-          seed: @user_exploration.id,
-          segments: @user_exploration.segment_definitions
-        )
+        schedule = if @user_exploration.segment_definitions.blank?
+                     [] # zero-checkpoint routes should not seed encounters
+                   else
+                     ExplorationEncounterCatalog.schedule_for(
+                       world: @generated_exploration.world,
+                       duration: @user_exploration.duration_seconds,
+                       base_key: @generated_exploration.base_key,
+                       prefix_key: @generated_exploration.prefix_key,
+                       suffix_key: @generated_exploration.suffix_key,
+                       ability_refs: ability_refs,
+                       ability_tags: ability_tags,
+                       requirements: progress,
+                       fulfilled_ids: fulfilled_requirement_ids,
+                       seed: @user_exploration.id,
+                       segments: @user_exploration.segment_definitions
+                     )
+                   end
 
         @user_exploration.update!(
           party_snapshot: snapshot,
@@ -439,7 +556,7 @@ class ExplorationsController < ApplicationController
     if filters[:pet_type_id].present?
       pets = pets.joins(pet: :pet_types).where(pet_types: { id: filters[:pet_type_id] })
     end
-    pets.order(power: :desc).distinct
+    pets
   end
 
   def find_selected_generated(generated_list)

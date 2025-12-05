@@ -1,0 +1,119 @@
+<% segment_entries = user_exploration.segment_progress_entries.sort_by { |entry| entry[:index].to_i } %>
+<% checkpoint_segment = user_exploration.checkpoint_segment_entry %>
+<% ready_encounter = user_exploration.ready_encounter_entry %>
+<% encounter_result = checkpoint_encounter_result(user_exploration) %>
+<% continue_url = continue_segment_user_exploration_path(user_exploration) %>
+<% activation_url = activate_encounter_user_exploration_path(user_exploration) %>
+<% timeline_nodes = [] %>
+<% timeline_nodes << { label: "Start", status: 'completed' } %>
+<% segment_entries.each do |segment| %>
+  <% node_label = segment[:label].presence || "Checkpoint #{segment[:index].to_i + 1}" %>
+  <% node_status =
+       case segment[:status].to_s
+       when 'completed' then 'completed'
+       when 'checkpoint' then 'checkpoint'
+       when 'active' then 'active'
+       else 'upcoming'
+       end %>
+  <% timeline_nodes << { label: node_label, status: node_status } %>
+<% end %>
+<% edge_count = [timeline_nodes.size - 1, 1].max %>
+<% completed_segments = segment_entries.count { |segment| %w[completed checkpoint].include?(segment[:status].to_s) } %>
+<% completed_edges = [completed_segments, edge_count].min %>
+<% completed_edges = edge_count if user_exploration.complete? %>
+<% active_edge_fraction = 0.0 %>
+
+<div class="space-y-4">
+  <div class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2">
+    <p class="text-sm font-semibold text-amber-700 flex items-center gap-2">
+      <span class="inline-flex h-2 w-2 rounded-full bg-amber-500 animate-pulse"></span>
+      Checkpoint reached
+    </p>
+    <% if checkpoint_segment %>
+      <p class="text-xs text-amber-600 mt-1">
+        <strong><%= checkpoint_segment[:label] || "Checkpoint #{checkpoint_segment[:index].to_i + 1}" %></strong> completed. Decide how to proceed.
+      </p>
+    <% end %>
+  </div>
+
+  <%= render "explorations/segment_timeline",
+             nodes: timeline_nodes,
+             edge_count: edge_count,
+             completed_edges: completed_edges,
+             active_edge_fraction: active_edge_fraction %>
+
+  <% if user_exploration.active_encounter? %>
+    <div class="rounded-xl border border-indigo-300 bg-white px-3 py-3">
+      <p class="text-xs font-semibold uppercase text-indigo-500 mb-2">Encounter in progress</p>
+      <%= render "explorations/encounters/panel",
+                 user_exploration: user_exploration %>
+    </div>
+  <% elsif ready_encounter.present? %>
+    <% encounter = ready_encounter.with_indifferent_access %>
+    <% title = encounter.dig(:encounter, :title) || encounter[:title] || "Mysterious encounter" %>
+    <div class="rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3 space-y-3">
+      <div>
+        <p class="text-[11px] font-semibold uppercase text-indigo-500">Encounter discovered</p>
+        <p class="text-base font-semibold text-indigo-700"><%= title %></p>
+        <% if encounter[:segment_label].present? %>
+          <p class="text-xs text-indigo-500">Discovered at <%= encounter[:segment_label] %>.</p>
+        <% end %>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        <%= button_to "Enter Encounter",
+                      activation_url,
+                      method: :post,
+                      class: "inline-flex justify-center items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-400" %>
+        <%= button_to "Continue Exploration",
+                      continue_url,
+                      method: :post,
+                      params: { skip_encounter: true },
+                      class: "inline-flex justify-center items-center gap-2 rounded-lg border border-indigo-200 bg-white px-4 py-2 text-sm font-semibold text-indigo-600 transition hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-indigo-200" %>
+      </div>
+    </div>
+  <% elsif encounter_result.present? %>
+    <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 space-y-3">
+      <div class="space-y-1">
+        <p class="text-[11px] font-semibold uppercase text-emerald-600">Encounter resolved</p>
+        <p class="text-base font-semibold text-emerald-700"><%= encounter_result[:title] %></p>
+        <% if encounter_result[:summary].present? %>
+          <p class="text-xs text-emerald-600/80"><%= encounter_result[:summary] %></p>
+        <% end %>
+        <% if encounter_result[:choice_label].present? %>
+          <p class="text-xs text-emerald-700">You chose <span class="font-semibold"><%= encounter_result[:choice_label] %></span>.</p>
+        <% end %>
+        <% if encounter_result[:choice_description].present? %>
+          <p class="text-xs text-emerald-600/80"><%= encounter_result[:choice_description] %></p>
+        <% end %>
+        <% if encounter_result[:outcome_label].present? %>
+          <p class="text-xs text-emerald-700">Outcome: <span class="font-semibold"><%= encounter_result[:outcome_label] %></span></p>
+        <% else %>
+          <p class="text-xs text-emerald-700">Nothing of note was found.</p>
+        <% end %>
+        <% if encounter_result[:conclusion_text].present? %>
+          <p class="text-xs text-emerald-600/80"><%= encounter_result[:conclusion_text] %></p>
+        <% end %>
+        <% if encounter_result[:reward_summary].present? %>
+          <p class="text-xs text-emerald-700">Rewards: <span class="font-semibold"><%= encounter_result[:reward_summary] %></span></p>
+        <% else %>
+          <p class="text-xs text-emerald-600/80">No special rewards were discovered this time.</p>
+        <% end %>
+      </div>
+      <%= button_to "Continue Exploration",
+                    continue_url,
+                    method: :post,
+                    class: "inline-flex justify-center items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-400" %>
+    </div>
+  <% else %>
+    <div class="rounded-xl border border-slate-200 bg-white px-4 py-3 space-y-3">
+      <p class="text-sm font-semibold text-slate-700">The path is clear.</p>
+      <p class="text-xs text-slate-500">No encounter awaits at this checkpoint. Continue when ready.</p>
+      <%= button_to "Continue Exploration",
+                    continue_url,
+                    method: :post,
+                    class: "inline-flex justify-center items-center gap-2 rounded-lg bg-slate-800 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-500" %>
+    </div>
+  <% end %>
+
+  <%= render "explorations/zone_card/requirements", requirement_progress: requirement_progress %>
+</div>

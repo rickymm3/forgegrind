@@ -21,3 +21,7 @@
 
 = turbo_stream.update(diamonds&.dom_id || currency_dom_id("Diamonds")) do
   = number_with_delimiter(diamonds&.amount.to_i)
+
+- if @leader_pet.present? && @leader_slot_dom_id.present?
+  = turbo_stream.replace @leader_slot_dom_id do
+    = render partial: "pets/active_slot", locals: { pet: @leader_pet, index: @leader_pet.active_slot }

@@ -26,6 +26,29 @@ module ExplorationsHelper
     end
   end
 
+  # Descriptors for base/prefix/suffix come from metadata -> component_descriptions
+  def exploration_component_descriptions(generated)
+    metadata = generated.metadata || {}
+    metadata[:component_descriptions] || metadata["component_descriptions"] || {}
+  end
+
+  def exploration_descriptor_pills(generated)
+    descs = exploration_component_descriptions(generated)
+    base_desc   = descs[:base]   || descs["base"]   || Array(metadata_flavor(generated)).first
+    prefix_desc = descs[:prefix] || descs["prefix"]
+    suffix_desc = descs[:suffix] || descs["suffix"]
+    [base_desc, prefix_desc, suffix_desc].flatten.compact.uniq
+  end
+
+  def exploration_base_label(generated)
+    labels = generated.metadata&.dig(:component_labels) || generated.metadata&.dig("component_labels") || {}
+    labels[:base] || labels["base"] || generated.name
+  end
+
+  def metadata_flavor(generated)
+    generated.metadata&.dig(:flavor) || generated.metadata&.dig("flavor") || []
+  end
+
   def expedition_segment_status(user_exploration, reference_time: Time.current)
     return nil unless user_exploration&.using_segments?
 

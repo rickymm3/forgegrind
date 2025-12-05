@@ -15,7 +15,7 @@ class PetsController < ApplicationController
     @storage_pets = pets.select { |pet| pet.active_slot.nil? }
     @storage_count = @storage_pets.size
     @empty_slots = @active_slots.count(&:nil?)
-    @user_eggs = current_user.user_eggs.includes(:egg).order(created_at: :asc)
+    @user_eggs = current_user.user_eggs.unhatched.includes(:egg).order(created_at: :asc)
   end
 
   def show
@@ -28,6 +28,11 @@ class PetsController < ApplicationController
   def accept_request
     @pet = current_user.user_pets.find(params[:id])
     refresh_pet_state(@pet)
+    if @pet.asleep_until.present? && Time.current < @pet.asleep_until
+      remaining_minutes = ((@pet.asleep_until - Time.current) / 60).ceil
+      flash.now[:alert] = "#{@pet.name} is asleep for another #{remaining_minutes} minute#{'s' if remaining_minutes != 1}."
+      render_request_stream and return
+    end
     service = PetRequestService.new(@pet)
 
     begin
