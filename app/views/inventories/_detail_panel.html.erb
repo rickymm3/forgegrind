@@ -192,6 +192,10 @@
             <% end %>
           </div>
 
+        <% when :tm_box %>
+          <%= render "inventories/tm_box_panel", user_item: user_item, item: item, metadata: metadata, close_path: close_path, errors: (local_assigns[:errors] || []) %>
+        <% when :tm_box_result %>
+          <%= render "inventories/tm_box_result", granted_skill: granted_skill, user_pet_skill: user_pet_skill, user_item: user_item, item: item, close_path: close_path %>
         <% else %>
           <div class="text-center text-xs text-slate-400">
             Select a container or item to view details.

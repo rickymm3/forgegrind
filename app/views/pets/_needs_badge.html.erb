@@ -1,0 +1,9 @@
+<% needs = defined?(has_needs) ? has_needs : needs_count.to_i.positive? %>
+<% if needs %>
+  <span class="pet-hero__nav-badge">
+    <span class="pet-hero__nav-badge-ping"></span>
+    <span class="pet-hero__nav-badge-dot">!</span>
+  </span>
+<% else %>
+  <span class="pet-hero__nav-badge pet-hero__nav-badge--hidden"></span>
+<% end %>

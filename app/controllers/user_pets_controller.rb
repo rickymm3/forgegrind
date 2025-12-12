@@ -1,8 +1,10 @@
 class UserPetsController < ApplicationController
   before_action :authenticate_user!
-  before_action :set_user_pet, only: [:show, :level_up, :destroy, :interact_preview, :interact, :energy_tick, :details_panel, :overview_panel, :level_up_panel]
-  before_action :guard_retired_pet!, only: [:show, :level_up, :interact_preview, :interact, :energy_tick, :details_panel, :overview_panel, :level_up_panel]
-  before_action :refresh_pet_state, only: [:show, :interact_preview, :interact, :level_up, :energy_tick, :details_panel, :overview_panel, :level_up_panel]
+  before_action :set_user_pet, only: [:show, :level_up, :destroy, :interact_preview, :interact, :energy_tick, :details_panel, :overview_panel, :level_up_panel, :equip_skill, :unequip_skill]
+  before_action :guard_retired_pet!, only: [:show, :level_up, :interact_preview, :interact, :energy_tick, :details_panel, :overview_panel, :level_up_panel, :equip_skill, :unequip_skill]
+  before_action :ensure_active_slot!, only: [:interact_preview, :interact, :energy_tick]
+  before_action :refresh_pet_state, only: [:show, :interact_preview, :interact, :level_up, :energy_tick, :details_panel, :overview_panel, :level_up_panel, :equip_skill, :unequip_skill]
+  before_action :set_user_pet_skill, only: [:equip_skill, :unequip_skill]
 
   def index
     @user_pets = current_user.user_pets.active.includes({ pet: :pet_types }, :rarity, :pet_thought)
@@ -10,6 +12,64 @@ class UserPetsController < ApplicationController
     @active_collection = params[:collection].presence_in(%w[pets eggs]) || "pets"
 
     PetThoughtRefresher.refresh!(@user_pets)
+  end
+
+  def equip_skill
+    unless @user_pet.active_slot.present?
+      message = "Make this pet active to equip skills."
+      return redirect_to(@user_pet, alert: message) if request.format.html?
+      return render turbo_stream: turbo_stream.replace(
+        helpers.user_pet_panel_body_dom_id(@user_pet),
+        partial: panel_partial_for(:details),
+        locals: panel_locals
+      ), status: :unprocessable_entity
+    end
+
+    slot = params[:slot].to_i
+    unless @user_pet_skill.can_equip?(@user_pet, slot)
+      return redirect_to @user_pet, alert: "Skill cannot be equipped in that slot." if request.format.html?
+      return head :unprocessable_entity
+    end
+
+    UserPetSkill.transaction do
+      @user_pet_skill.update!(
+        equipped_user_pet: @user_pet,
+        equipped_slot: slot
+      )
+    end
+
+    respond_to do |format|
+      format.turbo_stream do
+        flash.now[:notice] = "Equipped #{@user_pet_skill.pet_skill.name}."
+        render turbo_stream: turbo_stream.replace(
+          helpers.user_pet_panel_body_dom_id(@user_pet),
+          partial: panel_partial_for(:details),
+          locals: panel_locals
+        )
+      end
+      format.html { redirect_to @user_pet, notice: "Equipped #{@user_pet_skill.pet_skill.name}." }
+    end
+  end
+
+  def unequip_skill
+    if @user_pet_skill.equipped_user_pet != @user_pet
+      return redirect_to @user_pet, alert: "Skill is not equipped to this pet." if request.format.html?
+      return head :unprocessable_entity
+    end
+
+    @user_pet_skill.update!(equipped_user_pet: nil, equipped_slot: nil)
+
+    respond_to do |format|
+      format.turbo_stream do
+        flash.now[:notice] = "Unequipped #{@user_pet_skill.pet_skill.name}."
+        render turbo_stream: turbo_stream.replace(
+          helpers.user_pet_panel_body_dom_id(@user_pet),
+          partial: panel_partial_for(:details),
+          locals: panel_locals
+        )
+      end
+      format.html { redirect_to @user_pet, notice: "Unequipped #{@user_pet_skill.pet_skill.name}." }
+    end
   end
 
   def show
@@ -22,6 +82,11 @@ class UserPetsController < ApplicationController
 
   def overview_panel
     render_panel(:overview)
+  end
+
+  def skills_panel
+    render partial: "user_pets/skills_panel",
+           locals: { user_pet: @user_pet, skills: current_user.user_pet_skills.includes(:pet_skill) }
   end
 
   def level_up_panel
@@ -192,7 +257,7 @@ class UserPetsController < ApplicationController
       format.turbo_stream do
         flash.now[:notice] = notice
         streams = []
-        panel_frame_id = helpers.user_pet_panel_dom_id(@user_pet)
+        panel_frame_id = helpers.user_pet_panel_body_dom_id(@user_pet)
         streams << turbo_stream.replace(panel_frame_id, partial: panel_partial_for(:overview), locals: panel_locals)
         # Update active slot frame if requested
         if params[:frame_id].present?
@@ -534,6 +599,27 @@ class UserPetsController < ApplicationController
     end
   end
 
+  def ensure_active_slot!
+    return if @user_pet.active_slot.present?
+
+    message = "Make this pet active to interact with it."
+    respond_to do |format|
+      format.turbo_stream do
+        render_action_panel(
+          state: :error,
+          context: (params[:context].presence&.to_sym || :page),
+          message: message
+        )
+      end
+      format.html { redirect_to user_pet_path(@user_pet), alert: message }
+    end
+    false
+  end
+
+  def set_user_pet_skill
+    @user_pet_skill = current_user.user_pet_skills.find(params[:user_pet_skill_id])
+  end
+
   def interaction_payload(interaction)
     definition = PetCareService::ACTIONS[interaction]
     return nil unless definition
@@ -628,7 +714,11 @@ class UserPetsController < ApplicationController
   def render_panel(type, extra_locals: {})
     partial = panel_partial_for(type)
     locals = panel_locals(extra_locals)
-    frame_id = helpers.user_pet_panel_dom_id(@user_pet)
+    frame_id = if %i[details overview].include?(type)
+                 helpers.user_pet_panel_body_dom_id(@user_pet)
+               else
+                 helpers.user_pet_panel_dom_id(@user_pet)
+               end
 
     respond_to do |format|
       format.turbo_stream { render_panel_stream(partial, locals, frame_id) }
@@ -706,7 +796,7 @@ class UserPetsController < ApplicationController
     when :details then "user_pets/panel_details"
     when :level_up then "user_pets/level_up_panel"
     else
-      "user_pets/panel_overview"
+      "user_pets/panel_body_overview"
     end
   end
 

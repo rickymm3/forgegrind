@@ -17,6 +17,7 @@
   border-bottom: 1px solid rgba(71, 85, 105, 0.6);
   background-color: rgba(2, 6, 23, 0.95);
   backdrop-filter: blur(12px);
+  transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease, padding 0.2s ease;
 }
 
 .app-shell__header-inner {
@@ -34,16 +35,24 @@
   padding-bottom: 1.25rem;
 }
 
+.app-shell__header--collapsed {
+  border-color: rgba(71, 85, 105, 0.4);
+  background-color: rgba(2, 6, 23, 0.92);
+  box-shadow: 0 12px 32px rgba(2, 6, 23, 0.4);
+}
+
+.app-shell__header--collapsed .app-shell__header-inner {
+  padding-top: 0.4rem;
+  padding-bottom: 0.4rem;
+  gap: 0.35rem;
+}
+
 .app-shell__main {
   flex: 1;
   display: flex;
   flex-direction: column;
   min-height: 0;
   padding-bottom: calc(var(--tabbar-height, 0px) + env(safe-area-inset-bottom, 0px));
-}
-
-.app-shell--tabbar-hidden .app-shell__main {
-  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 .app-shell__main-inner {
@@ -54,13 +63,14 @@
 }
 
 .app-shell__tabbar {
-  position: sticky;
+  position: fixed;
+  left: 0;
+  right: 0;
   bottom: 0;
   width: 100%;
   background-color: rgba(2, 6, 23, 0.95);
   border-top: 1px solid rgba(71, 85, 105, 0.5);
   padding-bottom: env(safe-area-inset-bottom, 0px);
-  padding-top: 1.25rem;
   z-index: 40;
   display: flex;
   flex-direction: column;
@@ -95,30 +105,6 @@
   gap: 0.5rem;
 }
 
-.tabbar-toggle {
-  position: absolute;
-  top: 0;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 60;
-  width: 3rem;
-  height: 3rem;
-  border-radius: 999px;
-  border: 1px solid rgba(148, 163, 184, 0.4);
-  background: rgba(2, 6, 23, 0.9);
-  color: #f8fafc;
-  box-shadow: 0 10px 30px -20px rgba(15, 23, 42, 0.9);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-}
-
-.app-shell--tabbar-hidden .tabbar-toggle {
-  top: 0.35rem;
-  transform: translate(-50%, -50%);
-}
-
 .sr-only {
   position: absolute;
   width: 1px;
@@ -148,6 +134,7 @@
   justify-content: space-between;
   gap: 1rem;
   flex-wrap: wrap;
+  transition: padding 0.2s ease, gap 0.2s ease;
 }
 
 .page-header__primary {
@@ -199,6 +186,7 @@
   letter-spacing: 0.2em;
   font-weight: 600;
   color: rgba(165, 180, 252, 0.8);
+  transition: opacity 0.2s ease, max-height 0.2s ease, margin 0.2s ease;
 }
 
 .page-header__title {
@@ -206,12 +194,14 @@
   font-size: clamp(1.5rem, 3vw, 2.2rem);
   font-weight: 600;
   color: #f8fafc;
+  transition: font-size 0.2s ease;
 }
 
 .page-header__subtitle {
   margin: 0;
   font-size: 0.95rem;
   color: rgba(203, 213, 225, 0.9);
+  transition: opacity 0.2s ease, max-height 0.2s ease, margin 0.2s ease;
 }
 
 .page-header--condensed {
@@ -226,6 +216,17 @@
 
 .page-header--condensed .page-header__subtitle {
   font-size: 0.85rem;
+}
+
+.page-header--compact .page-header__eyebrow,
+.page-header--compact .page-header__subtitle,
+.page-header--compact .page-header__body {
+  opacity: 0;
+  max-height: 0;
+  margin-top: 0;
+  margin-bottom: 0;
+  overflow: hidden;
+  pointer-events: none;
 }
 
 .page-header__meta {
@@ -245,6 +246,7 @@
 
 .page-header__body {
   width: 100%;
+  transition: opacity 0.2s ease, max-height 0.2s ease, margin 0.2s ease;
 }
 
 .hero-header__stats {
@@ -753,6 +755,7 @@
 }
 
 .pet-hub-shell {
+  --tabbar-height: 0px;
   background: linear-gradient(180deg, #030617, #050a1b);
 }
 
@@ -815,6 +818,17 @@
   gap: 0.75rem;
   font-size: 0.8rem;
   color: rgba(226, 232, 255, 0.8);
+}
+
+/* On the pets page, let the tabbar participate in flow instead of fixed */
+.pet-hub-shell ~ .app-shell__tabbar {
+  position: static;
+  width: 100%;
+  margin-top: 1rem;
+}
+
+.pet-hub-shell ~ .app-shell__tabbar .tabbar-panel {
+  max-width: 100%;
 }
 
 .pet-hub-header__actions {

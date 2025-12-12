@@ -4,13 +4,15 @@
 
 <% tabs = { "items" => "Items", "eggs" => "Eggs" } %>
 <% header_body = render("store/header_body", tabs: tabs, active_tab: @active_tab, condensed: true, currencies: @currency_balances) %>
+<% header_right = render("shared/currency_badges", currencies: @currency_balances, compact: true) %>
 
 <% content_for :header do %>
   <%= render "shared/page_header",
              title: "Marketplace",
              subtitle: "Browse limited-time eggs and curated bundles.",
              class: "page-header--condensed",
-             body: header_body %>
+             body: header_body,
+             right: header_right %>
 <% end %>
 
 <div class="mx-auto w-full max-w-5xl flex-1 space-y-6">

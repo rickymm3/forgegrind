@@ -2,7 +2,6 @@
   display: flex;
   flex: 1;
   min-height: 0;
-  padding: 1rem;
   justify-content: center;
 }
 
@@ -36,6 +35,53 @@
 @media (min-width: 768px) {
   .pet-panel__card {
     grid-template-columns: 1.1fr 1fr;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1180px) {
+  .pet-panel-container {
+    max-width: 70rem;
+  }
+
+  .pet-panel__card {
+    grid-template-columns: minmax(22rem, 1.05fr) minmax(24rem, 1.15fr);
+  }
+
+  .pet-panel__media {
+    height: calc(100vh - 220px);
+    min-height: 22rem;
+    max-height: 38rem;
+  }
+
+  .pet-panel__body {
+    width: 100%;
+  }
+}
+
+@media (min-width: 1180px) {
+  .pet-panel-container {
+    max-width: 82rem;
+  }
+
+  .pet-panel__card {
+    grid-template-columns: minmax(24rem, 1.1fr) minmax(26rem, 1.2fr);
+  }
+
+  .pet-panel__media {
+    height: calc(100vh - 240px);
+    min-height: 24rem;
+    max-height: 42rem;
+  }
+
+  .pet-panel__body {
+    width: 100%;
+  }
+}
+
+@media (max-width: 767px) {
+  .pet-panel__card {
+    position: relative;
+    padding-bottom: 0;
   }
 }
 
@@ -144,6 +190,41 @@
   gap: 0.75rem;
 }
 
+@media (max-width: 767px) {
+  .pet-panel__media {
+    height: calc(100vh - 180px);
+    min-height: 18rem;
+    max-height: 32rem;
+  }
+
+  .pet-panel__body {
+    position: absolute;
+    top: 0.75rem;
+    left: 0.75rem;
+    right: auto;
+    bottom: auto;
+    max-width: calc(100% - 1.5rem);
+    padding: 0;
+    gap: 0.5rem;
+    background: none;
+    border: none;
+    box-shadow: none;
+    backdrop-filter: none;
+  }
+
+  .pet-panel__title {
+    color: #e2e8f0;
+  }
+
+  .pet-panel__subtitle,
+  .pet-panel__label,
+  .pet-panel__eyebrow,
+  .pet-panel__description,
+  .pet-panel__status-chip {
+    color: rgba(226, 232, 240, 0.9);
+  }
+}
+
 .pet-panel__eyebrow {
   font-size: 0.75rem;
   text-transform: uppercase;
@@ -226,6 +307,14 @@
   line-height: 1.4;
 }
 
+.pet-panel__section--description {
+  padding: 0.75rem 1rem;
+  border-radius: 1rem;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  box-shadow: 0 10px 30px -20px rgba(0, 0, 0, 0.5);
+}
+
 .pet-panel__footer {
   display: flex;
   justify-content: center;
@@ -234,6 +323,10 @@
 
 .pet-panel__footer--split {
   justify-content: space-between;
+}
+
+.pet-panel__footer--inline {
+  padding-top: 0.5rem;
 }
 
 .pet-panel__footer-form {
@@ -445,6 +538,53 @@
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
+}
+
+.pet-stat--wide {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 640px) {
+  .pet-stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .pet-stat--wide {
+    grid-column: 1 / -1;
+  }
+}
+
+.pet-stats-placeholder {
+  border: 1px dashed rgba(148, 163, 184, 0.35);
+  border-radius: 1rem;
+  padding: 1rem 1.25rem;
+  background: rgba(15, 23, 42, 0.6);
+  text-align: center;
+  color: rgba(226, 232, 240, 0.92);
+}
+
+.pet-stats-placeholder__title {
+  margin: 0;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+}
+
+.pet-stats-placeholder__helper {
+  margin: 0.35rem 0 0;
+  color: rgba(148, 163, 184, 0.85);
+  font-size: 0.9rem;
+}
+
+@media (max-width: 640px) {
+  .pet-stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .pet-stat--wide {
+    grid-column: 1 / -1;
+  }
 }
 
 .pet-stat__fill {
@@ -915,4 +1055,146 @@
 
 .pet-panel__full-row {
   grid-column: 1 / -1;
+}
+
+.pet-skill-panel {
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 1.25rem;
+  padding: 1rem;
+  background: rgba(15, 23, 42, 0.65);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.pet-skill-panel__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.pet-skill-panel__slots {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+}
+
+.pet-skill-slot {
+  border: 1px dashed rgba(148, 163, 184, 0.3);
+  border-radius: 1rem;
+  padding: 0.85rem;
+  background: rgba(2, 6, 23, 0.6);
+}
+
+.pet-skill-slot--filled {
+  border-style: solid;
+  border-color: rgba(99, 102, 241, 0.4);
+  background: rgba(79, 70, 229, 0.08);
+}
+
+.pet-skill-slot__meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.25rem;
+}
+
+.pet-skill-slot__label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(148, 163, 184, 0.9);
+}
+
+.pet-skill-slot__badge {
+  font-size: 0.75rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  background: rgba(79, 70, 229, 0.2);
+  border: 1px solid rgba(79, 70, 229, 0.4);
+  color: #c7d2fe;
+}
+
+.pet-skill-slot__name {
+  margin: 0;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.pet-skill-slot__desc {
+  margin: 0.1rem 0 0.6rem;
+  color: rgba(226, 232, 240, 0.85);
+  font-size: 0.9rem;
+}
+
+.pet-skill-slot__action {
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 0.85rem;
+  padding: 0.45rem 0.85rem;
+  background: rgba(15, 23, 42, 0.9);
+  color: #e2e8f0;
+  cursor: pointer;
+}
+
+.pet-skill-panel__inventory {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.pet-skill-item {
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 1rem;
+  padding: 0.85rem;
+  background: rgba(2, 6, 23, 0.65);
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.pet-skill-item__name {
+  margin: 0;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.pet-skill-item__rarity {
+  color: rgba(148, 163, 184, 0.85);
+}
+
+.pet-skill-item__desc {
+  margin: 0.1rem 0;
+  color: rgba(226, 232, 240, 0.9);
+}
+
+.pet-skill-item__meta {
+  margin: 0;
+  font-size: 0.85rem;
+  color: rgba(148, 163, 184, 0.85);
+}
+
+.pet-skill-item__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pet-skill-item__action {
+  border-radius: 0.85rem;
+  border: 1px solid rgba(99, 102, 241, 0.4);
+  padding: 0.55rem 0.95rem;
+  background: rgba(79, 70, 229, 0.18);
+  color: #e0e7ff;
+  cursor: pointer;
+}
+
+.pet-skill-item__helper {
+  color: rgba(148, 163, 184, 0.85);
+  font-size: 0.85rem;
+}
+
+.pet-skill-panel__empty {
+  margin: 0;
+  color: rgba(148, 163, 184, 0.85);
 }

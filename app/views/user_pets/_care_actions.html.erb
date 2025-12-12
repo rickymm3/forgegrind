@@ -1,0 +1,45 @@
+<% user_pet ||= local_assigns[:user_pet] %>
+<% actions_catalog ||= [] %>
+<% disabled_actions ||= false %>
+<% care_item_counts ||= {} %>
+
+<div class="pet-care-actions">
+  <% care_item_resolver = CareItemResolver.new(current_user) %>
+  <% actions_catalog.each do |action| %>
+    <% definition = PetCareService::ACTIONS[action[:key]] %>
+    <% optional_items = care_item_resolver.available_for(action[:key]) %>
+    <%= button_to interact_preview_user_pet_path(user_pet),
+                  method: :post,
+                  params: { interaction_type: action[:key], context: :page },
+                  form: {
+                    class: "pet-care-actions__form",
+                    data: {
+                      turbo_frame: action_panel_dom_id(user_pet),
+                      "pet-display-target": "careForm"
+                    }
+                  },
+                  disabled: disabled_actions,
+                  class: "pet-care-actions__button",
+                  title: action[:label],
+                  aria: { label: "#{action[:label]} action" } do %>
+      <% required_types = Array(definition[:required_item_types]) %>
+      <% if required_types.any? %>
+        <div class="pet-care-actions__stock">
+          <% required_types.each do |type| %>
+            <% quantity = care_item_counts[type.to_s].to_i %>
+            <span><%= quantity %>× <%= type.to_s.humanize %></span>
+          <% end %>
+        </div>
+      <% elsif optional_items.any? %>
+        <div class="pet-care-actions__stock">
+          <span class="optional-boost-pill">Optional boost items available</span>
+        </div>
+      <% end %>
+      <span class="pet-care-actions__emoji"><%= action[:emoji] %></span>
+      <span class="pet-care-actions__label"><%= action[:label] %></span>
+      <% if definition[:energy_cost].to_i.positive? %>
+        <span class="pet-care-actions__energy"><%= definition[:energy_cost] %> EN</span>
+      <% end %>
+    <% end %>
+  <% end %>
+</div>

@@ -1,16 +1,8 @@
 <% require "ostruct" %>
 <% exploring = pet.respond_to?(:exploring?) && pet.exploring? %>
 <% sleeping = pet.respond_to?(:asleep_until) && pet.asleep_until.present? && pet.asleep_until.future? %>
-<% request = care_request.presence || {} %>
-<% request_need = request["need"] %>
-<% definition = PetRequestService::REQUEST_DEFINITIONS[request_need&.to_sym] %>
-<% metric_value = request_need && pet.respond_to?(request_need) ? pet.send(request_need).to_i : nil %>
-<% interaction = definition&.dig(:interaction) %>
-<% action_def = interaction ? PetCareService::ACTIONS[interaction] : nil %>
 <% care_item_counts = care_item_counts_for(current_user) %>
-<% required_types = Array(action_def&.dig(:required_item_types)) %>
-<% cooling_down = request_cooldown_until.present? && request_cooldown_until.future? %>
-<% next_window = request_cooldown_until&.strftime("%l:%M %p") if cooling_down %>
+<% alerts = care_alerts_for(pet, item_counts: care_item_counts).first(3) %>
 
 <div class="pet-request" id="pet-care-request-card">
   <% if exploring %>
@@ -35,67 +27,46 @@
       </div>
       <p class="pet-request__prompt"><%= pet.name.presence || "This companion" %> is asleep. Check back soon.</p>
     </div>
-  <% elsif request.present? %>
+  <% elsif alerts.any? %>
     <div class="pet-request__card">
       <div class="pet-request__header">
-        <div class="pet-request__icon"><%= request["icon"] || "✨" %></div>
+        <div class="pet-request__icon">⚡️</div>
         <div>
-          <p class="pet-request__eyebrow">Request pending</p>
-          <p class="pet-request__title"><%= request["title"] || "Needs attention" %></p>
+          <p class="pet-request__eyebrow">Needs attention</p>
+          <p class="pet-request__title">Up to three care actions ready</p>
         </div>
-        <% if metric_value %>
-          <div class="pet-request__meter">
-            <div class="pet-request__meter-label"><%= metric_value %>%</div>
-            <div class="pet-request__meter-bar">
-              <span style="width: <%= [[metric_value, 100].min, 0].max %>%"></span>
+      </div>
+
+      <div class="pet-request__list">
+        <% alerts.each do |alert| %>
+          <div class="pet-request__item">
+            <div class="pet-request__item-head">
+              <span class="pet-request__icon"><%= alert[:icon] || "✨" %></span>
+              <div>
+                <p class="pet-request__eyebrow"><%= alert[:title] %></p>
+                <p class="pet-request__prompt"><%= alert[:prompt] %></p>
+                <p class="pet-request__description"><%= alert[:description] %></p>
+              </div>
+            </div>
+            <div class="pet-request__meta">
+              <% if alert[:item_name].present? %>
+                <span class="pet-request__pill">
+                  Needs <%= alert[:item_name] %> (<%= alert[:item_quantity] %> owned)
+                </span>
+              <% end %>
+              <span class="pet-request__pill pet-request__pill--value">
+                Value: <%= alert[:value] %>
+              </span>
+            </div>
+            <div class="pet-request__actions">
+              <%= link_to "Select item",
+                          care_item_picker_pet_path(pet, metric: alert[:key]),
+                          data: { turbo_frame: "care-item-panel" },
+                          class: "pet-request__btn pet-request__btn--primary" %>
             </div>
           </div>
         <% end %>
       </div>
-
-      <p class="pet-request__prompt"><%= request["prompt"] || definition&.dig(:prompt) || "Your pet is asking for care." %></p>
-      <p class="pet-request__description"><%= request["description"] || definition&.dig(:description) %></p>
-
-        <% care_item_options = interaction ? CareItemResolver.new(current_user).available_for(interaction) : [] %>
-      <% if care_item_options.empty? && required_types.any? %>
-        <% inventory = current_user.user_items.includes(:item).index_by { |ui| ui.item&.item_type } %>
-        <% required_types.each do |type| %>
-          <% ui = inventory[type] %>
-          <% next unless ui&.quantity.to_i.positive? %>
-          <% care_item_options << OpenStruct.new(item_type: type, name: ui.item.name, quantity: ui.quantity) %>
-        <% end %>
-      <% end %>
-
-      <div class="pet-request__actions">
-        <%= form_with url: accept_request_pet_path(pet),
-                      method: :post,
-                      data: { turbo_stream: true },
-                      class: "pet-request__form" do %>
-          <div class="pet-request__item-select">
-            <label class="pet-request__item-label">Optional item</label>
-            <select name="care_item" class="pet-request__item-dropdown">
-              <option value="">No extra item</option>
-              <% care_item_options.each do |entry| %>
-                <option value="<%= entry.item_type %>"><%= "#{entry.name} (#{entry.quantity}×)" %></option>
-              <% end %>
-            </select>
-            <% if care_item_options.empty? %>
-              <p class="pet-request__helper">You don't own any items for this request type.</p>
-            <% end %>
-          </div>
-
-          <%= hidden_field_tag :use_items, false %>
-          <button type="submit" class="pet-request__btn pet-request__btn--primary">Accept</button>
-        <% end %>
-
-        <%= button_to "Snooze",
-                      decline_request_pet_path(pet),
-                      method: :post,
-                      data: { turbo_stream: true },
-                      class: "pet-request__btn pet-request__btn--ghost" %>
-      </div>
-
-      <p class="pet-request__footnote">Responding now starts a short cooldown before the next request appears.</p>
     </div>
   <% else %>
     <div class="pet-request__card pet-request__card--idle">
@@ -107,9 +78,20 @@
         </div>
       </div>
       <p class="pet-request__prompt">Your companion is content. We'll queue the next request automatically.</p>
-      <% if next_window %>
-        <p class="pet-request__description">Next request window after <%= next_window %>.</p>
-      <% end %>
     </div>
   <% end %>
+  <% if current_user&.admin? && pet.respond_to?(:badges) %>
+    <% badge_list = Array(pet.badges).map(&:to_s) %>
+    <% if badge_list.any? %>
+      <div class="pet-request__badges grid grid-cols-2 gap-x-3 gap-y-1 mt-3 text-[11px] text-slate-400">
+        <% badge_list.sort.each do |badge| %>
+          <span class="truncate">• <%= badge.humanize %></span>
+        <% end %>
+      </div>
+    <% else %>
+      <div class="pet-request__badges text-[11px] text-slate-500 mt-3">No badges earned yet.</div>
+    <% end %>
+  <% end %>
 </div>
+
+<turbo-frame id="care-item-panel"></turbo-frame>

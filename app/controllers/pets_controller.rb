@@ -100,6 +100,96 @@ class PetsController < ApplicationController
     end
   end
 
+  def care_item_picker
+    @pet = current_user.user_pets.find(params[:id])
+    metric = params[:metric]&.to_sym
+    catalog = UserPetsHelper::CARE_ALERT_CATALOG
+    @config = catalog[metric]
+    unless @config
+      head :not_found and return
+    end
+
+    interaction = @config[:action]
+    items = CareItemResolver.new(current_user).available_for(interaction)
+    if @config[:item_type].present?
+      items = items.select { |entry| entry.item_type.to_s == @config[:item_type].to_s }
+    end
+
+    render partial: "pets/care_item_picker",
+           locals: { pet: @pet, metric: metric, items: items, config: @config }
+  end
+
+  def perform_care
+    @pet = current_user.user_pets.find(params[:id])
+    metric = params[:metric]&.to_sym
+    catalog = UserPetsHelper::CARE_ALERT_CATALOG
+    config = catalog[metric]
+
+    unless config
+      flash.now[:alert] = "Unknown care request."
+      return render_care_stream
+    end
+
+    if @pet.respond_to?(:exploring?) && @pet.exploring?
+      flash.now[:alert] = "This pet is exploring right now."
+      return render_care_stream
+    end
+
+    if @pet.respond_to?(:asleep_until) && @pet.asleep_until.present? && @pet.asleep_until.future?
+      flash.now[:alert] = "This pet is asleep right now."
+      return render_care_stream
+    end
+
+    user_item = current_user.user_items.find_by(id: params[:user_item_id])
+    if user_item.nil? || user_item.quantity.to_i <= 0
+      flash.now[:alert] = "You need an appropriate item to help."
+      return render_care_stream
+    end
+
+    required_type = config[:item_type]
+    if required_type.present? && user_item.item&.item_type.to_s != required_type.to_s
+      flash.now[:alert] = "This item can't be used for that need."
+      return render_care_stream
+    end
+
+    interaction = config[:action]
+
+    begin
+      PetCareService.new(
+        user_pet: @pet,
+        user: current_user,
+        interaction_type: interaction,
+        item_ids: [user_item.id],
+        use_items: true
+      ).run!
+      @pet.reload
+      flash.now[:notice] = "#{config[:title] || metric.to_s.humanize} handled."
+    rescue StandardError => e
+      flash.now[:alert] = e.message
+    end
+
+    render_care_stream
+  end
+
+  def needs_status
+    @pet = current_user.user_pets.find(params[:id])
+    refresh_pet_state(@pet)
+    alerts = helpers.care_alerts_for(@pet, item_counts: helpers.care_item_counts_for(current_user)).first(3)
+    needs_count = alerts.size
+    needs_count = [needs_count, 1].max if @pet.pending_care_request.present?
+
+    respond_to do |format|
+      format.turbo_stream do
+        render turbo_stream: turbo_stream.replace(
+          "pet-needs-badge",
+          partial: "pets/needs_badge",
+          locals: { needs_count: needs_count }
+        )
+      end
+      format.json { render json: { needs_count: needs_count } }
+    end
+  end
+
   def select
     @slot_index = slot_param
     @active_slots = current_user.active_pet_slots
@@ -122,6 +212,22 @@ class PetsController < ApplicationController
     else
       redirect_to pets_path
     end
+  end
+
+  def render_care_stream
+    refresh_pet_state(@pet)
+    render turbo_stream: [
+      turbo_stream.replace(
+        "pet-care-request",
+        partial: "pets/care_alerts",
+        locals: {
+          pet: @pet,
+          care_request: nil,
+          request_cooldown_until: nil
+        }
+      ),
+      turbo_stream.update("care-item-panel", "")
+    ]
   end
 
   def assign
@@ -207,7 +313,8 @@ class PetsController < ApplicationController
     @care_request = @pet.pending_care_request
     respond_to do |format|
       format.turbo_stream do
-        render turbo_stream: turbo_stream.replace(
+        streams = []
+        streams << turbo_stream.replace(
           "pet-care-request",
           partial: "pets/care_alerts",
           locals: {
@@ -216,6 +323,16 @@ class PetsController < ApplicationController
             request_cooldown_until: @pet.care_request_cooldown_until
           }
         )
+
+        if @pet.active_slot.present?
+          streams << turbo_stream.replace(
+            helpers.pet_slot_dom_id(@pet, @pet.active_slot),
+            partial: "pets/active_slot",
+            locals: { pet: @pet, index: @pet.active_slot }
+          )
+        end
+
+        render turbo_stream: streams
       end
       format.html { redirect_to pet_path(@pet) }
     end

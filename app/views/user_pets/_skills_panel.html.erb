@@ -1,0 +1,78 @@
+<% slots = user_pet.skill_slots.to_i %>
+<% equipped_by_slot = user_pet.equipped_pet_skills.includes(:pet_skill).index_by(&:equipped_slot) %>
+<% owned_skills = (local_assigns[:skills] || current_user.user_pet_skills.includes(:pet_skill)).owned %>
+
+<div class="pet-skill-panel">
+  <div class="pet-skill-panel__header">
+    <div>
+      <p class="pet-panel__eyebrow">Skills</p>
+      <h3 class="pet-panel__title">Equipped</h3>
+    </div>
+    <p class="pet-panel__helper"><%= slots %> slots available</p>
+  </div>
+
+  <div class="pet-skill-panel__slots">
+    <% slots.times do |slot| %>
+      <% equipped = equipped_by_slot[slot] %>
+      <div class="pet-skill-slot <%= equipped ? 'pet-skill-slot--filled' : 'pet-skill-slot--empty' %>">
+        <div class="pet-skill-slot__meta">
+          <span class="pet-skill-slot__label">Slot <%= slot + 1 %></span>
+          <% if equipped %>
+            <span class="pet-skill-slot__badge"><%= equipped.pet_skill.rarity.titleize %></span>
+          <% end %>
+        </div>
+        <% if equipped %>
+          <h4 class="pet-skill-slot__name"><%= equipped.pet_skill.name %></h4>
+          <p class="pet-skill-slot__desc"><%= equipped.pet_skill.description %></p>
+          <%= button_to "Unequip",
+                        unequip_skill_user_pet_path(user_pet, user_pet_skill_id: equipped.id),
+                        method: :post,
+                        data: { turbo_frame: helpers.user_pet_panel_body_dom_id(user_pet) },
+                        class: "pet-skill-slot__action" %>
+        <% else %>
+          <p class="pet-skill-slot__desc">Empty slot</p>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="pet-skill-panel__header">
+    <div>
+      <p class="pet-panel__eyebrow">Inventory</p>
+      <h3 class="pet-panel__title">Owned Skills</h3>
+    </div>
+  </div>
+
+  <% if owned_skills.any? %>
+    <div class="pet-skill-panel__inventory">
+      <% owned_skills.each do |skill| %>
+        <div class="pet-skill-item">
+          <div>
+            <p class="pet-skill-item__name"><%= skill.pet_skill.name %> <span class="pet-skill-item__rarity">(<%= skill.pet_skill.rarity.titleize %>)</span></p>
+            <p class="pet-skill-item__desc"><%= skill.pet_skill.description %></p>
+            <p class="pet-skill-item__meta">Qty: <%= skill.quantity %> · Tier <%= skill.tier %></p>
+          </div>
+          <div class="pet-skill-item__actions">
+            <% if user_pet.active_slot.present? %>
+              <% slots.times do |slot| %>
+                <% next if equipped_by_slot.key?(slot) %>
+                <% if skill.can_equip?(user_pet, slot) %>
+                  <%= button_to "Equip to slot #{slot + 1}",
+                                equip_skill_user_pet_path(user_pet, user_pet_skill_id: skill.id, slot: slot),
+                                method: :post,
+                                data: { turbo_frame: helpers.user_pet_panel_body_dom_id(user_pet) },
+                                class: "pet-skill-item__action" %>
+                  <% break %>
+                <% end %>
+              <% end %>
+            <% else %>
+              <span class="pet-skill-item__helper">Activate pet to equip</span>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  <% else %>
+    <p class="pet-skill-panel__empty">You don't own any skills yet.</p>
+  <% end %>
+</div>

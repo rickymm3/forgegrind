@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_12_04_100000) do
+ActiveRecord::Schema[8.0].define(version: 2025_12_05_180000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -275,6 +275,22 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_04_100000) do
     t.index ["user_pet_id"], name: "index_pet_camp_interactions_on_user_pet_id"
   end
 
+  create_table "pet_skills", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "key", null: false
+    t.string "rarity", default: "common", null: false
+    t.text "description"
+    t.string "family"
+    t.integer "tier", default: 1, null: false
+    t.string "effect_key"
+    t.jsonb "effect_value", default: {}
+    t.jsonb "requirements", default: {}
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["family", "tier"], name: "index_pet_skills_on_family_and_tier"
+    t.index ["key"], name: "index_pet_skills_on_key", unique: true
+  end
+
   create_table "pet_thoughts", force: :cascade do |t|
     t.string "thought"
     t.float "playfulness_mod"
@@ -455,6 +471,22 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_04_100000) do
     t.index ["user_pet_id"], name: "index_user_pet_abilities_on_user_pet_id"
   end
 
+  create_table "user_pet_skills", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "pet_skill_id", null: false
+    t.integer "tier", default: 1, null: false
+    t.integer "quantity", default: 1, null: false
+    t.bigint "equipped_user_pet_id"
+    t.integer "equipped_slot"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["equipped_user_pet_id", "equipped_slot"], name: "index_user_pet_skills_on_equipped_slot_unique", unique: true, where: "((equipped_user_pet_id IS NOT NULL) AND (equipped_slot IS NOT NULL))"
+    t.index ["equipped_user_pet_id"], name: "index_user_pet_skills_on_equipped_user_pet_id"
+    t.index ["pet_skill_id"], name: "index_user_pet_skills_on_pet_skill_id"
+    t.index ["user_id", "pet_skill_id", "tier"], name: "index_user_pet_skills_on_user_and_skill_and_tier"
+    t.index ["user_id"], name: "index_user_pet_skills_on_user_id"
+  end
+
   create_table "user_pets", force: :cascade do |t|
     t.bigint "user_id", null: false
     t.bigint "pet_id", null: false
@@ -509,6 +541,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_04_100000) do
     t.integer "coin_daily_cap", default: 500, null: false
     t.decimal "coin_buff_multiplier", precision: 5, scale: 2, default: "0.0", null: false
     t.datetime "coin_buff_expires_at"
+    t.integer "skill_slots", default: 2, null: false
     t.index ["egg_id"], name: "index_user_pets_on_egg_id"
     t.index ["held_user_item_id"], name: "index_user_pets_on_held_user_item_id"
     t.index ["pet_id"], name: "index_user_pets_on_pet_id"
@@ -655,6 +688,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_04_100000) do
   add_foreign_key "user_notifications", "users"
   add_foreign_key "user_pet_abilities", "abilities"
   add_foreign_key "user_pet_abilities", "user_pets"
+  add_foreign_key "user_pet_skills", "pet_skills"
+  add_foreign_key "user_pet_skills", "user_pets", column: "equipped_user_pet_id"
+  add_foreign_key "user_pet_skills", "users"
   add_foreign_key "user_pets", "eggs"
   add_foreign_key "user_pets", "pet_thoughts"
   add_foreign_key "user_pets", "pets"

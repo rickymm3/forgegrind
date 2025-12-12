@@ -1,0 +1,22 @@
+<div class="inventory-detail__header">
+  <div>
+    <p class="inventory-detail__eyebrow">Skill Learned</p>
+    <h2 class="inventory-detail__title"><%= granted_skill.name %></h2>
+    <p class="inventory-detail__subtitle"><%= granted_skill.description %></p>
+  </div>
+  <span class="inventory-detail__badge"><%= granted_skill.rarity.titleize %></span>
+</div>
+
+<div class="inventory-detail__body">
+  <p class="inventory-detail__helper">Added to your skill inventory (Qty: <%= user_pet_skill.quantity %>, Tier: <%= user_pet_skill.tier %>).</p>
+  <div class="inventory-detail__actions">
+    <%= link_to "Open another",
+                open_tm_box_inventory_path(item_id: user_item.id),
+                data: { turbo_frame: "inventory-detail-panel" },
+                class: "inventory-detail__primary" %>
+    <%= link_to "Close",
+                close_path,
+                data: { turbo_frame: "inventory-detail-panel" },
+                class: "inventory-detail__secondary" %>
+  </div>
+</div>

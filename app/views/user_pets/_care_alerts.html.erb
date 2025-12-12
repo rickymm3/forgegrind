@@ -1,0 +1,97 @@
+<% require "ostruct" %>
+<% exploring = pet.respond_to?(:exploring?) && pet.exploring? %>
+<% sleeping = pet.respond_to?(:asleep_until) && pet.asleep_until.present? && pet.asleep_until.future? %>
+<% care_item_counts = care_item_counts_for(current_user) %>
+<% alerts = care_alerts_for(pet, item_counts: care_item_counts).first(3) %>
+
+<div class="pet-request" id="pet-care-request-card">
+  <% if exploring %>
+    <div class="pet-request__card pet-request__card--idle">
+      <div class="pet-request__header">
+        <div class="pet-request__icon">🧭</div>
+        <div>
+          <p class="pet-request__eyebrow">Exploring</p>
+          <p class="pet-request__title">Requests paused</p>
+        </div>
+      </div>
+      <p class="pet-request__prompt">This companion is out exploring. Care requests will resume when they return.</p>
+    </div>
+  <% elsif sleeping %>
+    <div class="pet-request__card pet-request__card--idle">
+      <div class="pet-request__header">
+        <div class="pet-request__icon">💤</div>
+        <div>
+          <p class="pet-request__eyebrow">Sleeping</p>
+          <p class="pet-request__title">Resting now</p>
+        </div>
+      </div>
+      <p class="pet-request__prompt"><%= pet.name.presence || "This companion" %> is asleep. Check back soon.</p>
+    </div>
+  <% elsif alerts.any? %>
+    <div class="pet-request__card">
+      <div class="pet-request__header">
+        <div class="pet-request__icon">⚡️</div>
+        <div>
+          <p class="pet-request__eyebrow">Needs attention</p>
+          <p class="pet-request__title">Up to three care actions ready</p>
+        </div>
+      </div>
+
+      <div class="pet-request__list">
+        <% alerts.each do |alert| %>
+          <div class="pet-request__item">
+            <div class="pet-request__item-head">
+              <span class="pet-request__icon"><%= alert[:icon] || "✨" %></span>
+              <div>
+                <p class="pet-request__eyebrow"><%= alert[:title] %></p>
+                <p class="pet-request__prompt"><%= alert[:prompt] %></p>
+                <p class="pet-request__description"><%= alert[:description] %></p>
+              </div>
+            </div>
+            <div class="pet-request__meta">
+              <% if alert[:item_name].present? %>
+                <span class="pet-request__pill">
+                  Needs <%= alert[:item_name] %> (<%= alert[:item_quantity] %> owned)
+                </span>
+              <% end %>
+              <span class="pet-request__pill pet-request__pill--value">
+                Value: <%= alert[:value] %>
+              </span>
+            </div>
+            <div class="pet-request__actions">
+              <%= link_to "Select item",
+                          care_item_picker_pet_path(pet, metric: alert[:key]),
+                          data: { turbo_frame: "care-item-panel" },
+                          class: "pet-request__btn pet-request__btn--primary" %>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  <% else %>
+    <div class="pet-request__card pet-request__card--idle">
+      <div class="pet-request__header">
+        <div class="pet-request__icon">🌀</div>
+        <div>
+          <p class="pet-request__eyebrow">All calm</p>
+          <p class="pet-request__title">No active requests</p>
+        </div>
+      </div>
+      <p class="pet-request__prompt">Your companion is content. We'll queue the next request automatically.</p>
+    </div>
+  <% end %>
+  <% if current_user&.admin? && pet.respond_to?(:badges) %>
+    <% badge_list = Array(pet.badges).map(&:to_s) %>
+    <% if badge_list.any? %>
+      <div class="pet-request__badges grid grid-cols-2 gap-x-3 gap-y-1 mt-3 text-[11px] text-slate-400">
+        <% badge_list.sort.each do |badge| %>
+          <span class="truncate">• <%= badge.humanize %></span>
+        <% end %>
+      </div>
+    <% else %>
+      <div class="pet-request__badges text-[11px] text-slate-500 mt-3">No badges earned yet.</div>
+    <% end %>
+  <% end %>
+</div>
+
+<turbo-frame id="care-item-panel"></turbo-frame>

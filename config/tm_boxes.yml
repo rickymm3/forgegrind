@@ -1,0 +1,72 @@
+tm_box_common:
+  skills:
+    - key: swift_steps
+      name: Swift Steps
+      rarity: common
+      description: Exploration speed +3%
+      effect_key: explore_speed_pct
+      effect_value: { amount: 3 }
+      requirements: {}
+    - key: lucky_paws
+      name: Lucky Paws
+      rarity: common
+      description: Egg rare chance +2%
+      effect_key: egg_rare_chance_pct
+      effect_value: { amount: 2 }
+      requirements: {}
+
+tm_box_uncommon:
+  skills:
+    - key: sharp_scents
+      name: Sharp Scents
+      rarity: uncommon
+      description: Rare drop chance in forests +5%
+      effect_key: rare_drop_pct
+      effect_value: { amount: 5, zone: "forest" }
+      requirements:
+        allowed_pet_types: ["Beast", "Forest"]
+    - key: thrifty_tail
+      name: Thrifty Tail
+      rarity: uncommon
+      description: Store prices -5%
+      effect_key: store_discount_pct
+      effect_value: { amount: 5 }
+      requirements: {}
+
+tm_box_rare:
+  skills:
+    - key: lightning_dash
+      name: Lightning Dash
+      rarity: rare
+      description: Exploration speed +6%
+      effect_key: explore_speed_pct
+      effect_value: { amount: 6 }
+      requirements:
+        allowed_pet_types: ["Beast"]
+    - key: radiant_charm
+      name: Radiant Charm
+      rarity: rare
+      description: Rare egg odds +5%
+      effect_key: egg_rare_chance_pct
+      effect_value: { amount: 5 }
+      requirements: {}
+
+tm_box_legendary:
+  skills:
+    - key: fortune_bound
+      name: Fortune Bound
+      rarity: legendary
+      description: Coins gained +12%
+      effect_key: coin_gain_pct
+      effect_value: { amount: 12 }
+      requirements: {}
+    - key: trailblaze_plus
+      name: Trailblaze+
+      rarity: legendary
+      description: Exploration speed +10% and +10% rare drops
+      effect_key: multi
+      effect_value:
+        explore_speed_pct: 10
+        rare_drop_pct: 10
+      requirements:
+        allowed_pet_types: ["Beast", "Scout"]

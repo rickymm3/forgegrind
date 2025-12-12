@@ -23,6 +23,10 @@ class UserPet < ApplicationRecord
   has_many :learned_abilities,
            through: :user_pet_abilities,
            source: :ability
+  has_many :equipped_pet_skills,
+           class_name: "UserPetSkill",
+           foreign_key: :equipped_user_pet_id,
+           dependent: :nullify
 
   scope :equipped, -> { where.not(active_slot: nil).order(:active_slot) }
   scope :active, -> { where(retired_at: nil) }
@@ -73,6 +77,26 @@ class UserPet < ApplicationRecord
     payload if payload["status"] == "pending"
   rescue StandardError
     nil
+  end
+
+  def equipped_skill_effects
+    effects = Hash.new(0.0)
+    equipped_pet_skills.includes(:pet_skill).each do |ups|
+      skill = ups.pet_skill
+      next unless skill
+      multiplier = ups.tier.to_f
+      case skill.effect_key
+      when "multi"
+        skill.effect_value.to_h.each do |k, v|
+          amount = v.is_a?(Hash) ? v["amount"].to_f : v.to_f
+          effects[k.to_s] += amount * multiplier
+        end
+      else
+        amount = skill.effect_value.to_h["amount"] || skill.effect_value
+        effects[skill.effect_key.to_s] += amount.to_f * multiplier
+      end
+    end
+    effects
   end
 
   def ability_references

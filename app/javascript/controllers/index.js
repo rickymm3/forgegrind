@@ -91,3 +91,9 @@ application.register("encounter-builder", EncounterBuilderController)
 
 import PetDetailController from "./pet_detail_controller"
 application.register("pet-detail", PetDetailController)
+
+import HeaderCollapseController from "./header_collapse_controller"
+application.register("header-collapse", HeaderCollapseController)
+
+import PetNeedsPollController from "./pet_needs_poll_controller"
+application.register("pet-needs-poll", PetNeedsPollController)

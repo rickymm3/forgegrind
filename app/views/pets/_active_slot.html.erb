@@ -30,12 +30,7 @@
           <p class="pet-slot__name"><%= pet.name.presence || pet.pet.name %></p>
           <p class="pet-slot__energy"><%= "#{pet.energy.to_i} / #{UserPet::MAX_ENERGY}" %></p>
         </div>
-        <div class="pet-slot__details-row">
-          <% if (feeling = pet_feeling_descriptor(pet)) %>
-            <span class="pet-slot__chip"><%= feeling[:label] %></span>
-          <% end %>
-          <span class="pet-slot__status"><%= pet_status_label(pet) %></span>
-        </div>
+
         <% if pet.pending_care_request.present? %>
           <div class="pet-slot__details-row">
             <span class="pet-slot__request">
@@ -102,6 +97,7 @@
               <span data-pet-coins-target="collectedText">Holding: <%= coin_stats[:pending_amount] %>/<%= coin_stats[:holding_cap] %></span>
               <span>Multiplier: <%= coin_stats[:multiplier] %>×</span>
             </div>
+
           <% end %>
         </div>
 

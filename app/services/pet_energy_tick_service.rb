@@ -10,8 +10,8 @@ class PetEnergyTickService
     mood: :mood_score
   }.freeze
 
-  GOOD_THRESHOLD = 60
-  BAD_THRESHOLD  = 40
+  GOOD_THRESHOLD = 75
+  BAD_THRESHOLD  = 45
   TRACKER_MIN    = 0
   TRACKER_MAX    = 100
 
@@ -66,13 +66,10 @@ class PetEnergyTickService
   def tracker_delta_for(need)
     value = user_pet.send(need).to_i
 
-    if value >= GOOD_THRESHOLD
-      1
-    elsif value <= BAD_THRESHOLD
-      -1
-    else
-      0
-    end
+    return 1  if value >= GOOD_THRESHOLD
+    return -2 if value <= BAD_THRESHOLD
+
+    0
   end
 
   def clamp_tracker(value)

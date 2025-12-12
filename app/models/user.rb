@@ -12,6 +12,7 @@ class User < ApplicationRecord
   has_many :user_items, dependent: :destroy
   has_many :user_containers, dependent: :destroy
   has_many :container_open_events, dependent: :destroy
+  has_many :user_pet_skills, dependent: :destroy
   has_many :battle_sessions, dependent: :destroy
   has_many :user_zone_completions, dependent: :destroy
   has_many :generated_explorations, dependent: :destroy
@@ -125,6 +126,16 @@ class User < ApplicationRecord
       slots[index] = pet
     end
     slots
+  end
+
+  def primary_active_pet
+    active_pet_slots.compact.first
+  end
+
+  def skill_modifiers
+    pet = primary_active_pet
+    return {} unless pet
+    pet.equipped_skill_effects
   end
 
   def first_available_pet_slot

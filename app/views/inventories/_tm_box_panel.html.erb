@@ -1,0 +1,31 @@
+<div class="inventory-detail__header">
+  <div>
+    <p class="inventory-detail__eyebrow">TM Box</p>
+    <h2 class="inventory-detail__title"><%= item.name %></h2>
+    <p class="inventory-detail__subtitle"><%= metadata[:description] || "Open to receive a random pet skill." %></p>
+  </div>
+  <span class="inventory-detail__badge"><%= metadata[:rarity].to_s.titleize %></span>
+</div>
+
+<div class="inventory-detail__body">
+  <p class="inventory-detail__helper">Owned: <%= user_item.quantity %></p>
+
+  <div class="inventory-detail__actions">
+    <% if errors.present? %>
+      <div class="inventory-detail__error"><%= errors.join(", ") %></div>
+    <% end %>
+    <% if user_item.quantity.to_i > 0 %>
+      <%= button_to "Open Box",
+                    open_tm_box_inventory_path(item_id: user_item.id),
+                    method: :post,
+                    data: { turbo_frame: "inventory-detail-panel" },
+                    class: "inventory-detail__primary" %>
+    <% else %>
+      <p class="inventory-detail__helper">No boxes remaining.</p>
+    <% end %>
+    <%= link_to "Close",
+                close_path,
+                data: { turbo_frame: "inventory-detail-panel" },
+                class: "inventory-detail__secondary" %>
+  </div>
+</div>

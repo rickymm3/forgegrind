@@ -1,0 +1,39 @@
+<div class="pet-care-picker">
+  <div class="pet-care-picker__header">
+    <div>
+      <p class="pet-care-picker__eyebrow">Select an item</p>
+      <p class="pet-care-picker__title"><%= config[:title] || params[:metric].to_s.humanize %></p>
+      <% if config[:description].present? %>
+        <p class="pet-care-picker__helper"><%= config[:description] %></p>
+      <% end %>
+    </div>
+  </div>
+
+  <% if items.any? %>
+    <div class="pet-care-picker__grid">
+      <% items.each do |item| %>
+        <%= form_with url: perform_care_pet_path(pet), method: :post, data: { turbo_stream: true }, class: "pet-care-picker__card" do %>
+          <%= hidden_field_tag :metric, metric %>
+          <%= hidden_field_tag :user_item_id, item.user_item_id %>
+          <div class="pet-care-picker__name-row">
+            <p class="pet-care-picker__name"><%= item.name %></p>
+            <span class="pet-care-picker__badge"><%= item.quantity %> owned</span>
+          </div>
+          <% if item.respond_to?(:badge) && item.badge.present? %>
+            <p class="pet-care-picker__badge-inline">Unlocks badge: <%= item.badge.to_s.humanize %></p>
+          <% end %>
+          <% if item.respond_to?(:coin_buff) && item.coin_buff.present? %>
+            <p class="pet-care-picker__badge-inline">Coin buff: <%= item.coin_buff %></p>
+          <% end %>
+          <div class="pet-care-picker__actions">
+            <button type="submit" class="pet-request__btn pet-request__btn--primary w-full">Use item</button>
+          </div>
+        <% end %>
+      <% end %>
+    </div>
+  <% else %>
+    <div class="pet-care-picker__empty">
+      <p>You don’t have the right items for this need.</p>
+    </div>
+  <% end %>
+</div>

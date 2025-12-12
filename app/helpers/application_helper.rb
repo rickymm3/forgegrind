@@ -117,6 +117,10 @@ module ApplicationHelper
     ActionView::RecordIdentifier.dom_id(user_pet, :panel)
   end
 
+  def user_pet_panel_body_dom_id(user_pet)
+    ActionView::RecordIdentifier.dom_id(user_pet, :panel_body)
+  end
+
   def badge_registry_definitions
     BadgeRegistry.definitions.values.sort_by(&:label)
   end

@@ -1,0 +1,75 @@
+<% alerts_for_nav = care_alerts_for(@pet, item_counts: care_item_counts_for(current_user)).first(3) %>
+<% has_needs = alerts_for_nav.any? || @pet.pending_care_request.present? %>
+
+<nav class="pet-hero__nav pet-hero__nav--glass" aria-label="Pet controls">
+  <%= link_to pets_path,
+              class: "pet-hero__nav-btn pet-hero__nav-btn--ghost",
+              aria: { label: "Back to pets" } do %>
+    <svg xmlns="http://www.w3.org/2000/svg"
+         viewBox="0 0 24 24"
+         fill="none"
+         stroke="currentColor"
+         stroke-width="2"
+         stroke-linecap="round"
+         stroke-linejoin="round"
+         class="pet-hero__nav-icon">
+      <line x1="19" y1="12" x2="5" y2="12"></line>
+      <polyline points="12 19 5 12 12 5"></polyline>
+    </svg>
+    <span class="pet-hero__tooltip">Back to pets</span>
+  <% end %>
+
+  <button type="button" class="pet-hero__nav-btn pet-hero__nav-btn--ghost" aria-label="Pet stats">
+    <svg xmlns="http://www.w3.org/2000/svg"
+         viewBox="0 0 24 24"
+         fill="none"
+         stroke="currentColor"
+         stroke-width="2"
+         stroke-linecap="round"
+         stroke-linejoin="round"
+         class="pet-hero__nav-icon">
+      <line x1="18" y1="20" x2="18" y2="10"></line>
+      <line x1="12" y1="20" x2="12" y2="4"></line>
+      <line x1="6" y1="20" x2="6" y2="14"></line>
+    </svg>
+    <span class="pet-hero__tooltip">Pet stats</span>
+  </button>
+
+  <button type="button" class="pet-hero__nav-btn pet-hero__nav-btn--ghost" aria-label="Pet needs">
+    <svg xmlns="http://www.w3.org/2000/svg"
+         viewBox="0 0 24 24"
+         fill="none"
+         stroke="currentColor"
+         stroke-width="2"
+         stroke-linecap="round"
+         stroke-linejoin="round"
+         class="pet-hero__nav-icon">
+      <circle cx="12" cy="12" r="10"></circle>
+      <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
+    </svg>
+    <%= turbo_frame_tag "pet-needs-badge", class: "pet-hero__nav-badge-frame" do %>
+      <%= render "pets/needs_badge", has_needs: has_needs %>
+    <% end %>
+    <span class="pet-hero__tooltip">Pet needs</span>
+  </button>
+
+  <button type="button" class="pet-hero__nav-btn pet-hero__nav-btn--ghost" aria-label="Training">
+    <svg xmlns="http://www.w3.org/2000/svg"
+         viewBox="0 0 24 24"
+         fill="none"
+         stroke="currentColor"
+         stroke-width="2"
+         stroke-linecap="round"
+         stroke-linejoin="round"
+         class="pet-hero__nav-icon">
+      <path d="m6.5 6.5 11 11"></path>
+      <path d="m21 21-1-1"></path>
+      <path d="m3 3 1 1"></path>
+      <path d="m18 22 4-4"></path>
+      <path d="m2 6 4-4"></path>
+      <path d="m3 10 7-7"></path>
+      <path d="m14 21 7-7"></path>
+    </svg>
+    <span class="pet-hero__tooltip">Training</span>
+  </button>
+</nav>

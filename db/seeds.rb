@@ -16,9 +16,17 @@ celestial = PetType.find_or_create_by!(name: "Celestial")
 beast     = PetType.find_or_create_by!(name: "Beast")
 
 # === Currencies (legacy) ===
-coins = Currency.find_or_create_by!(name: "Coins", symbol: "🪙")
-diamonds = Currency.find_or_create_by!(name: "Diamonds", symbol: "💎")
-glow_essence = Currency.find_or_create_by!(name: "Glow Essence", symbol: "✨")
+coins = Currency.find_or_initialize_by(name: "Coins")
+coins.symbol ||= "🪙"
+coins.save!
+
+diamonds = Currency.find_or_initialize_by(name: "Diamonds")
+diamonds.symbol ||= "💎"
+diamonds.save!
+
+glow_essence = Currency.find_or_initialize_by(name: "Glow Essence")
+glow_essence.symbol ||= "✨"
+glow_essence.save!
 
 # === Rarities ===
 rarity_definitions = [
@@ -75,6 +83,10 @@ wind_stone        = items.fetch(:wind_stone)
 spirit_stone      = items.fetch(:spirit_stone)
 storm_stone       = items.fetch(:storm_stone)
 celestial_stone   = items.fetch(:celestial_stone)
+tm_box_common     = items[:tm_box_common]
+tm_box_uncommon   = items[:tm_box_uncommon]
+tm_box_rare       = items[:tm_box_rare]
+tm_box_legendary  = items[:tm_box_legendary]
 
 # === Special Abilities ===
 special_abilities = PetSpecialAbilityCatalog.sync_definitions!
@@ -147,6 +159,11 @@ verdant_canopy = World.find_or_create_by!(name: "Verdant Canopy") do |w|
   w.reward_item_type = "grass_stone"
   w.diamond_reward   = 85
 end
+starter_zone.update!(reward_item_type: "tm_box_common")
+forest.update!(reward_item_type: "tm_box_uncommon")
+ember_fields.update!(reward_item_type: "tm_box_rare")
+aurora_tundra.update!(reward_item_type: "tm_box_rare")
+verdant_canopy.update!(reward_item_type: "tm_box_legendary")
 forest.enemies.destroy_all
 forest.enemies.create!([
   { name: "Wolf",
@@ -178,10 +195,27 @@ forest.enemies.create!([
 # associate grass type for Forest
 forest.pet_types = [grass]
 
+# === Pet Skills (baseline TM drops) ===
+tm_config_path = Rails.root.join("config", "tm_boxes.yml")
+tm_config = tm_config_path.exist? ? YAML.load_file(tm_config_path) : {}
+tm_config.values.flat_map { |cfg| cfg["skills"] || [] }.each do |skill_def|
+  skill_def = skill_def.with_indifferent_access
+  PetSkill.find_or_create_by!(key: skill_def[:key]) do |ps|
+    ps.name         = skill_def[:name]
+    ps.rarity       = skill_def[:rarity] || "common"
+    ps.description  = skill_def[:description]
+    ps.family       = skill_def[:family] || skill_def[:key].to_s.split("_").first
+    ps.tier         = skill_def[:tier] || 1
+    ps.effect_key   = skill_def[:effect_key]
+    ps.effect_value = skill_def[:effect_value] || {}
+    ps.requirements = skill_def[:requirements] || {}
+  end
+end
+
 # === Eggs ===
 starter_egg = Egg.find_or_create_by!(name: "Starter Egg") do |e|
   e.currency       = coins
-  e.cost_amount    = 10
+  e.cost_amount    = 0
   e.hatch_duration = 15
 end
 starter_egg.update!(hatch_duration: 15) unless starter_egg.hatch_duration == 15
@@ -712,7 +746,7 @@ PetThought.find_or_create_by!(thought: "I feel so curious!") do |pt|
 end
 
 # === Egg Item Costs ===
-EggItemCost.find_or_create_by!(egg: starter_egg, item: starter_item) { |eic| eic.quantity = 1 }
+EggItemCost.where(egg: starter_egg).delete_all
 
 # === Retroactive type associations ===
 Pet.find_each do |pet|

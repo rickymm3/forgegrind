@@ -41,11 +41,51 @@ class InventoriesController < ApplicationController
     item = user_item.item
     metadata = item_metadata(item)
 
+    if item.item_type.to_s.start_with?("tm_box")
+      render_detail_panel(
+        state: :tm_box,
+        user_item: user_item,
+        item: item,
+        metadata: metadata,
+        close_path: item_panel_inventory_path
+      )
+    else
+      render_detail_panel(
+        state: :item,
+        user_item: user_item,
+        item: item,
+        metadata: metadata,
+        close_path: item_panel_inventory_path
+      )
+    end
+  end
+
+  def open_tm_box
+    load_inventory
+    user_item = @items.find { |record| record.id == params[:item_id].to_i }
+    raise ActiveRecord::RecordNotFound, "Item not found" unless user_item
+
+    opener = TmBoxOpener.new(user: current_user, user_item: user_item)
+    result = opener.call
+
+    if result.errors.present?
+      render_detail_panel(
+        state: :tm_box,
+        user_item: user_item,
+        item: user_item.item,
+        metadata: item_metadata(user_item.item),
+        close_path: item_panel_inventory_path,
+        errors: result.errors
+      )
+      return
+    end
+
     render_detail_panel(
-      state: :item,
+      state: :tm_box_result,
+      granted_skill: result.granted_skill,
+      user_pet_skill: result.user_pet_skill,
       user_item: user_item,
-      item: item,
-      metadata: metadata,
+      item: user_item.item,
       close_path: item_panel_inventory_path
     )
   end

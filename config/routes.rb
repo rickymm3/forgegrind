@@ -16,6 +16,9 @@ Rails.application.routes.draw do
       get  :level_up_panel
       get  :details_panel
       get  :overview_panel
+      get  :skills_panel
+      post :equip_skill
+      post :unequip_skill
     end
     collection do
       post :unequip
@@ -41,6 +44,7 @@ Rails.application.routes.draw do
   resource :inventory, only: [:show] do
     post :container_panel
     post :item_panel
+    post :open_tm_box
   end
 
 get "/store", to: "store#index"
@@ -105,6 +109,9 @@ post "/store/items/:item_type/purchase", to: "store#purchase_item", as: :store_p
       post :accept_request
       post :decline_request
       post :collect_passive
+      get  :care_item_picker
+      post :perform_care
+      get  :needs_status
     end
   end
 

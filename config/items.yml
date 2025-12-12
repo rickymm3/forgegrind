@@ -26,6 +26,34 @@ frisbee:
   target_type: pet
   rarity: uncommon
 
+tm_box_common:
+  name: "Common TM Box"
+  description: "A common TM box containing a random pet skill."
+  rarity: common
+  usable: true
+  target_type: tm_box
+
+tm_box_uncommon:
+  name: "Uncommon TM Box"
+  description: "An uncommon TM box containing a random pet skill."
+  rarity: uncommon
+  usable: true
+  target_type: tm_box
+
+tm_box_rare:
+  name: "Rare TM Box"
+  description: "A rare TM box containing a random pet skill."
+  rarity: rare
+  usable: true
+  target_type: tm_box
+
+tm_box_legendary:
+  name: "Legendary TM Box"
+  description: "A legendary TM box containing a powerful pet skill."
+  rarity: legendary
+  usable: true
+  target_type: tm_box
+
 blanket:
   name: "Blanket"
   description: "A cozy blanket that makes your pet feel safe and warm."

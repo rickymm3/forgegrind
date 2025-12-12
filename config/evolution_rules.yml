@@ -50,3 +50,222 @@ lupin:
       priority: 5
       guard: {}
       notes: "Lupins that grow without special circumstances mature into Galeclaw."
+
+kittian:
+  parent: Kittian
+  rules:
+    verdant_kittian:
+      child: Verdant Kittian
+      trigger_level: 3
+      priority: 20
+      guard:
+        all:
+          - type: flag_true
+            key: forest_explorer
+        any:
+          - type: badge_unlocked
+            key: well_fed
+          - type: badge_unlocked
+            key: clean_paws
+      notes: "Exploration-forward branch unlocked by forest runs and good care."
+    brighteye_kittian:
+      child: Brighteye Kittian
+      trigger_level: 3
+      priority: 15
+      guard:
+        all:
+          - type: badge_unlocked
+            key: playmate
+          - type: badge_unlocked
+            key: caretakers_favorite
+      notes: "Social/encounter branch unlocked by playful care with items."
+    ember_kittian:
+      child: Ember Kittian
+      trigger_level: 3
+      priority: 10
+      guard:
+        all:
+          - type: badge_unlocked
+            key: gritty
+          - type: badge_unlocked
+            key: pushed_limits
+      notes: "Risk/battle-flavored branch unlocked by low-mood/low-energy grit."
+
+verdant_kittian:
+  parent: Verdant Kittian
+  rules:
+    trail_prowler:
+      child: Trail Prowler
+      trigger_level: 6
+      priority: 30
+      guard:
+        all:
+          - type: badge_unlocked
+            key: trailblazer
+          - type: badge_unlocked
+            key: steady_mood
+        any:
+          - type: badge_unlocked
+            key: map_reader
+          - type: flag_true
+            key: forest_explorer_plus
+      notes: "Coin/efficiency rare form from exploration mastery."
+    canopy_warden:
+      child: Canopy Warden
+      trigger_level: 6
+      priority: 28
+      guard:
+        all:
+          - type: badge_unlocked
+            key: guardian
+          - type: flag_true
+            key: forest_explorer_plus
+      notes: "Defensive rare form; favors encounter avoidance on forest routes."
+
+trail_prowler:
+  parent: Trail Prowler
+  rules:
+    verdant_sentinel:
+      child: Verdant Sentinel
+      trigger_level: 8
+      priority: 40
+      guard:
+        all:
+          - type: badge_unlocked
+            key: scout_captain
+          - type: badge_unlocked
+            key: no_stumble_plus
+      notes: "Legendary defender; excels at encounter negation on forest routes."
+
+canopy_warden:
+  parent: Canopy Warden
+  rules:
+    moonlit_arcanist:
+      child: Moonlit Arcanist
+      trigger_level: 8
+      priority: 38
+      guard:
+        all:
+          - type: badge_unlocked
+            key: trailblazer_plus
+          - type: badge_unlocked
+            key: silver_tongue
+          - type: item_held
+            value: moon_charm
+      notes: "Hybrid legendary; mixes exploration + encounter + rare item."
+
+brighteye_kittian:
+  parent: Brighteye Kittian
+  rules:
+    starwhisker_muse:
+      child: Starwhisker Muse
+      trigger_level: 6
+      priority: 26
+      guard:
+        all:
+          - type: badge_unlocked
+            key: silver_tongue
+          - type: badge_unlocked
+            key: party_anchor
+          - type: badge_unlocked
+            key: show_starter
+      notes: "Encounter/social rare form; boosts encounter outcomes."
+    jubilee_harlequin:
+      child: Jubilee Harlequin
+      trigger_level: 6
+      priority: 25
+      guard:
+        all:
+          - type: badge_unlocked
+            key: show_starter
+          - type: badge_unlocked
+            key: cheer_chain
+      notes: "Item synergy rare form; entertainment/care streak focus."
+
+starwhisker_muse:
+  parent: Starwhisker Muse
+  rules:
+    harmony_oracle:
+      child: Harmony Oracle
+      trigger_level: 8
+      priority: 37
+      guard:
+        all:
+          - type: badge_unlocked
+            key: party_anchor_plus
+          - type: badge_unlocked
+            key: silver_tongue_plus
+      notes: "Legendary social final; party-wide mood/encounter support."
+
+jubilee_harlequin:
+  parent: Jubilee Harlequin
+  rules:
+    carnival_maestro:
+      child: Carnival Maestro
+      trigger_level: 8
+      priority: 50
+      guard:
+        all:
+          - type: badge_unlocked
+            key: show_starter_plus
+          - type: badge_unlocked
+            key: cheer_chain_plus
+          - type: badge_unlocked
+            key: storyteller
+      notes: "Mythic item/encounter performer; top priority final."
+
+ember_kittian:
+  parent: Ember Kittian
+  rules:
+    ashstrider:
+      child: Ashstrider
+      trigger_level: 6
+      priority: 24
+      guard:
+        all:
+          - type: badge_unlocked
+            key: no_stumble
+          - type: badge_unlocked
+            key: sprinter
+      notes: "Endurance/speed rare form; clean runs with tight timers."
+    cinder_mystic:
+      child: Cinder Mystic
+      trigger_level: 6
+      priority: 23
+      guard:
+        all:
+          - type: badge_unlocked
+            key: risk_taker
+          - type: badge_unlocked
+            key: edge_walker
+      notes: "Risky encounter rare form; completes runs at low reserves."
+
+ashstrider:
+  parent: Ashstrider
+  rules:
+    ember_sovereign:
+      child: Ember Sovereign
+      trigger_level: 8
+      priority: 39
+      guard:
+        all:
+          - type: badge_unlocked
+            key: risk_taker_plus
+          - type: badge_unlocked
+            key: grit_master
+      notes: "Legendary endurance; excels in hard encounters with steady mood."
+
+cinder_mystic:
+  parent: Cinder Mystic
+  rules:
+    inferno_dancer:
+      child: Inferno Dancer
+      trigger_level: 8
+      priority: 48
+      guard:
+        all:
+          - type: badge_unlocked
+            key: edge_walker_plus
+          - type: badge_unlocked
+            key: tempo_keeper
+      notes: "Mythic high-risk finisher; top priority on ember branch."

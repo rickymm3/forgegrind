@@ -10,6 +10,34 @@
 <% status_label = pet_status_label(@pet) %>
 <% feeling = pet_feeling_descriptor(@pet) %>
 
+<div class="pet-show-shell">
+  <div class="pet-show-main">
+    <div class="pet-hero" style="background-image: url('<%= sprite_path.presence || asset_path('pets/placeholder.svg') %>');">
+      <div class="pet-hero__overlay"></div>
+      <div class="pet-hero__badge">
+        <span class="pet-hero__dot"></span>
+        <span>Live</span>
+      </div>
+      <div class="pet-hero__content" data-controller="pet-needs-poll" data-pet-needs-poll-url-value="<%= needs_status_pet_path(@pet, format: :turbo_stream) %>">
+        <span class="pet-hero__eyebrow">Companion</span>
+        <h1 class="pet-hero__title"><%= display_name %></h1>
+        <p class="pet-hero__subtitle"><%= status_label %></p>
+        <%= render "pets/show/hero_nav" %>
+      </div>
+    </div>
+  </div>
+
+  <nav class="pet-show-nav" aria-label="Pet navigation">
+    <%= link_to pets_path, class: "pet-show-nav__btn", aria: { label: "Back to pets" } do %>
+      ←
+    <% end %>
+    <a href="#" class="pet-show-nav__btn" aria-label="Overview">🏠</a>
+    <a href="#" class="pet-show-nav__btn" aria-label="Care">🩺</a>
+    <a href="#" class="pet-show-nav__btn" aria-label="Skills">✨</a>
+    <a href="#" class="pet-show-nav__btn" aria-label="Explorations">🧭</a>
+  </nav>
+</div>
+
 <div class="pet-detail" data-controller="pet-detail" data-action="click->pet-detail#showOverlay">
   <div class="pet-detail__media">
     <% if sprite_path.present? %>

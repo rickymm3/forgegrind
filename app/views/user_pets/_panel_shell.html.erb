@@ -1,0 +1,26 @@
+<% pet         = user_pet.pet %>
+<% pet_name    = user_pet.name.presence || pet.name %>
+<% rarity_name = user_pet.rarity&.name || "Unknown" %>
+<% sprite_path = pet_sprite_path(pet) %>
+<% rarity_class = rarity_border_class(user_pet.rarity) %>
+<% media_style = sprite_path.present? ? "background-image: url('#{sprite_path}');" : nil %>
+
+<section class="pet-panel pet-panel--overview">
+  <div class="pet-panel__card">
+    <div class="pet-panel__media <%= rarity_class %> <%= 'pet-panel__media--empty' unless sprite_path.present? %>"
+         style="<%= media_style %>"
+         role="img"
+         aria-label="<%= pet_name %> portrait">
+      <% unless sprite_path.present? %>
+        <div class="pet-panel__image-placeholder">Artwork unavailable</div>
+      <% end %>
+    </div>
+
+    <turbo-frame id="<%= user_pet_panel_body_dom_id(user_pet) %>">
+      <%= render (local_assigns[:body_partial] || "user_pets/panel_body_overview"),
+                 user_pet: user_pet %>
+    </turbo-frame>
+  </div>
+
+  <%= yield if block_given? %>
+</section>

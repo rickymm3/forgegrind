@@ -24,7 +24,7 @@
     - header_classes = ["app-shell__header"]
     - header_classes << "hidden" unless has_flash_messages || has_header_content || show_admin_nav
     .app-shell
-      %header{ class: header_classes.join(' ') }
+      %header{ class: header_classes.join(' '), data: { controller: "header-collapse" } }
         - inner_classes = ["app-shell__header-inner"]
         - inner_classes << "app-shell__header-inner--spaced" if has_flash_messages || has_header_content || show_admin_nav
         %div{ class: inner_classes.join(' ') }
@@ -43,10 +43,6 @@
         %div{ class: inner_classes.compact.join(' ') }
           = yield
       - unless admin_namespace?
-        %footer.app-shell__tabbar{ data: { controller: "tabbar", tabbar_state_value: "visible" } }
-          %button.tabbar-toggle{ type: "button",
-                                 aria: { pressed: "false", label: "Hide navigation" },
-                                 data: { action: "tabbar#toggle", tabbar_target: "toggle" } }
-            %span{ data: { tabbar_target: "icon" } } ↓
-          .tabbar-panel{ data: { tabbar_target: "panel" }, aria: { hidden: "false" } }
+        %footer.app-shell__tabbar
+          .tabbar-panel
             = render partial: "shared/nav/tabbar", locals: { dom_id: "primary-tabbar" }

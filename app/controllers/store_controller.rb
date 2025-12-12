@@ -10,6 +10,11 @@ class StoreController < ApplicationController
     { item_type: "soap", price: 90, quantity: 1, currency_key: :coins },
     { item_type: "rainbow_fruit", price: 150, quantity: 1, currency_key: :coins, highlighted: true },
     { item_type: "rainbow_fruit", price: 20, quantity: 1, currency_key: :diamonds },
+    # TM boxes for testing
+    { item_type: "tm_box_common", price: 50, quantity: 1, currency_key: :coins },
+    { item_type: "tm_box_uncommon", price: 100, quantity: 1, currency_key: :coins },
+    { item_type: "tm_box_rare", price: 10, quantity: 1, currency_key: :diamonds },
+    { item_type: "tm_box_legendary", price: 25, quantity: 1, currency_key: :diamonds, highlighted: true },
 
     # Extended care catalog
     { item_type: "bone", price: 80, quantity: 1, currency_key: :coins },
@@ -49,6 +54,9 @@ class StoreController < ApplicationController
       redirect_to store_path(tab: "items"), alert: "Unknown currency."
       return
     end
+
+    discount_pct = current_user.skill_modifiers["store_discount_pct"].to_f
+    price = [(price * (1 - discount_pct / 100.0)).floor, 1].max if discount_pct.positive?
 
     balance = current_user.currency_balance(currency)
     quantity = offer[:quantity].to_i

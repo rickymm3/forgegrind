@@ -23,14 +23,4 @@
     <% end %>
   </nav>
 
-  <div class="page-toolbar__stats">
-    <div class="stat-chip stat-chip--amber">
-      <span class="stat-chip__label">Coins</span>
-      <span class="stat-chip__value" id="<%= coins&.dom_id || currency_dom_id('Coins') %>"><%= number_with_delimiter(coins_amount.to_i) %></span>
-    </div>
-    <div class="stat-chip stat-chip--indigo">
-      <span class="stat-chip__label">Diamonds</span>
-      <span class="stat-chip__value" id="<%= diamonds&.dom_id || currency_dom_id('Diamonds') %>"><%= number_with_delimiter(diamonds_amount.to_i) %></span>
-    </div>
-  </div>
 </div>
